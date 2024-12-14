@@ -17,41 +17,53 @@ include <BOSL2/std.scad>
 include <BOSL2/rounding.scad>
 
 
-gridfinity_bin_bottom_grid(2, 2);
+gridfinity_bin_bottom_grid(5, 2);
 
-//gridfinity_bin_bottom();
+outside_radius = 7.5; //radius of the outside corner of the baseplate
+inside_radius = 0.8; //radius of the inside corner of the baseplate
 
-module gridfinity_bin_bottom_grid(x, y, additionalHeight = 1){
-    up(4.75+additionalHeight/2)
-    minkowski(){
-        cuboid([x*41.75-5.9+.25*(x-2), y*41.75-5.9+.25*(y-2), additionalHeight]);
-        cyl(h=0.01, d=5.9, $fn=50);
-    }
-    translate([42/2-42/2*x,42/2-42/2*y,0])
-    //translate([-x*42/2, -y*42/2,0])
-    for (i = [0:x-1]){
-        for (j = [0:y-1]){
-            translate([i*42, j*42, 0]){
-                gridfinity_bin_bottom(anchor=BOT);
-            }
+module gridfinity_bin_bottom_grid(x, y, additionalHeight = 1, anchor, spin, orient){
+    attachable(anchor, spin, orient, size=[42*x-0.5, 42*y-0.5, 4.75+additionalHeight]){
+        down((4.75+additionalHeight)/2)
+        union(){
+            up(4.75+additionalHeight/2-0.01)
+                minkowski(){
+                    cuboid([42*x-.5-outside_radius,42*y-0.5-outside_radius, additionalHeight]);
+                    cyl(h=0.01, d=outside_radius, $fn=50);
+                }
+            translate([42/2-42/2*x,42/2-42/2*y,0])
+                for (i = [0:x-1]){
+                    for (j = [0:y-1]){
+                        translate([i*42, j*42, 0]){
+                            gridfinity_bin_bottom(anchor=BOT);
+                        }
+                    }
+                }
         }
+    children();
     }
+    
 }
 
+//profile with inside radius added (for minkowski)
+base_profile_adj = [
+                    [0,0], //start at inner profile
+                    [inside_radius,0], //start at inner profile
+                    [0.8+inside_radius, 0.8], //up and out 0.8
+                    [0.8+inside_radius, 0.8 + 1.8], //up 1.8
+                    [0.8 + 2.15+inside_radius, 0.8 + 1.8 + 2.15], //up and out 2.15
+                    [0, 0.8 + 1.8 + 2.15] //back to inside
+                ]; //Gridfinity Bin Bottom Specs
+
+//this doesn't quite work because it doesn't do the 1.6 radius on the inside
 module gridfinity_bin_bottom(additionalHeight = 0, anchor, spin, orient){
     attachable(anchor, spin, orient, size=[41.5, 41.5, 4.75]){
-                translate(v = [-35.6/2,-35.6/2,-4.75/2]) 
+                translate(v = [-(35.6-inside_radius*2)/2,-(35.6-inside_radius*2)/2,-4.75/2]) 
                     rotate(a = [0,0,0]) 
                         minkowski() {
                             rotate_extrude($fn=50) 
-                                    polygon(points = [
-                                        [0,0], //start at inner profile
-                                        [0.8, 0.8], //up and out 0.8
-                                        [0.8, 0.8 + 1.8], //up 1.8
-                                        [0.8 + 2.15, 0.8 + 1.8 + 2.15], //up and out 2.15
-                                        [0, 0.8 + 1.8 + 2.15] //back to inside
-                                    ]); //Gridfinity Bin Bottom Specs
-                            cube(size = [35.6,35.6,0.01+additionalHeight]);
+                                    polygon(points=base_profile_adj); //Gridfinity Bin Bottom Specs
+                            cube(size = [35.6-inside_radius*2,35.6-inside_radius*2,0.01+additionalHeight]);
                         }
     children();
     }
