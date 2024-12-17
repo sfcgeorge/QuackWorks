@@ -30,6 +30,12 @@ Wall_Thickness = 4;
 //Length of the channel (by mm)
 Channel_Length = 42; 
 
+/*[Vertical Trim]*/
+//Length of the channel (by mm)
+Total_Trim_Width = 42; 
+Middle_Seam_Width = 5;
+Total_Trim_Height = 20;
+
 /*[Advanced]*/
 //Size of the grid (by mm). 42mm by default for gridfinity. Other sized not tested. 
 grid_size = 42;
@@ -86,6 +92,16 @@ fwd(part_placement*3){
         NeoGrid_L_Intersection_Top(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
 }
 
+right(100)
+diff()
+cuboid([Total_Trim_Width, Wall_Thickness*2+Material_Thickness, Total_Trim_Height], anchor=BOT){
+    //cutouts
+    attach([LEFT, RIGHT], LEFT, inside=true, shiftout=0.01)
+        cuboid([Total_Trim_Width/2-Middle_Seam_Width/2, Material_Thickness, Total_Trim_Height+0.02]);
+    //chamfers
+    edge_profile([BOT+FRONT, BOT+BACK, TOP+FRONT, TOP+BACK])
+        mask2d_chamfer(Wall_Thickness/3);
+}
 
 /*
     
@@ -108,10 +124,13 @@ module NeoGrid_Straight_Thru_Top(Material_Thickness, Channel_Depth = 20, Wall_Th
         cuboid([Wall_Thickness*2+Material_Thickness, Channel_Length, Channel_Depth], anchor=BOT){ //Gridfinity Base
             //top chamfer
                 edge_profile([BOT+LEFT, BOT+RIGHT])
-                    mask2d_chamfer(Wall_Thickness/2);
+                    mask2d_chamfer(Wall_Thickness/3);
         //Removal tool for channel
-        attach(TOP, BOT, inside=true, shiftout=Wall_Thickness+0.01)
-            cuboid([Material_Thickness, Channel_Length+0.02, Channel_Depth+0.02]);
+        attach(TOP, BOT, inside=true, shiftout=0.01)
+            cuboid([Material_Thickness, Channel_Length+0.02, Channel_Depth-Wall_Thickness+0.02])
+                //material insertion chamfer 
+                edge_profile_asym([BOT+LEFT, BOT+RIGHT], corner_type="sharp")
+                    xflip() mask2d_chamfer(Wall_Thickness/3);
         }
     }
 }
@@ -130,10 +149,13 @@ module NeoGrid_Straight_Thru_Base(Material_Thickness, Channel_Depth = 20, Wall_T
                         xflip()mask2d_chamfer(5);
                 //top chamfer
                     edge_profile([TOP+FRONT, TOP+BACK])
-                        mask2d_chamfer(Wall_Thickness/2);
+                        mask2d_chamfer(Wall_Thickness/3);
             //Removal tool for channel
             attach(TOP, BOT, inside=true, shiftout=0.01)
-                cuboid([ Channel_Length+0.02, Material_Thickness, Channel_Depth+0.02]);
+                cuboid([ Channel_Length+0.02, Material_Thickness, Channel_Depth+0.02])
+                    //material insertion chamfer 
+                    edge_profile_asym([BOT+FRONT, BOT+BACK], corner_type="sharp")
+                        xflip() mask2d_chamfer(Wall_Thickness/3);
             }
     }
 }
@@ -147,48 +169,57 @@ module NeoGrid_X_Intersection_Top(Material_Thickness, Channel_Depth = 20, Wall_T
             cuboid([Wall_Thickness*2+Material_Thickness, grid_size, Channel_Depth], anchor=BOT){ //Gridfinity Base
                 //top chamfer
                     edge_profile([BOT+LEFT, BOT+RIGHT])
-                        mask2d_chamfer(Wall_Thickness/2);
+                        mask2d_chamfer(Wall_Thickness/3);
             //Removal tool for channel
             zrot_copies([0,90]) 
-                attach(TOP, BOT, inside=true, shiftout=Wall_Thickness+0.01)
-                    cuboid([Material_Thickness, grid_size+0.02, Channel_Depth+0.02]);
+                attach(TOP, BOT, inside=true, shiftout=0.01)
+                    cuboid([Material_Thickness, grid_size+0.02, Channel_Depth-Wall_Thickness+0.02])
+                        //material insertion chamfer 
+                        edge_profile_asym([BOT+LEFT, BOT+RIGHT], corner_type="sharp")
+                            xflip() mask2d_chamfer(Wall_Thickness/3);
         }
     }
 }
 
 module NeoGrid_X_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_Thickness = 4, grid_size = 42){
     //X Intersection Base
-    diff("channel") //small trick here. External chamfers auto-apply the "remove" tag. This is a workaround to keep the chamfers on the channel walls by renaming the remove tag.
+    diff("channel chamf") //small trick here. External chamfers auto-apply the "remove" tag. This is a workaround to keep the chamfers on the channel walls by renaming the remove tag.
         //Gridfinity Base 1x1 for all intersections.
         gridfinity_bin_bottom_grid(x=1,y=1, anchor=BOT){
         //Channel Wall Y
         attach(TOP, BOT, overlap=0.01) //attach to the top of the gridfinity base
-            cuboid([Wall_Thickness*2+Material_Thickness, grid_size-grid_clearance, Channel_Depth]){ //cube that is 
+            cuboid([Wall_Thickness*2+Material_Thickness, grid_size-grid_clearance, Channel_Depth]){
                 //bottom outward chamfer
                     edge_profile([BOT+LEFT, BOT+RIGHT])
                         xflip() //xflip to put the chamfer out rather than in
                             mask2d_chamfer(5); 
                 //top inward chamfer
-                    edge_profile([TOP+LEFT, TOP+RIGHT])
-                        mask2d_chamfer(Wall_Thickness/2); //chanmfer half the wall thickness
+                    tag("chamf") edge_profile([TOP+LEFT, TOP+RIGHT])
+                        mask2d_chamfer(Wall_Thickness/3); //chamfer portion of the wall thickness
             }
         //Channel Wall X
         attach(TOP, BOT)
-            zrot(90)
+            zrot(90) down(0.01)
             cuboid([Wall_Thickness*2+Material_Thickness, grid_size-grid_clearance, Channel_Depth]){
             //bottom chamfer
-                edge_profile([BOT+LEFT, BOT+RIGHT])
+                edge_profile_asym([BOT+LEFT, BOT+RIGHT])
                     xflip() //xflip to put the chamfer out rather than in
                         mask2d_chamfer(5); 
             //top chamfer
-                edge_profile([TOP+LEFT, TOP+RIGHT])
-                    mask2d_chamfer(Wall_Thickness/2); //chanmfer half the wall thickness
+                tag("chamf") edge_profile_asym([TOP+LEFT, TOP+RIGHT])
+                    mask2d_chamfer(Wall_Thickness/3); //chamfer portion of the wall thickness
         }
         //clear the channels in both directions
         tag("channel")attach(TOP, BOT, shiftout=0.01)
-            cuboid([Material_Thickness, grid_size+0.02, Channel_Depth+0.02]);
+            cuboid([Material_Thickness, grid_size+0.05, Channel_Depth+0.02])
+                //material insertion chamfer 
+                edge_profile([TOP+LEFT, TOP+RIGHT])
+                    xflip() mask2d_chamfer(Wall_Thickness/3);
         tag("channel")zrot(90) attach(TOP, BOT, shiftout=0.01)
-            cuboid([Material_Thickness, grid_size+0.02, Channel_Depth+0.02]);
+            cuboid([Material_Thickness, grid_size+0.05, Channel_Depth+0.02])
+                //material insertion chamfer 
+                edge_profile([TOP+LEFT, TOP+RIGHT])
+                    xflip() mask2d_chamfer(Wall_Thickness/3);
         }//end gridfinity base
 }
 
@@ -199,10 +230,13 @@ module NeoGrid_T_Intersection_Top(Material_Thickness, Channel_Depth = 20, Wall_T
         cuboid([Wall_Thickness*2+Material_Thickness, grid_size, Channel_Depth], anchor=BOT){
             //top chamfer
             edge_profile([BOT+LEFT, BOT+RIGHT])
-                mask2d_chamfer(Wall_Thickness/2);
+                mask2d_chamfer(Wall_Thickness/3);
             //Removal tool - Full Width
-            attach(TOP, BOT, inside=true, shiftout=Wall_Thickness+0.01)
-                cuboid([Material_Thickness, grid_size+0.02, Channel_Depth+0.02]);
+            attach(TOP, BOT, inside=true, shiftout=0.01)
+                cuboid([Material_Thickness, grid_size+0.02, Channel_Depth-Wall_Thickness+0.02])
+                    //material insertion chamfer 
+                    edge_profile_asym([BOT+LEFT, BOT+RIGHT], corner_type="sharp")
+                        xflip() mask2d_chamfer(Wall_Thickness/3);
         }
         //Partial Width Channel
         zrot(90)
@@ -210,29 +244,32 @@ module NeoGrid_T_Intersection_Top(Material_Thickness, Channel_Depth = 20, Wall_T
         cuboid([Wall_Thickness*2+Material_Thickness, grid_size/2+Material_Thickness/2+Wall_Thickness, Channel_Depth], anchor=BOT+FRONT){ //Gridfinity Base
             //top chamfer
             edge_profile([BOT+LEFT, BOT+RIGHT])
-                mask2d_chamfer(Wall_Thickness/2);
+                mask2d_chamfer(Wall_Thickness/3);
             //Removal tool - Partial
-            up(Wall_Thickness) attach(TOP, BOT, shiftout=0.01, inside=true, align=BACK)
-                cuboid([Material_Thickness, grid_size/2++Material_Thickness/2+0.02, Channel_Depth+0.02]);
+            attach(TOP, BOT, shiftout=0.01, inside=true, align=BACK)
+                cuboid([Material_Thickness, grid_size/2++Material_Thickness/2+0.02, Channel_Depth-Wall_Thickness+0.02])
+                //material insertion chamfer 
+                    edge_profile_asym([BOT+LEFT, BOT+RIGHT], corner_type="sharp")
+                        xflip() mask2d_chamfer(Wall_Thickness/3);
         }
     }
 }
 
 module NeoGrid_T_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_Thickness = 4, grid_size = 42){
     //X Intersection Base
-    diff("channel") //small trick here. External chamfers auto-apply the "remove" tag. This is a workaround to keep the chamfers on the channel walls by renaming the remove tag.
+    diff("channel chamf") //small trick here. External chamfers auto-apply the "remove" tag. This is a workaround to keep the chamfers on the channel walls by renaming the remove tag.
         //Gridfinity Base 1x1 for all intersections.
         gridfinity_bin_bottom_grid(x=1,y=1, anchor=BOT){
         //Channel Wall partial 
-        attach(TOP, BOT, overlap=0.01, align=FRONT) //attach to the top of the gridfinity base
+        attach(TOP, BOT, overlap=0.01, align=FRONT) up(0.01)//attach to the top of the gridfinity base
             cuboid([Wall_Thickness*2+Material_Thickness, grid_size/2, Channel_Depth]){
                 //bottom outward chamfer
                     edge_profile([BOT+LEFT, BOT+RIGHT])
                         xflip() //xflip to put the chamfer out rather than in
                             mask2d_chamfer(5); 
                 //top inward chamfer
-                    edge_profile([TOP+LEFT, TOP+RIGHT])
-                        mask2d_chamfer(Wall_Thickness/2); //chanmfer half the wall thickness
+                    tag("chamf")edge_profile([TOP+LEFT, TOP+RIGHT])
+                        mask2d_chamfer(Wall_Thickness/3); //chamfer portion of the wall thickness
             }
         //Channel Wall full width
         attach(TOP, BOT)
@@ -243,16 +280,22 @@ module NeoGrid_T_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
                     xflip() //xflip to put the chamfer out rather than in
                         mask2d_chamfer(5); 
             //top chamfer
-                edge_profile([TOP+LEFT, TOP+RIGHT])
-                    mask2d_chamfer(Wall_Thickness/2); //chanmfer half the wall thickness
+                tag("chamf")edge_profile([TOP+LEFT, TOP+RIGHT])
+                    mask2d_chamfer(Wall_Thickness/3); //chamfer portion of the wall thickness
         }
         //clear the channels in both directions
         //channel clear partial
         tag("channel")attach(TOP, BOT, shiftout=0.01, align=FRONT)
-            cuboid([Material_Thickness, grid_size/2+0.02, Channel_Depth+0.02]);
+            cuboid([Material_Thickness, grid_size/2+0.02, Channel_Depth+0.02])
+                //material insertion chamfer 
+                edge_profile_asym([TOP+LEFT, TOP+RIGHT], corner_type="chamfer")
+                    xflip() mask2d_chamfer(Wall_Thickness/3);
         //channel clear full length
         tag("channel")zrot(90) attach(TOP, BOT, shiftout=0.01)
-            cuboid([Material_Thickness, grid_size+0.02, Channel_Depth+0.02]);
+            cuboid([Material_Thickness, grid_size+0.02, Channel_Depth+0.02])
+                //material insertion chamfer 
+                edge_profile_asym([TOP+LEFT, TOP+RIGHT], corner_type="chamfer")
+                    xflip() mask2d_chamfer(Wall_Thickness/3);
         }//end gridfinity base
 }
 
@@ -262,11 +305,14 @@ module NeoGrid_Straight_End_Top(Material_Thickness, Channel_Depth = 20, Wall_Thi
         //Channel Walls
             cuboid([ grid_size, Wall_Thickness*2+Material_Thickness, Channel_Depth], anchor=BOT){
             //top chamfer
-                edge_profile([BOT+FRONT, BOT+BACK])
-                    mask2d_chamfer(Wall_Thickness/2);
+                edge_profile([BOT+FRONT, BOT+BACK, BOT+RIGHT])
+                    mask2d_chamfer(Wall_Thickness/3);
         //Removal tool for channel
-        up(Wall_Thickness) attach(TOP, BOT, inside=true, shiftout=+0.01, align=LEFT)
-                cuboid([ grid_size/2+Partial_Channel_Buffer+0.02, Material_Thickness, Channel_Depth+0.02]);
+        attach(TOP, BOT, inside=true, shiftout=0.01, align=LEFT)
+                cuboid([ grid_size/2+Partial_Channel_Buffer+0.02, Material_Thickness, Channel_Depth-Wall_Thickness+0.02])
+                    //material insertion chamfer 
+                    edge_profile_asym([BOT], corner_type="chamfer")
+                        xflip() mask2d_chamfer(Wall_Thickness/3);
         }
     }
 }
@@ -285,10 +331,13 @@ module NeoGrid_Straight_End_Base(Material_Thickness, Channel_Depth = 20, Wall_Th
                         xflip()mask2d_chamfer(5);
                 //top chamfer
                     edge_profile([TOP+FRONT, TOP+BACK])
-                        mask2d_chamfer(Wall_Thickness/2);
+                        mask2d_chamfer(Wall_Thickness/3);
             //Removal tool for channel
             attach(TOP, BOT, inside=true, shiftout=0.01, align=LEFT)
-                cuboid([ grid_size/2+Partial_Channel_Buffer+0.02, Material_Thickness, Channel_Depth+0.02]);
+                cuboid([ grid_size/2+Partial_Channel_Buffer+0.02, Material_Thickness, Channel_Depth+0.02])
+                    //material insertion chamfer 
+                    edge_profile_asym([BOT], corner_type="chamfer")
+                        xflip() mask2d_chamfer(Wall_Thickness/3);
             }
     }
 }
@@ -303,24 +352,30 @@ module NeoGrid_L_Intersection_Top(Material_Thickness, Channel_Depth = 20, Wall_T
         cuboid([Wall_Thickness*2+Material_Thickness, grid_size/2+Wall_Thickness+Material_Thickness/2-grid_clearance/2, Channel_Depth], anchor=BOT+BACK){
             //inward chamfer
                 edge_profile([BOT+LEFT, BOT+RIGHT])
-                    mask2d_chamfer(Wall_Thickness/2); //chamfer half the wall thickness
+                    mask2d_chamfer(Wall_Thickness/3); //chamfer half the wall thickness
         }
         //Channel Wall Y axis
         right(Material_Thickness/2+Wall_Thickness)
         cuboid([grid_size/2+Wall_Thickness+Material_Thickness/2-grid_clearance/2, Wall_Thickness*2+Material_Thickness, Channel_Depth], anchor=BOT+RIGHT){
         //inward chamfer
             edge_profile([BOT+FRONT, BOT+BACK])
-                mask2d_chamfer(Wall_Thickness/2); //chanmfer half the wall thickness
+                mask2d_chamfer(Wall_Thickness/3); //chamfer portion of the wall thickness
         }
         //clear the channels in both directions
         //channel clear partial
         tag("remove")
             up(Wall_Thickness) back(Material_Thickness/2)
-            cuboid([Material_Thickness, grid_size/2+Material_Thickness/2-grid_clearance/2+0.02, Channel_Depth+0.02], anchor=BOT+BACK);
+            cuboid([Material_Thickness, grid_size/2+Material_Thickness/2-grid_clearance/2+0.02, Channel_Depth-Wall_Thickness+0.02], anchor=BOT+BACK)
+                //material insertion chamfer 
+                edge_profile_asym([TOP+LEFT, TOP+RIGHT, TOP+BACK], corner_type="chamfer")
+                    xflip() mask2d_chamfer(Wall_Thickness/3);
         //channel clear full length
         tag("remove")
             up(Wall_Thickness) right(Material_Thickness/2)
-            cuboid([grid_size/2+Material_Thickness/2-grid_clearance/2+0.02, Material_Thickness, Channel_Depth+0.02], anchor=BOT+RIGHT);
+            cuboid([grid_size/2+Material_Thickness/2-grid_clearance/2+0.02, Material_Thickness, Channel_Depth-Wall_Thickness+0.02], anchor=BOT+RIGHT)
+                //material insertion chamfer 
+                edge_profile_asym([TOP+FRONT, TOP+BACK], corner_type="chamfer")
+                    xflip() mask2d_chamfer(Wall_Thickness/3);
     }
 }
 
@@ -339,7 +394,7 @@ module NeoGrid_L_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
                             mask2d_chamfer(5); 
                 //top inward chamfer
                     edge_profile([TOP+LEFT, TOP+RIGHT])
-                        mask2d_chamfer(Wall_Thickness/2); //chanmfer half the wall thickness
+                        mask2d_chamfer(Wall_Thickness/3); //chamfer portion of the wall thickness
             }
         //Channel Wall Y axis
         attach(TOP, BOT, shiftout=-0.01, align=LEFT)
@@ -350,15 +405,21 @@ module NeoGrid_L_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
                         mask2d_chamfer(5); 
             //top chamfer
                 edge_profile([TOP+LEFT, TOP+RIGHT])
-                    mask2d_chamfer(Wall_Thickness/2); //chanmfer half the wall thickness
+                    mask2d_chamfer(Wall_Thickness/3); //chamfer portion of the wall thickness
         }
         //clear the channels in both directions
         //channel clear partial
         tag("channel")attach(TOP, BOT, shiftout=0.01, align=FRONT)
-            cuboid([Material_Thickness, grid_size/2+Material_Thickness/2-grid_clearance/2+0.02, Channel_Depth+0.02]);
+            cuboid([Material_Thickness, grid_size/2+Material_Thickness/2-grid_clearance/2+0.02, Channel_Depth+0.02])
+                //material insertion chamfer 
+                edge_profile_asym([TOP+LEFT, TOP+RIGHT], corner_type="chamfer")
+                    xflip() mask2d_chamfer(Wall_Thickness/3);
         //channel clear full length
         tag("channel")attach(TOP, BOT, shiftout=0.01, align=LEFT)
-            cuboid([grid_size/2+Material_Thickness/2-grid_clearance/2+0.02, Material_Thickness, Channel_Depth+0.02]);
+            cuboid([grid_size/2+Material_Thickness/2-grid_clearance/2+0.02, Material_Thickness, Channel_Depth+0.02])
+                //material insertion chamfer 
+                edge_profile_asym([TOP+FRONT, TOP+BACK, TOP+RIGHT], corner_type="chamfer")
+                    xflip() mask2d_chamfer(Wall_Thickness/3);
         }//end gridfinity base
 }
 
