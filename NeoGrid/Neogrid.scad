@@ -116,6 +116,19 @@ BEGIN NEOGRID MODULES
 */
 
 
+
+module channelDeleteTool(size, chamfer_edges = [BOT], anchor = CENTER, spin = 0, orient = UP){
+    tag_scope()
+    diff(){
+        cuboid(size, anchor=anchor, spin=spin, orient=orient){ //passthru attachables
+                //material insertion chamfer 
+                edge_profile_asym(chamfer_edges, corner_type="chamfer")
+                    xflip() mask2d_chamfer(Wall_Thickness/3);
+        children();
+        }
+    }
+}
+
 //STRAIGHT CHANNELS
 
 module NeoGrid_Straight_Thru_Top(Material_Thickness, Channel_Depth = 20, Wall_Thickness = 4, grid_size = 42, Channel_Length = 42){
@@ -127,10 +140,7 @@ module NeoGrid_Straight_Thru_Top(Material_Thickness, Channel_Depth = 20, Wall_Th
                     mask2d_chamfer(Wall_Thickness/3);
         //Removal tool for channel
         attach(TOP, BOT, inside=true, shiftout=0.01)
-            cuboid([Material_Thickness, Channel_Length+0.02, Channel_Depth-Wall_Thickness+0.02])
-                //material insertion chamfer 
-                edge_profile_asym([BOT+LEFT, BOT+RIGHT], corner_type="sharp")
-                    xflip() mask2d_chamfer(Wall_Thickness/3);
+            channelDeleteTool([Material_Thickness, Channel_Length+0.02, Channel_Depth-Wall_Thickness+0.02]);
         }
     }
 }
@@ -152,10 +162,7 @@ module NeoGrid_Straight_Thru_Base(Material_Thickness, Channel_Depth = 20, Wall_T
                         mask2d_chamfer(Wall_Thickness/3);
             //Removal tool for channel
             attach(TOP, BOT, inside=true, shiftout=0.01)
-                cuboid([ Channel_Length+0.02, Material_Thickness, Channel_Depth+0.02])
-                    //material insertion chamfer 
-                    edge_profile_asym([BOT+FRONT, BOT+BACK], corner_type="sharp")
-                        xflip() mask2d_chamfer(Wall_Thickness/3);
+                channelDeleteTool([Channel_Length+0.02,Material_Thickness, Channel_Depth+0.02]);
             }
     }
 }
@@ -173,10 +180,7 @@ module NeoGrid_X_Intersection_Top(Material_Thickness, Channel_Depth = 20, Wall_T
             //Removal tool for channel
             zrot_copies([0,90]) 
                 attach(TOP, BOT, inside=true, shiftout=0.01)
-                    cuboid([Material_Thickness, grid_size+0.02, Channel_Depth-Wall_Thickness+0.02])
-                        //material insertion chamfer 
-                        edge_profile_asym([BOT+LEFT, BOT+RIGHT], corner_type="sharp")
-                            xflip() mask2d_chamfer(Wall_Thickness/3);
+                    channelDeleteTool([Material_Thickness, grid_size+0.02, Channel_Depth-Wall_Thickness+0.02]);
         }
     }
 }
@@ -210,16 +214,10 @@ module NeoGrid_X_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
                     mask2d_chamfer(Wall_Thickness/3); //chamfer portion of the wall thickness
         }
         //clear the channels in both directions
-        tag("channel")attach(TOP, BOT, shiftout=0.01)
-            cuboid([Material_Thickness, grid_size+0.05, Channel_Depth+0.02])
-                //material insertion chamfer 
-                edge_profile([TOP+LEFT, TOP+RIGHT])
-                    xflip() mask2d_chamfer(Wall_Thickness/3);
-        tag("channel")zrot(90) attach(TOP, BOT, shiftout=0.01)
-            cuboid([Material_Thickness, grid_size+0.05, Channel_Depth+0.02])
-                //material insertion chamfer 
-                edge_profile([TOP+LEFT, TOP+RIGHT])
-                    xflip() mask2d_chamfer(Wall_Thickness/3);
+        tag("channel")attach(TOP, TOP, shiftout=0.01)
+            channelDeleteTool([Material_Thickness, grid_size+0.01, Channel_Depth+0.02]);
+        tag("channel")zrot(90) attach(TOP, TOP, shiftout=0.01)
+            channelDeleteTool([Material_Thickness, grid_size+0.01, Channel_Depth+0.02]);
         }//end gridfinity base
 }
 
@@ -233,10 +231,7 @@ module NeoGrid_T_Intersection_Top(Material_Thickness, Channel_Depth = 20, Wall_T
                 mask2d_chamfer(Wall_Thickness/3);
             //Removal tool - Full Width
             attach(TOP, BOT, inside=true, shiftout=0.01)
-                cuboid([Material_Thickness, grid_size+0.02, Channel_Depth-Wall_Thickness+0.02])
-                    //material insertion chamfer 
-                    edge_profile_asym([BOT+LEFT, BOT+RIGHT], corner_type="sharp")
-                        xflip() mask2d_chamfer(Wall_Thickness/3);
+                channelDeleteTool([Material_Thickness, grid_size+0.02, Channel_Depth-Wall_Thickness+0.02]);
         }
         //Partial Width Channel
         zrot(90)
@@ -247,10 +242,7 @@ module NeoGrid_T_Intersection_Top(Material_Thickness, Channel_Depth = 20, Wall_T
                 mask2d_chamfer(Wall_Thickness/3);
             //Removal tool - Partial
             attach(TOP, BOT, shiftout=0.01, inside=true, align=BACK)
-                cuboid([Material_Thickness, grid_size/2++Material_Thickness/2+0.02, Channel_Depth-Wall_Thickness+0.02])
-                //material insertion chamfer 
-                    edge_profile_asym([BOT+LEFT, BOT+RIGHT], corner_type="sharp")
-                        xflip() mask2d_chamfer(Wall_Thickness/3);
+                channelDeleteTool([Material_Thickness, grid_size/2++Material_Thickness/2+0.02, Channel_Depth-Wall_Thickness+0.02]);
         }
     }
 }
@@ -285,17 +277,11 @@ module NeoGrid_T_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
         }
         //clear the channels in both directions
         //channel clear partial
-        tag("channel")attach(TOP, BOT, shiftout=0.01, align=FRONT)
-            cuboid([Material_Thickness, grid_size/2+0.02, Channel_Depth+0.02])
-                //material insertion chamfer 
-                edge_profile_asym([TOP+LEFT, TOP+RIGHT], corner_type="chamfer")
-                    xflip() mask2d_chamfer(Wall_Thickness/3);
+        tag("channel")attach(TOP, TOP, shiftout=0.01, align=FRONT)
+            channelDeleteTool([Material_Thickness, grid_size/2+0.02, Channel_Depth+0.02]);
         //channel clear full length
-        tag("channel")zrot(90) attach(TOP, BOT, shiftout=0.01)
-            cuboid([Material_Thickness, grid_size+0.02, Channel_Depth+0.02])
-                //material insertion chamfer 
-                edge_profile_asym([TOP+LEFT, TOP+RIGHT], corner_type="chamfer")
-                    xflip() mask2d_chamfer(Wall_Thickness/3);
+        tag("channel")zrot(90) attach(TOP, TOP, shiftout=0.01)
+            channelDeleteTool([Material_Thickness, grid_size+0.02, Channel_Depth+0.02]);
         }//end gridfinity base
 }
 
@@ -309,10 +295,7 @@ module NeoGrid_Straight_End_Top(Material_Thickness, Channel_Depth = 20, Wall_Thi
                     mask2d_chamfer(Wall_Thickness/3);
         //Removal tool for channel
         attach(TOP, BOT, inside=true, shiftout=0.01, align=LEFT)
-                cuboid([ grid_size/2+Partial_Channel_Buffer+0.02, Material_Thickness, Channel_Depth-Wall_Thickness+0.02])
-                    //material insertion chamfer 
-                    edge_profile_asym([BOT], corner_type="chamfer")
-                        xflip() mask2d_chamfer(Wall_Thickness/3);
+                channelDeleteTool([ grid_size/2+Partial_Channel_Buffer+0.02, Material_Thickness, Channel_Depth-Wall_Thickness+0.02]);
         }
     }
 }
@@ -332,12 +315,9 @@ module NeoGrid_Straight_End_Base(Material_Thickness, Channel_Depth = 20, Wall_Th
                 //top chamfer
                     edge_profile([TOP+FRONT, TOP+BACK])
                         mask2d_chamfer(Wall_Thickness/3);
-            //Removal tool for channel
-            attach(TOP, BOT, inside=true, shiftout=0.01, align=LEFT)
-                cuboid([ grid_size/2+Partial_Channel_Buffer+0.02, Material_Thickness, Channel_Depth+0.02])
-                    //material insertion chamfer 
-                    edge_profile_asym([BOT], corner_type="chamfer")
-                        xflip() mask2d_chamfer(Wall_Thickness/3);
+                //Removal tool for channel
+                attach(TOP, BOT, inside=true, shiftout=0.01, align=LEFT)
+                    channelDeleteTool([ grid_size/2+Partial_Channel_Buffer+0.02, Material_Thickness, Channel_Depth+0.02]);
             }
     }
 }
@@ -365,17 +345,11 @@ module NeoGrid_L_Intersection_Top(Material_Thickness, Channel_Depth = 20, Wall_T
         //channel clear partial
         tag("remove")
             up(Wall_Thickness) back(Material_Thickness/2)
-            cuboid([Material_Thickness, grid_size/2+Material_Thickness/2-grid_clearance/2+0.02, Channel_Depth-Wall_Thickness+0.02], anchor=BOT+BACK)
-                //material insertion chamfer 
-                edge_profile_asym([TOP+LEFT, TOP+RIGHT, TOP+BACK], corner_type="chamfer")
-                    xflip() mask2d_chamfer(Wall_Thickness/3);
+            channelDeleteTool([Material_Thickness, grid_size/2+Material_Thickness/2-grid_clearance/2+0.02, Channel_Depth-Wall_Thickness+0.02], chamfer_edges=TOP, anchor=BOT+BACK);
         //channel clear full length
         tag("remove")
             up(Wall_Thickness) right(Material_Thickness/2)
-            cuboid([grid_size/2+Material_Thickness/2-grid_clearance/2+0.02, Material_Thickness, Channel_Depth-Wall_Thickness+0.02], anchor=BOT+RIGHT)
-                //material insertion chamfer 
-                edge_profile_asym([TOP+FRONT, TOP+BACK], corner_type="chamfer")
-                    xflip() mask2d_chamfer(Wall_Thickness/3);
+            channelDeleteTool([grid_size/2+Material_Thickness/2-grid_clearance/2+0.02, Material_Thickness, Channel_Depth-Wall_Thickness+0.02], chamfer_edges=TOP, anchor=BOT+RIGHT);
     }
 }
 
@@ -409,17 +383,11 @@ module NeoGrid_L_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
         }
         //clear the channels in both directions
         //channel clear partial
-        tag("channel")attach(TOP, BOT, shiftout=0.01, align=FRONT)
-            cuboid([Material_Thickness, grid_size/2+Material_Thickness/2-grid_clearance/2+0.02, Channel_Depth+0.02])
-                //material insertion chamfer 
-                edge_profile_asym([TOP+LEFT, TOP+RIGHT], corner_type="chamfer")
-                    xflip() mask2d_chamfer(Wall_Thickness/3);
+        tag("channel")attach(TOP, TOP, shiftout=0.01, align=FRONT)
+            channelDeleteTool([Material_Thickness, grid_size/2+Material_Thickness/2-grid_clearance/2+0.02, Channel_Depth+0.02]);
         //channel clear full length
-        tag("channel")attach(TOP, BOT, shiftout=0.01, align=LEFT)
-            cuboid([grid_size/2+Material_Thickness/2-grid_clearance/2+0.02, Material_Thickness, Channel_Depth+0.02])
-                //material insertion chamfer 
-                edge_profile_asym([TOP+FRONT, TOP+BACK, TOP+RIGHT], corner_type="chamfer")
-                    xflip() mask2d_chamfer(Wall_Thickness/3);
+        tag("channel")attach(TOP, TOP, shiftout=0.01, align=LEFT)
+            channelDeleteTool([grid_size/2+Material_Thickness/2-grid_clearance/2+0.02, Material_Thickness, Channel_Depth+0.02]);
         }//end gridfinity base
 }
 
