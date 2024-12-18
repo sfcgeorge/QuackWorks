@@ -166,10 +166,10 @@ module NeoGrid_Straight_Thru_Base(Material_Thickness, Channel_Depth = 20, Wall_T
             cuboid([ Wall_Thickness*2+Material_Thickness, Channel_Length-grid_clearance,  Channel_Depth], anchor=BOT){ //Gridfinity Base
                 //bottom chamfer
                 tag("keep") //must label keep due to chamfering out an addition and not a diff. 
-                    edge_profile([BOT+FRONT, BOT+BACK])
+                    edge_profile([BOT+LEFT, BOT+RIGHT])
                         xflip()mask2d_chamfer(5);
                 //top chamfer
-                    edge_profile([TOP+FRONT, TOP+BACK])
+                    edge_profile([TOP+LEFT, TOP+RIGHT])
                         mask2d_chamfer(Wall_Thickness/3);
             //Removal tool for channel
             attach(TOP, BOT, inside=true, shiftout=0.01)
