@@ -55,7 +55,7 @@ outside_radius = 7.5; //radius of the outside corner of the baseplate
 inside_radius = 0.8; //radius of the inside corner of the baseplate
 grid_x = 1;
 grid_y = 1;
-
+retention_spike_size = 0.8;
 part_placement = grid_size/2+Part_Separation;
 
 /*
@@ -64,12 +64,15 @@ BEGIN DISPLAYS
 
 */
 
+//Straight
 left(part_placement*3){
     fwd(quantup(Channel_Length, grid_size)/2+Part_Separation) 
         NeoGrid_Straight_Thru_Base(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size, Channel_Length = Channel_Length);
     back(Channel_Length/2+Part_Separation)
         NeoGrid_Straight_Thru_Top(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size, Channel_Length = Channel_Length);
 }
+
+//X Intersection
 fwd(part_placement){
     left(part_placement)
         NeoGrid_X_Intersection_Base(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
@@ -77,6 +80,7 @@ fwd(part_placement){
         NeoGrid_X_Intersection_Top(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
 }
 
+//T Intersection
 back(part_placement){
     left(part_placement)
         NeoGrid_T_Intersection_Base(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
@@ -84,6 +88,7 @@ back(part_placement){
         NeoGrid_T_Intersection_Top(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
 }
 
+//Straight End
 back(part_placement*3){
     left(part_placement)
         NeoGrid_Straight_End_Base(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
@@ -91,6 +96,7 @@ back(part_placement*3){
         NeoGrid_Straight_End_Top(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
 }
 
+//L Intersection
 fwd(part_placement*3){
     left(part_placement) 
         NeoGrid_L_Intersection_Base(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
@@ -98,17 +104,13 @@ fwd(part_placement*3){
         NeoGrid_L_Intersection_Top(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
 }
 
+//Vertical Trim
 if(Show_Vertical_Trim ) 
-right(100)
-diff()
-cuboid([Total_Trim_Width, Wall_Thickness*2+Material_Thickness, Total_Trim_Height], anchor=BOT){
-    //cutouts
-    attach([LEFT, RIGHT], LEFT, inside=true, shiftout=0.01)
-        cuboid([Total_Trim_Width/2-Middle_Seam_Width/2, Material_Thickness, Total_Trim_Height+0.02]);
-    //chamfers
-    edge_profile([BOT+FRONT, BOT+BACK, TOP+FRONT, TOP+BACK])
-        mask2d_chamfer(Wall_Thickness/3);
-}
+    right(100)
+    NeoGrid_Vertical_Trim(Material_Thickness, Wall_Thickness = Wall_Thickness, Total_Trim_Width = Total_Trim_Width, Middle_Seam_Width = Middle_Seam_Width, Total_Trim_Height = Total_Trim_Height);
+
+//debugging delete tool
+//channelDeleteTool([Material_Thickness, grid_size+0.02, Channel_Depth-Wall_Thickness+0.02]);
 
 /*
     
@@ -122,7 +124,7 @@ BEGIN NEOGRID MODULES
 
 */
 
-//channelDeleteTool([Material_Thickness, grid_size+0.02, Channel_Depth-Wall_Thickness+0.02]);
+
 
 module channelDeleteTool(size, chamfer_edges = [BOT], spike_count = 1, anchor = CENTER, spin = 0, orient = UP){
     tag_scope()
@@ -134,7 +136,7 @@ module channelDeleteTool(size, chamfer_edges = [BOT], spike_count = 1, anchor = 
         if(Retention_Spike)
             //Retention Spike
             tag("spike") ycopies(n=spike_count, spacing=size[1]/2)attach([LEFT,RIGHT], BOT, inside=true, overlap=0.01, $fn=30)
-                cyl(h=Material_Thickness/3*Spike_Scale,d2=0, d1=Material_Thickness/3*Spike_Scale*2);
+                cyl(h=retention_spike_size*Spike_Scale,d2=0, d1=retention_spike_size*Spike_Scale*2);
         children();
         }
     }
@@ -400,6 +402,18 @@ module NeoGrid_L_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
         tag("channel")attach(TOP, TOP, shiftout=0.01, align=LEFT, spin=90)
             channelDeleteTool([Material_Thickness, grid_size/2+Material_Thickness/2-grid_clearance/2+0.02, Channel_Depth+0.02]);
         }//end gridfinity base
+}
+
+module NeoGrid_Vertical_Trim(Material_Thickness, Wall_Thickness = 4, Total_Trim_Width = 42, Middle_Seam_Width = 4, Total_Trim_Height = 40){
+    diff()
+    cuboid([Total_Trim_Width, Wall_Thickness*2+Material_Thickness, Total_Trim_Height], anchor=BOT){
+        //cutouts
+        attach([LEFT, RIGHT], LEFT, inside=true, shiftout=0.01)
+            cuboid([Total_Trim_Width/2-Middle_Seam_Width/2, Material_Thickness, Total_Trim_Height+0.02]);
+        //chamfers
+        edge_profile([BOT+FRONT, BOT+BACK, TOP+FRONT, TOP+BACK])
+            mask2d_chamfer(Wall_Thickness/3);
+    }
 }
 
 /*
