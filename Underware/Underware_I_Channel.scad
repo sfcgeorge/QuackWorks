@@ -88,6 +88,8 @@ Global_Color = "SlateBlue";
 Override_Width_Using_Internal_MM = 0; 
 //Slop in thread. Increase to make threading easier. Decrease to make threading harder.
 Slop = 0.075;
+//BETA FEATURE: Change snap profile for strong holding strength. Not backwards compatible.
+Additional_Holding_Strength = 0.0;//[0:0.1:1.5]
 
 /*[Hidden]*/
 channelWidth = Override_Width_Using_Internal_MM == 0 ? Channel_Width_in_Units * Grid_Size : Override_Width_Using_Internal_MM + 6;
@@ -97,7 +99,7 @@ interlockOverlap = 3.09; //distance that the top and base overlap each other
 interlockFromFloor = 6.533; //distance from the bottom of the base to the bottom of the top when interlocked
 partSeparation = 10;
 
-///*[Visual Options]*/
+/*[Visual Options]*/
 Debug_Show_Grid = false;
 //View the parts as they attach. Note that you must disable this before exporting for printing. 
 Show_Attached = false;
@@ -212,24 +214,24 @@ baseProfileHalf =
     fwd(-7.947, //take Katie's exact measurements for half the profile and use fwd to place flush on the Y axis
         //profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
         [
-            [0,-4.447],
-            [-8.5,-4.447],
-            [-9.5,-3.447],
-            [-9.5,1.683],
-            [-10.517,1.683],
-            [-11.459,1.422],
-            [-11.459,-0.297],
-            [-11.166,-0.592],
-            [-11.166,-1.414],
-            [-11.666,-1.914],
-            [-12.517,-1.914],
-            [-12.517,-4.448],
-            [-10.517,-6.448],
-            [-10.517,-7.947],
-            [0,-7.947]
+            [0,-4.447], //Point 1
+            [-8.5+Additional_Holding_Strength,-4.447], //Point 2
+            [-9.5+Additional_Holding_Strength,-3.447],  //Point 3
+            [-9.5+Additional_Holding_Strength,1.683], //Point 4
+            [-10.517,1.683], //Point 5
+            [-11.459,1.422], //Point 6
+            [-11.459,-0.297], //Point 7
+            [-11.166+Additional_Holding_Strength,-0.592-Additional_Holding_Strength/2], //Point 8 move
+            [-11.166+Additional_Holding_Strength,-1.414-Additional_Holding_Strength], //Point 9 move
+            [-11.666+Additional_Holding_Strength,-1.914-Additional_Holding_Strength], //Point 10 move
+            [-12.517,-1.914-Additional_Holding_Strength], //Point 11 move
+            [-12.517,-4.448], //Point 12
+            [-10.517,-6.448], //Point 13
+            [-10.517,-7.947], //Point 14
+            [0,-7.947] //Point 15
         ]
 );
-
+/* Original Profile
 function topProfileHalf(heightMM = 12) =
         back(1.414,//profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
         [
@@ -245,6 +247,25 @@ function topProfileHalf(heightMM = 12) =
             [-10.517,1.683],
             [-10.517,4.725 + (heightMM - 12)],
             [-7.688,7.554 + (heightMM - 12)]
+        ]
+        );
+*/
+
+function topProfileHalf(heightMM = 12) =
+        back(1.414,//profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
+        [
+            [0,7.554 + (heightMM - 12)],//Point 1 (-0.017 per Katie's diagram. Moved to zero)
+            [0,9.554 + (heightMM - 12)],//Point 2
+            [-8.517,9.554 + (heightMM - 12)],//Point 3 
+            [-12.517,5.554 + (heightMM - 12)],//Point 4
+            [-12.517,-1.414-Additional_Holding_Strength],//Point 5
+            [-11.166+Additional_Holding_Strength-.7,-1.414-Additional_Holding_Strength],//Point 6
+            [-11.166+Additional_Holding_Strength,-0.592-Additional_Holding_Strength/2],//Point 7
+            [-11.459,-0.297],//Point 8
+            [-11.459,1.422],//Point 9
+            [-10.517,1.683],//Point 10
+            [-10.517, 4.725 + (heightMM - 12)],//Point 11
+            [-7.688,7.554 + (heightMM - 12)]//Point 12
         ]
         );
 
