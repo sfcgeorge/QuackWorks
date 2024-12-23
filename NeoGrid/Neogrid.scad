@@ -42,6 +42,14 @@ Total_Trim_Width = 42;
 Middle_Seam_Width = 5;
 Total_Trim_Height = 20;
 
+/*[Screw Mounting]*/
+//Wood screw diameter (in mm)
+Wood_Screw_Thread_Diameter = 3.5;
+//Wood Screw Head Diameter (in mm)
+Wood_Screw_Head_Diameter = 7;
+//Wood Screw Head Height (in mm)
+Wood_Screw_Head_Height = 1.75;
+
 /*[Advanced]*/
 //Size of the grid (by mm). 42mm by default for gridfinity. Other sized not tested. 
 grid_size = 42;
@@ -59,6 +67,7 @@ grid_y = 1;
 retention_spike_size = 0.8;
 part_placement = grid_size/2+Part_Separation;
 
+
 /*
 
 BEGIN DISPLAYS
@@ -73,9 +82,10 @@ Shelf_Exterior_Drop = 10;
 Adhesive_Backer_Thickness = 2;
 Adhesive_Backer_Width = 20;
 
-/*
+
 //drawer wall hook
-left(40)diff(){
+right(grid_size*2)
+diff(){
     //Channel Walls
     cuboid([Wall_Thickness*2+Material_Thickness, Channel_Length, Channel_Depth+Wall_Thickness], anchor=FRONT+BOT, orient=FRONT){ //Gridfinity Base
         //Removal tool for channel
@@ -90,6 +100,8 @@ left(40)diff(){
 }
 
 //drawer wall adhesive
+right(grid_size*2)
+back(grid_size+Part_Separation)
 diff(){
     //Channel Walls
     cuboid([Wall_Thickness*2+Material_Thickness, Channel_Length, Channel_Depth+Wall_Thickness-Adhesive_Backer_Thickness], anchor=FRONT+BOT, orient=FRONT){ //Gridfinity Base
@@ -101,7 +113,28 @@ diff(){
             cuboid([max(Wall_Thickness*2+Material_Thickness, Adhesive_Backer_Width), Channel_Length, Adhesive_Backer_Thickness]);
     }
 }
-*/
+
+Screw_Backer_Thickness = 2;
+Screw_Backer_Buffer_Width = 4;
+//drawer wall screw
+right(grid_size*2)
+back(grid_size*2+Part_Separation)
+diff(){
+    //Channel Walls
+    cuboid([Wall_Thickness*2+Material_Thickness, Channel_Length, Channel_Depth+Wall_Thickness-Adhesive_Backer_Thickness], anchor=FRONT+BOT, orient=FRONT){ //Gridfinity Base
+        //Removal tool for channel
+        attach(TOP, BOT, inside=true, shiftout=0.01)
+            channelDeleteTool([Material_Thickness, Channel_Length+0.02, Channel_Depth+0.02]);
+        //back bracket
+        attach(BOT, TOP, align=BACK)
+            cuboid([max(Wall_Thickness*2+Material_Thickness, Wall_Thickness*2+Material_Thickness+Wood_Screw_Head_Diameter*2+Screw_Backer_Buffer_Width*2), Channel_Length, Adhesive_Backer_Thickness])
+                //wood screw head
+                attach(TOP, TOP, inside=true, shiftout=0.01)
+                xcopies(n=2, spacing = Wall_Thickness*2+Material_Thickness+Wood_Screw_Head_Diameter+4) 
+                    cyl(h=Wood_Screw_Head_Height+0.05, d1=Wood_Screw_Thread_Diameter, d2=Wood_Screw_Head_Diameter, $fn=25)
+                        attach(BOT, TOP, overlap=0.01) cyl(h=3.5 - Wood_Screw_Head_Height+0.05, d=Wood_Screw_Thread_Diameter, $fn=25, anchor=TOP);
+    }
+}
 
 //Straight
 left(part_placement*3){
