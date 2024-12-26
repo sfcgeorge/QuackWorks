@@ -16,6 +16,15 @@ Credit to
 include <BOSL2/std.scad>
 include <BOSL2/rounding.scad>
 
+/*[Part Selection)]*/
+Select_Part = "Straight"; //[Drawer Wall Mounts, Straight, Straight End, X Intersection, T Intersection, L Intersection, Vertical Trim]
+
+/*[Base Options]*/
+//Not yet implemented
+Selected_Base = "Gridfinity"; //[Gridfinity, Flat, None]
+//Thickness of the flat baseplate (by mm)
+Flat_Base_Thickness = 2; 
+
 /*[Material Size]*/
 //Material Thickness (by mm)
 Material_Thickness = 3.5; //.01
@@ -67,7 +76,9 @@ grid_y = 1;
 retention_spike_size = 0.8;
 part_placement = grid_size/2+Part_Separation;
 
-
+calculated_base_height = Selected_Base == "Gridfinity" ? 4.75+0.6 : //0.6 is the additional height for the gridfinity baseplate by default. Update this if parameterized. 
+    Selected_Base == "Flat" ? Flat_Base_Thickness :
+    0;
 /*
 
 BEGIN DISPLAYS
@@ -83,59 +94,101 @@ Adhesive_Backer_Thickness = 2;
 Adhesive_Backer_Width = 20;
 
 
-//drawer wall hook
-right(grid_size*2)
-diff(){
-    //Channel Walls
-    cuboid([Wall_Thickness*2+Material_Thickness, Channel_Length, Channel_Depth+Wall_Thickness], anchor=FRONT+BOT, orient=FRONT){ //Gridfinity Base
-        //Removal tool for channel
-        attach(TOP, BOT, inside=true, shiftout=0.01)
-            channelDeleteTool([Material_Thickness, Channel_Length+0.02, Channel_Depth+0.02]);
-        //top of shelf bracket
-        attach(BOT, FRONT, overlap=0.01, align=BACK)
-            cuboid([Wall_Thickness*2+Material_Thickness, Shelf_Wall_Thickness, Shelf_Bracket_Thickness])
-                attach(BACK, FRONT, overlap=0.01, align=TOP)
-                    cuboid([Wall_Thickness*2+Material_Thickness, Shelf_Bracket_Thickness, Shelf_Exterior_Drop+Shelf_Bracket_Thickness]);
+
+if(Select_Part == "Drawer Wall Mounts"){
+    //drawer wall hook
+    diff(){
+        //Channel Walls
+        cuboid([Wall_Thickness*2+Material_Thickness, Channel_Length, Channel_Depth+Wall_Thickness], anchor=FRONT+BOT, orient=FRONT){ //Gridfinity Base
+            //Removal tool for channel
+            attach(TOP, BOT, inside=true, shiftout=0.01)
+                channelDeleteTool([Material_Thickness, Channel_Length+0.02, Channel_Depth+0.02]);
+            //top of shelf bracket
+            attach(BOT, FRONT, overlap=0.01, align=BACK)
+                cuboid([Wall_Thickness*2+Material_Thickness, Shelf_Wall_Thickness, Shelf_Bracket_Thickness])
+                    attach(BACK, FRONT, overlap=0.01, align=TOP)
+                        cuboid([Wall_Thickness*2+Material_Thickness, Shelf_Bracket_Thickness, Shelf_Exterior_Drop+Shelf_Bracket_Thickness]);
+        }
+    }
+
+    //drawer wall adhesive
+    back(grid_size+Part_Separation)
+    diff(){
+        //Channel Walls
+        cuboid([Wall_Thickness*2+Material_Thickness, Channel_Length, Channel_Depth+Wall_Thickness-Adhesive_Backer_Thickness], anchor=FRONT+BOT, orient=FRONT){ //Gridfinity Base
+            //Removal tool for channel
+            attach(TOP, BOT, inside=true, shiftout=0.01)
+                channelDeleteTool([Material_Thickness, Channel_Length+0.02, Channel_Depth+0.02]);
+            //back bracket
+            attach(BOT, TOP, align=BACK)
+                cuboid([max(Wall_Thickness*2+Material_Thickness, Adhesive_Backer_Width), Channel_Length, Adhesive_Backer_Thickness]);
+        }
+    }
+
+    Screw_Backer_Thickness = 2;
+    Screw_Backer_Buffer_Width = 4;
+    //drawer wall screw
+    back(grid_size*2+Part_Separation)
+    diff(){
+        //Channel Walls
+        cuboid([Wall_Thickness*2+Material_Thickness, Channel_Length, Channel_Depth+Wall_Thickness-Adhesive_Backer_Thickness], anchor=FRONT+BOT, orient=FRONT){ //Gridfinity Base
+            //Removal tool for channel
+            attach(TOP, BOT, inside=true, shiftout=0.01)
+                channelDeleteTool([Material_Thickness, Channel_Length+0.02, Channel_Depth+0.02]);
+            //back bracket
+            attach(BOT, TOP, align=BACK)
+                cuboid([max(Wall_Thickness*2+Material_Thickness, Wall_Thickness*2+Material_Thickness+Wood_Screw_Head_Diameter*2+Screw_Backer_Buffer_Width*2), Channel_Length, Adhesive_Backer_Thickness])
+                    //wood screw head
+                    attach(TOP, TOP, inside=true, shiftout=0.01)
+                    xcopies(n=2, spacing = Wall_Thickness*2+Material_Thickness+Wood_Screw_Head_Diameter+4) 
+                        cyl(h=Wood_Screw_Head_Height+0.05, d1=Wood_Screw_Thread_Diameter, d2=Wood_Screw_Head_Diameter, $fn=25)
+                            attach(BOT, TOP, overlap=0.01) cyl(h=3.5 - Wood_Screw_Head_Height+0.05, d=Wood_Screw_Thread_Diameter, $fn=25, anchor=TOP);
+        }
     }
 }
 
-//drawer wall adhesive
-right(grid_size*2)
-back(grid_size+Part_Separation)
-diff(){
-    //Channel Walls
-    cuboid([Wall_Thickness*2+Material_Thickness, Channel_Length, Channel_Depth+Wall_Thickness-Adhesive_Backer_Thickness], anchor=FRONT+BOT, orient=FRONT){ //Gridfinity Base
-        //Removal tool for channel
-        attach(TOP, BOT, inside=true, shiftout=0.01)
-            channelDeleteTool([Material_Thickness, Channel_Length+0.02, Channel_Depth+0.02]);
-        //back bracket
-        attach(BOT, TOP, align=BACK)
-            cuboid([max(Wall_Thickness*2+Material_Thickness, Adhesive_Backer_Width), Channel_Length, Adhesive_Backer_Thickness]);
-    }
+if(Select_Part == "Straight"){
+    fwd(quantup(Channel_Length, grid_size)/2+Part_Separation) 
+        NeoGrid_Straight_Thru_Base(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size, Channel_Length = Channel_Length);
+    back(Channel_Length/2+Part_Separation)
+        NeoGrid_Straight_Thru_Top(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size, Channel_Length = Channel_Length);
+}
+if(Select_Part == "X Intersection"){
+        left(part_placement)
+        NeoGrid_X_Intersection_Base(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
+    right(part_placement)
+        NeoGrid_X_Intersection_Top(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
 }
 
-Screw_Backer_Thickness = 2;
-Screw_Backer_Buffer_Width = 4;
-//drawer wall screw
-right(grid_size*2)
-back(grid_size*2+Part_Separation)
-diff(){
-    //Channel Walls
-    cuboid([Wall_Thickness*2+Material_Thickness, Channel_Length, Channel_Depth+Wall_Thickness-Adhesive_Backer_Thickness], anchor=FRONT+BOT, orient=FRONT){ //Gridfinity Base
-        //Removal tool for channel
-        attach(TOP, BOT, inside=true, shiftout=0.01)
-            channelDeleteTool([Material_Thickness, Channel_Length+0.02, Channel_Depth+0.02]);
-        //back bracket
-        attach(BOT, TOP, align=BACK)
-            cuboid([max(Wall_Thickness*2+Material_Thickness, Wall_Thickness*2+Material_Thickness+Wood_Screw_Head_Diameter*2+Screw_Backer_Buffer_Width*2), Channel_Length, Adhesive_Backer_Thickness])
-                //wood screw head
-                attach(TOP, TOP, inside=true, shiftout=0.01)
-                xcopies(n=2, spacing = Wall_Thickness*2+Material_Thickness+Wood_Screw_Head_Diameter+4) 
-                    cyl(h=Wood_Screw_Head_Height+0.05, d1=Wood_Screw_Thread_Diameter, d2=Wood_Screw_Head_Diameter, $fn=25)
-                        attach(BOT, TOP, overlap=0.01) cyl(h=3.5 - Wood_Screw_Head_Height+0.05, d=Wood_Screw_Thread_Diameter, $fn=25, anchor=TOP);
-    }
+if(Select_Part == "T Intersection"){
+    left(part_placement)
+        NeoGrid_T_Intersection_Base(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
+    right(part_placement)
+        NeoGrid_T_Intersection_Top(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
+
 }
 
+if(Select_Part == "Straight End"){
+    left(part_placement)
+        NeoGrid_T_Intersection_Base(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
+    right(part_placement)
+        NeoGrid_T_Intersection_Top(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
+
+}
+
+if(Select_Part == "L Intersection"){
+    left(part_placement) 
+        NeoGrid_L_Intersection_Base(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
+    right(part_placement)
+        NeoGrid_L_Intersection_Top(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
+
+}
+
+if(Select_Part == "Vertical Trim"){
+    NeoGrid_Vertical_Trim(Material_Thickness, Wall_Thickness = Wall_Thickness, Total_Trim_Width = Total_Trim_Width, Middle_Seam_Width = Middle_Seam_Width, Total_Trim_Height = Total_Trim_Height);
+}
+
+/* Display all
 //Straight
 left(part_placement*3){
     fwd(quantup(Channel_Length, grid_size)/2+Part_Separation) 
@@ -183,7 +236,7 @@ if(Show_Vertical_Trim )
 
 //debugging delete tool
 //channelDeleteTool([Material_Thickness, grid_size+0.02, Channel_Depth-Wall_Thickness+0.02]);
-
+*/
 
 /*
     
@@ -235,9 +288,12 @@ module NeoGrid_Straight_Thru_Base(Material_Thickness, Channel_Depth = 20, Wall_T
     //Straight Channel
     diff(){
         //Gridfinity Base
-        gridfinity_bin_bottom_grid( x = 1, y = quantup(Channel_Length, grid_size)/grid_size, anchor=BOT)
+        if(Selected_Base == "Gridfinity")
+        gridfinity_bin_bottom_grid( x = 1, y = quantup(Channel_Length, grid_size)/grid_size, anchor=BOT);
+        if(Selected_Base == "Flat")
+        cuboid( [grid_size, grid_size, Flat_Base_Thickness], anchor=BOT);
         //Channel Walls
-        attach(TOP, BOT, overlap=0.01)
+        up(calculated_base_height-0.01)
             cuboid([ Wall_Thickness*2+Material_Thickness, Channel_Length-grid_clearance,  Channel_Depth], anchor=BOT){ //Gridfinity Base
                 //bottom chamfer
 
