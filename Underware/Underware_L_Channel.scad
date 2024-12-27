@@ -67,6 +67,8 @@ topHeight = 10.968;
 interlockOverlap = 3.09; //distance that the top and base overlap each other
 interlockFromFloor = 6.533; //distance from the bottom of the base to the bottom of the top when interlocked
 partSeparation = 10;
+//when using 0 units the model breaks, we have to use this as a fallback
+fallbackSize = 0.05;
 
 ///*[Visual Options]*/
 Debug_Show_Grid = false;
@@ -96,13 +98,12 @@ Base_Screw_Hole_Cone = false;
 if(Base_Top_or_Both != "Top")
 color_this(Global_Color)
     left(Show_Attached ? 0 : partSeparation)
-        lChannelBase(lengthMM = L_Channel_Length_in_Units * Grid_Size, widthMM = L_Channel_Width_in_Units * Grid_Size, depthMM = Channel_Depth_in_Units * Grid_Size, anchor=Show_Attached ? BOT : BOT+RIGHT);
+        lChannelBase(lengthMM = L_Channel_Length_in_Units ? L_Channel_Length_in_Units * Grid_Size : fallbackSize, widthMM = L_Channel_Width_in_Units ? L_Channel_Width_in_Units * Grid_Size : fallbackSize, depthMM = Channel_Depth_in_Units * Grid_Size, anchor=Show_Attached ? BOT : BOT+RIGHT);
 if(Base_Top_or_Both != "Base")
 color_this(Global_Color)
     up(Show_Attached ? interlockFromFloor : 0)
     right(Show_Attached ? 0 : partSeparation)
-        lChannelTop(lengthMM = L_Channel_Length_in_Units * Grid_Size, widthMM = L_Channel_Width_in_Units * Grid_Size, depthMM = Channel_Depth_in_Units * Grid_Size, heightMM = Channel_Internal_Height, anchor= Show_Attached ? BOT : TOP+RIGHT, orient=Show_Attached ? TOP : BOT);
-
+        lChannelTop(lengthMM = L_Channel_Length_in_Units ? L_Channel_Length_in_Units * Grid_Size : fallbackSize, widthMM = L_Channel_Width_in_Units ? L_Channel_Width_in_Units * Grid_Size : fallbackSize, depthMM = Channel_Depth_in_Units * Grid_Size, heightMM = Channel_Internal_Height, anchor= Show_Attached ? BOT : TOP+RIGHT, orient=Show_Attached ? TOP : BOT);
 
 /*
 
