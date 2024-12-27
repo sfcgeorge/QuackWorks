@@ -29,11 +29,13 @@ Base_Top_or_Both = "Both"; // [Base, Top, Both]
 
 /*[Channel Size]*/
 //Width of channel in units (default unit is 25mm)
-Channel_Width_in_Units = 1;
+Channel_Depth_in_Units = 1;
 //Height (Z axis) inside the channel (in mm)
 Channel_Internal_Height = 12; //[12:6:72]
 //Number of grids extending from the corner grid in units (default unit is 25mm)
 L_Channel_Length_in_Units = 1;
+//Number of grids extending from the corner grid in units (default unit is 25mm)
+L_Channel_Width_in_Units = 1;
 
 /*[Mounting Options]*/
 //How do you intend to mount the channels to a surface such as Honeycomb Storage Wall or Multiboard? See options at https://handsonkatie.com/underware-2-0-the-made-to-measure-collection/
@@ -60,7 +62,6 @@ Global_Color = "SlateBlue";
 Slop = 0.075;
 
 /*[Hidden]*/
-channelWidth = Channel_Width_in_Units * Grid_Size;
 baseHeight = 9.63;
 topHeight = 10.968;
 interlockOverlap = 3.09; //distance that the top and base overlap each other
@@ -95,12 +96,12 @@ Base_Screw_Hole_Cone = false;
 if(Base_Top_or_Both != "Top")
 color_this(Global_Color)
     left(Show_Attached ? 0 : partSeparation)
-        lChannelBase(lengthMM = L_Channel_Length_in_Units * Grid_Size, widthMM = Channel_Width_in_Units * Grid_Size, anchor=Show_Attached ? BOT : BOT+RIGHT);
+        lChannelBase(lengthMM = L_Channel_Length_in_Units * Grid_Size, widthMM = L_Channel_Width_in_Units * Grid_Size, depthMM = Channel_Depth_in_Units * Grid_Size, anchor=Show_Attached ? BOT : BOT+RIGHT);
 if(Base_Top_or_Both != "Base")
 color_this(Global_Color)
     up(Show_Attached ? interlockFromFloor : 0)
     right(Show_Attached ? 0 : partSeparation)
-        lChannelTop(lengthMM = L_Channel_Length_in_Units * Grid_Size, widthMM = Channel_Width_in_Units * Grid_Size, heightMM = Channel_Internal_Height, anchor= Show_Attached ? BOT : TOP+RIGHT, orient=Show_Attached ? TOP : BOT);
+        lChannelTop(lengthMM = L_Channel_Length_in_Units * Grid_Size, widthMM = L_Channel_Width_in_Units * Grid_Size, depthMM = Channel_Depth_in_Units * Grid_Size, heightMM = Channel_Internal_Height, anchor= Show_Attached ? BOT : TOP+RIGHT, orient=Show_Attached ? TOP : BOT);
 
 
 /*
@@ -110,14 +111,15 @@ color_this(Global_Color)
 */
 
 //L CHANNELS
-module lChannelBase(lengthMM = 50, widthMM = 25, anchor, spin, orient){
-    attachable(anchor, spin, orient, size=[widthMM+lengthMM, widthMM+lengthMM, baseHeight]){
-        let(calculatedPath = widthMM/2+lengthMM)
-        left(widthMM/2+lengthMM/2) fwd(lengthMM/2)
+module lChannelBase(lengthMM = 50, widthMM = 50, depthMM = 25, anchor, spin, orient){
+    attachable(anchor, spin, orient, size=[depthMM+widthMM, depthMM+lengthMM, baseHeight]){
+        let(calculatedLengthPath = depthMM/2+lengthMM)
+        let(calculatedWidthPath = depthMM/2+widthMM)
+        left(depthMM/2+widthMM/2) fwd(lengthMM/2)
         down(baseHeight/2)
         diff("holes"){
-            path_sweep2d(baseProfile(widthMM = widthMM), turtle(["move", calculatedPath, "turn", 90, "move",calculatedPath] )); 
-            tag("holes") right(widthMM/2+lengthMM/2) back(lengthMM/2) grid_copies(spacing=Grid_Size, inside=rect([widthMM+lengthMM-1,widthMM+lengthMM-1])) 
+            path_sweep2d(baseProfile(widthMM = depthMM), turtle(["move", calculatedWidthPath, "turn", 90, "move", calculatedLengthPath] )); 
+            tag("holes") right(depthMM/2+widthMM/2) back(lengthMM/2) grid_copies(spacing=Grid_Size, inside=rect([depthMM+widthMM-1,depthMM+lengthMM-1])) 
                 if(Mounting_Method == "Direct Multiboard Screw") up(Base_Screw_Hole_Inner_Depth) cyl(h=8, d=Base_Screw_Hole_Inner_Diameter, $fn=25, anchor=TOP) attach(TOP, BOT, overlap=0.01) cyl(h=10, d=Base_Screw_Hole_Outer_Diameter, $fn=25);
                 else if(Mounting_Method == "Magnet") up(Magnet_Thickness+Magnet_Tolerance-0.01) cyl(h=Magnet_Thickness+Magnet_Tolerance, d=Magnet_Diameter+Magnet_Tolerance, $fn=50, anchor=TOP);
                 else if(Mounting_Method == "Wood Screw") up(3.5 - Wood_Screw_Head_Height) cyl(h=3.5 - Wood_Screw_Head_Height+0.05, d=Wood_Screw_Thread_Diameter, $fn=25, anchor=TOP)
@@ -130,12 +132,13 @@ module lChannelBase(lengthMM = 50, widthMM = 25, anchor, spin, orient){
     children();
     }
 }
-module lChannelTop(lengthMM = 50, widthMM = 25, heightMM = 12, anchor, spin, orient){
-    attachable(anchor, spin, orient, size=[widthMM+lengthMM, widthMM+lengthMM, topHeight + (heightMM-12)]){
-        let(calculatedPath = widthMM/2+lengthMM)
-        left(widthMM/2+lengthMM/2) fwd(lengthMM/2) 
+module lChannelTop(lengthMM = 50, widthMM = 50, depthMM = 25, heightMM = 12, anchor, spin, orient){
+    attachable(anchor, spin, orient, size=[depthMM+widthMM, depthMM+lengthMM, topHeight + (heightMM-12)]){
+        let(calculatedLengthPath = depthMM/2+lengthMM)
+        let(calculatedWidthPath = depthMM/2+widthMM)
+        left(depthMM/2+widthMM/2) fwd(lengthMM/2) 
         down(topHeight/2 + (heightMM - 12)/2)
-        path_sweep2d(topProfile(widthMM = widthMM, heightMM = heightMM), turtle(["move", calculatedPath, "turn", 90, "move",calculatedPath] )); 
+        path_sweep2d(topProfile(widthMM = depthMM, heightMM = heightMM), turtle(["move", calculatedWidthPath, "turn", 90, "move", calculatedLengthPath] )); 
     children();
     }
 }
