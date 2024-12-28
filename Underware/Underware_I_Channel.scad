@@ -128,7 +128,7 @@ color_this(Global_Color)
         left(Show_Attached ? 0 : channelWidth/2)
             straightChannelBase(lengthMM = Channel_Length_Units * Grid_Size, widthMM = channelWidth, anchor=BOT);
 if(Base_Top_or_Both != "Base")
-color_this(Global_Color)
+#color_this(Global_Color)
         right(Show_Attached ? 0 : channelWidth/2 + 5)
         up(Show_Attached ? interlockFromFloor : Add_Label ? 0.01 : 0)
             diff("text")
@@ -215,14 +215,14 @@ baseProfileHalf =
         //profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
         [
             [0,-4.447], //Point 1
-            [-8.5+Additional_Holding_Strength,-4.447], //Point 2
-            [-9.5+Additional_Holding_Strength,-3.447],  //Point 3
-            [-9.5+Additional_Holding_Strength,1.683], //Point 4
-            [-10.517,1.683], //Point 5
-            [-11.459,1.422], //Point 6
-            [-11.459,-0.297], //Point 7
-            [-11.166+Additional_Holding_Strength,-0.592-Additional_Holding_Strength/2], //Point 8 move
-            [-11.166+Additional_Holding_Strength,-1.414-Additional_Holding_Strength], //Point 9 move
+            [-8.5+Additional_Holding_Strength*1.5,-4.447], //Point 2
+            [-9.5+Additional_Holding_Strength*1.5,-3.447],  //Point 3
+            [-9.5+Additional_Holding_Strength*1.5,1.683], //Point 4
+            [-10.517+Additional_Holding_Strength/2,1.683], //Point 5
+            [-11.459+Additional_Holding_Strength/2,1.422], //Point 6
+            [-11.459+Additional_Holding_Strength/2,-0.297], //Point 7
+            [-11.166+Additional_Holding_Strength+Additional_Holding_Strength/2,-0.592-Additional_Holding_Strength/2], //Point 8 move
+            [-11.166+Additional_Holding_Strength+Additional_Holding_Strength/2,-1.414-Additional_Holding_Strength], //Point 9 move
             [-11.666+Additional_Holding_Strength,-1.914-Additional_Holding_Strength], //Point 10 move
             [-12.517,-1.914-Additional_Holding_Strength], //Point 11 move
             [-12.517,-4.448], //Point 12
@@ -259,12 +259,12 @@ function topProfileHalf(heightMM = 12) =
             [-8.517,9.554 + (heightMM - 12)],//Point 3 
             [-12.517,5.554 + (heightMM - 12)],//Point 4
             [-12.517,-1.414-Additional_Holding_Strength],//Point 5
-            [-11.166+Additional_Holding_Strength-.7,-1.414-Additional_Holding_Strength],//Point 6
-            [-11.166+Additional_Holding_Strength,-0.592-Additional_Holding_Strength/2],//Point 7
-            [-11.459,-0.297],//Point 8
-            [-11.459,1.422],//Point 9
-            [-10.517,1.683],//Point 10
-            [-10.517, 4.725 + (heightMM - 12)],//Point 11
+            [-11.166+Additional_Holding_Strength+Additional_Holding_Strength/2-1,-1.414-Additional_Holding_Strength],//Point 6
+            [-11.166+Additional_Holding_Strength+Additional_Holding_Strength/2,-0.592-Additional_Holding_Strength/2],//Point 7
+            [-11.459+Additional_Holding_Strength/2,-0.297],//Point 8
+            [-11.459+Additional_Holding_Strength/2,1.422],//Point 9
+            [-10.517+Additional_Holding_Strength/2,1.683],//Point 10
+            [-10.517+Additional_Holding_Strength/2, 4.725 + (heightMM - 12)],//Point 11
             [-7.688,7.554 + (heightMM - 12)]//Point 12
         ]
         );
