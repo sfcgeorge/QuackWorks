@@ -251,6 +251,8 @@ function topProfileHalf(heightMM = 12) =
         );
 */
 
+topChamfer = Additional_Holding_Strength < .4 ? 0 : 1;
+
 function topProfileHalf(heightMM = 12) =
         back(1.414,//profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
         [
@@ -259,7 +261,7 @@ function topProfileHalf(heightMM = 12) =
             [-8.517,9.554 + (heightMM - 12)],//Point 3 
             [-12.517,5.554 + (heightMM - 12)],//Point 4
             [-12.517,-1.414-Additional_Holding_Strength],//Point 5
-            [-11.166+Additional_Holding_Strength+Additional_Holding_Strength/2-1,-1.414-Additional_Holding_Strength],//Point 6
+            [-11.166+Additional_Holding_Strength+Additional_Holding_Strength/2-topChamfer,-1.414-Additional_Holding_Strength],//Point 6
             [-11.166+Additional_Holding_Strength+Additional_Holding_Strength/2,-0.592-Additional_Holding_Strength/2],//Point 7
             [-11.459+Additional_Holding_Strength/2,-0.297],//Point 8
             [-11.459+Additional_Holding_Strength/2,1.422],//Point 9
