@@ -23,7 +23,7 @@ Select_Part = "Straight"; //[Drawer Wall Mounts, Straight, Straight End, X Inter
 //Not yet implemented
 Selected_Base = "Gridfinity"; //[Gridfinity, Flat, None]
 //Thickness of the flat baseplate (by mm)
-Flat_Base_Thickness = 2; 
+Flat_Base_Thickness = 1.4; //0.1
 
 /*[Material Size]*/
 //Material Thickness (by mm)
@@ -62,7 +62,7 @@ Wood_Screw_Head_Height = 1.75;
 /*[Advanced]*/
 //Size of the grid (by mm). 42mm by default for gridfinity. Other sized not tested. 
 grid_size = 42;
-grid_clearance = 0.5; //adjusted grid size for spacing between grids
+
 //Additional channel length beyond center for partial channels. This allows slop in cutting dividers. 
 Partial_Channel_Buffer = 3;
 Part_Separation = 5;
@@ -75,9 +75,10 @@ grid_x = 1;
 grid_y = 1;
 retention_spike_size = 0.8;
 part_placement = grid_size/2+Part_Separation;
+grid_clearance = Selected_Base == "Gridfinity" ? 0.5 : 1; //adjusted grid size for spacing between grids
 
 calculated_base_height = Selected_Base == "Gridfinity" ? 4.75+0.6 : //0.6 is the additional height for the gridfinity baseplate by default. Update this if parameterized. 
-    Selected_Base == "Flat" ? Flat_Base_Thickness :
+    Selected_Base == "Flat" ? Flat_Base_Thickness:
     0;
 /*
 
@@ -170,9 +171,9 @@ if(Select_Part == "T Intersection"){
 
 if(Select_Part == "Straight End"){
     left(part_placement)
-        NeoGrid_T_Intersection_Base(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
+        NeoGrid_Straight_End_Base(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
     right(part_placement)
-        NeoGrid_T_Intersection_Top(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
+        NeoGrid_Straight_End_Top(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
 
 }
 
@@ -289,9 +290,10 @@ module NeoGrid_Straight_Thru_Base(Material_Thickness, Channel_Depth = 20, Wall_T
     diff(){
         //Gridfinity Base
         if(Selected_Base == "Gridfinity")
-        gridfinity_bin_bottom_grid( x = 1, y = quantup(Channel_Length, grid_size)/grid_size, anchor=BOT);
+            gridfinity_bin_bottom_grid( x = 1, y = quantup(Channel_Length, grid_size)/grid_size, anchor=BOT);
+        //Flat Base
         if(Selected_Base == "Flat")
-        cuboid( [grid_size, grid_size, Flat_Base_Thickness], anchor=BOT);
+            cuboid( [grid_size, Channel_Length, Flat_Base_Thickness], chamfer=0.5, except=BOT, anchor=BOT);
         //Channel Walls
         up(calculated_base_height-0.01)
             cuboid([ Wall_Thickness*2+Material_Thickness, Channel_Length-grid_clearance,  Channel_Depth], anchor=BOT){ //Gridfinity Base
@@ -331,12 +333,16 @@ module NeoGrid_X_Intersection_Top(Material_Thickness, Channel_Depth = 20, Wall_T
 
 module NeoGrid_X_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_Thickness = 4, grid_size = 42){
     //X Intersection Base
-    diff("channel chamf") //small trick here. External chamfers auto-apply the "remove" tag. This is a workaround to keep the chamfers on the channel walls by renaming the remove tag.
+    diff("channel chamf"){ //small trick here. External chamfers auto-apply the "remove" tag. This is a workaround to keep the chamfers on the channel walls by renaming the remove tag.
         //Gridfinity Base 1x1 for all intersections.
-        gridfinity_bin_bottom_grid(x=1,y=1, anchor=BOT){
+        if(Selected_Base == "Gridfinity")
+            gridfinity_bin_bottom_grid(x=1,y=1, anchor=BOT);
+        //Flat Base
+        if(Selected_Base == "Flat")
+            cuboid( [grid_size, grid_size, Flat_Base_Thickness], chamfer=0.5, except=BOT, anchor=BOT);
         //Channel Wall Y
-        attach(TOP, BOT, overlap=0.01) //attach to the top of the gridfinity base
-            cuboid([Wall_Thickness*2+Material_Thickness, grid_size-grid_clearance, Channel_Depth]){
+        up(calculated_base_height-0.01)
+            cuboid([Wall_Thickness*2+Material_Thickness, grid_size-grid_clearance, Channel_Depth], anchor=BOT){
                 //bottom outward chamfer
                     edge_profile([BOT+LEFT, BOT+RIGHT])
                         xflip() //xflip to put the chamfer out rather than in
@@ -346,9 +352,9 @@ module NeoGrid_X_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
                         mask2d_chamfer(Wall_Thickness/3); //chamfer portion of the wall thickness
             }
         //Channel Wall X
-        attach(TOP, BOT)
+        up(calculated_base_height-0.01)
             zrot(90) down(0.01)
-            cuboid([Wall_Thickness*2+Material_Thickness, grid_size-grid_clearance, Channel_Depth]){
+            cuboid([Wall_Thickness*2+Material_Thickness, grid_size-grid_clearance, Channel_Depth], anchor=BOT){
             //bottom chamfer
                 edge_profile_asym([BOT+LEFT, BOT+RIGHT])
                     xflip() //xflip to put the chamfer out rather than in
@@ -358,10 +364,10 @@ module NeoGrid_X_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
                     mask2d_chamfer(Wall_Thickness/3); //chamfer portion of the wall thickness
         }
         //clear the channels in both directions
-        tag("channel")attach(TOP, TOP, shiftout=0.01)
-            channelDeleteTool([Material_Thickness, grid_size+0.01, Channel_Depth+0.02], spike_count=2);
-        tag("channel")zrot(90) attach(TOP, TOP, shiftout=0.01)
-            channelDeleteTool([Material_Thickness, grid_size+0.01, Channel_Depth+0.02], spike_count=2);
+        tag("channel")up(calculated_base_height-0.02)
+            channelDeleteTool([Material_Thickness, grid_size+0.01, Channel_Depth+0.04], spike_count=2, chamfer_edges=[TOP], anchor=BOT);
+        tag("channel")zrot(90) up(calculated_base_height-0.02)
+            channelDeleteTool([Material_Thickness, grid_size+0.01, Channel_Depth+0.04], spike_count=2, chamfer_edges=[TOP], anchor=BOT);
         }//end gridfinity base
 }
 
@@ -393,12 +399,17 @@ module NeoGrid_T_Intersection_Top(Material_Thickness, Channel_Depth = 20, Wall_T
 
 module NeoGrid_T_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_Thickness = 4, grid_size = 42){
     //X Intersection Base
-    diff("channel chamf") //small trick here. External chamfers auto-apply the "remove" tag. This is a workaround to keep the chamfers on the channel walls by renaming the remove tag.
+    diff("channel chamf"){ //small trick here. External chamfers auto-apply the "remove" tag. This is a workaround to keep the chamfers on the channel walls by renaming the remove tag.
         //Gridfinity Base 1x1 for all intersections.
-        gridfinity_bin_bottom_grid(x=1,y=1, anchor=BOT){
+        if(Selected_Base == "Gridfinity")
+            gridfinity_bin_bottom_grid(x=1,y=1, anchor=BOT);
+        //Flat Base
+        if(Selected_Base == "Flat")
+            cuboid( [grid_size, grid_size, Flat_Base_Thickness], chamfer=0.5, except=BOT, anchor=BOT);
         //Channel Wall partial 
-        attach(TOP, BOT, overlap=0.01, align=FRONT) up(0.01)//attach to the top of the gridfinity base
-            cuboid([Wall_Thickness*2+Material_Thickness, grid_size/2, Channel_Depth]){
+        up(calculated_base_height-0.01)//attach to the top of the gridfinity base
+            fwd(grid_size/4-grid_clearance/2)
+            cuboid([Wall_Thickness*2+Material_Thickness, grid_size/2, Channel_Depth], anchor=BOT){
                 //bottom outward chamfer
                     edge_profile([BOT+LEFT, BOT+RIGHT])
                         xflip() //xflip to put the chamfer out rather than in
@@ -408,9 +419,9 @@ module NeoGrid_T_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
                         mask2d_chamfer(Wall_Thickness/3); //chamfer portion of the wall thickness
             }
         //Channel Wall full width
-        attach(TOP, BOT)
+        up(calculated_base_height-0.01)
             zrot(90)
-            cuboid([Wall_Thickness*2+Material_Thickness, grid_size-grid_clearance, Channel_Depth]){
+            cuboid([Wall_Thickness*2+Material_Thickness, grid_size-grid_clearance, Channel_Depth], anchor=BOT){
             //bottom chamfer
                 edge_profile([BOT+LEFT, BOT+RIGHT])
                     xflip() //xflip to put the chamfer out rather than in
@@ -421,11 +432,11 @@ module NeoGrid_T_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
         }
         //clear the channels in both directions
         //channel clear partial
-        tag("channel")attach(TOP, TOP, shiftout=0.01, align=FRONT)
-            channelDeleteTool([Material_Thickness, grid_size/2+0.02, Channel_Depth+0.02]);
+        tag("channel")up(calculated_base_height-0.02) fwd(grid_size/4-grid_clearance/2)
+            channelDeleteTool([Material_Thickness, grid_size/2+0.02, Channel_Depth+0.02], chamfer_edges=[TOP], anchor=BOT);
         //channel clear full length
-        tag("channel")zrot(90) attach(TOP, TOP, shiftout=0.01)
-            channelDeleteTool([Material_Thickness, grid_size+0.02, Channel_Depth+0.02], spike_count=2);
+        tag("channel")zrot(90)up(calculated_base_height-0.02)
+            channelDeleteTool([Material_Thickness, grid_size+0.02, Channel_Depth+0.02], spike_count=2, chamfer_edges=[TOP], anchor=BOT);
         }//end gridfinity base
 }
 
@@ -448,9 +459,13 @@ module NeoGrid_Straight_End_Base(Material_Thickness, Channel_Depth = 20, Wall_Th
     //Straight Channel
     diff(){
         //Gridfinity Base
-        gridfinity_bin_bottom_grid(x = 1, y = 1, anchor=BOT)
+        if(Selected_Base == "Gridfinity")
+            gridfinity_bin_bottom_grid( x = 1, y = quantup(Channel_Length, grid_size)/grid_size, anchor=BOT);
+        //Flat Base
+        if(Selected_Base == "Flat")
+            cuboid( [grid_size, grid_size, Flat_Base_Thickness], chamfer=0.5, except=BOT, anchor=BOT);
         //Channel Walls
-        attach(TOP, BOT, overlap=0.01, align=LEFT)
+        up(calculated_base_height-0.01)
             cuboid([grid_size - grid_clearance, Wall_Thickness*2+Material_Thickness, Channel_Depth], anchor=BOT){
                 //bottom chamfer
                 tag("keep") //must label keep due to chamfering out an addition and not a diff. 
@@ -499,12 +514,17 @@ module NeoGrid_L_Intersection_Top(Material_Thickness, Channel_Depth = 20, Wall_T
 
 module NeoGrid_L_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_Thickness = 4, grid_size = 42){
     //X Intersection Base
-    diff("channel") //small trick here. External chamfers auto-apply the "remove" tag. This is a workaround to keep the chamfers on the channel walls by renaming the remove tag.
+    diff("channel"){ //small trick here. External chamfers auto-apply the "remove" tag. This is a workaround to keep the chamfers on the channel walls by renaming the remove tag.
         //Gridfinity Base 1x1 for all intersections.
-        gridfinity_bin_bottom_grid(x=1,y=1, anchor=BOT){
+        if(Selected_Base == "Gridfinity")
+            gridfinity_bin_bottom_grid(x=1,y=1, anchor=BOT);
+        //Flat Base
+        if(Selected_Base == "Flat")
+            cuboid( [grid_size, grid_size, Flat_Base_Thickness], chamfer=0.5, except=BOT, anchor=BOT);
         //Channel Wall X axis
-        attach(TOP, BOT, overlap=0.01, shiftout=-0.01, align=FRONT) //attach to the top of the gridfinity base
-            cuboid([Wall_Thickness*2+Material_Thickness, grid_size/2+Wall_Thickness+Material_Thickness/2-grid_clearance/2, Channel_Depth]){
+        up(calculated_base_height-0.01) //attach to the top of the gridfinity base
+            fwd(grid_size/4-grid_clearance/4-Material_Thickness/4-Wall_Thickness/2)
+            cuboid([Wall_Thickness*2+Material_Thickness, grid_size/2+Wall_Thickness+Material_Thickness/2-grid_clearance/2, Channel_Depth], anchor=BOT){
                 //bottom outward chamfer
                     edge_profile([BOT+LEFT, BOT+RIGHT])
                         xflip() //xflip to put the chamfer out rather than in
@@ -514,8 +534,9 @@ module NeoGrid_L_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
                         mask2d_chamfer(Wall_Thickness/3); //chamfer portion of the wall thickness
             }
         //Channel Wall Y axis
-        attach(TOP, BOT, shiftout=-0.01, align=LEFT)
-            cuboid([grid_size/2+Wall_Thickness+Material_Thickness/2-grid_clearance/2, Wall_Thickness*2+Material_Thickness, Channel_Depth]){
+        up(calculated_base_height-0.01)
+            left(grid_size/4-grid_clearance/4-Material_Thickness/4-Wall_Thickness/2)
+            cuboid([grid_size/2+Wall_Thickness+Material_Thickness/2-grid_clearance/2, Wall_Thickness*2+Material_Thickness, Channel_Depth], anchor=BOT){
             //bottom chamfer
                 edge_profile_asym([BOT+FRONT, BOT+BACK, BOT+RIGHT], corner_type="sharp")
                     xflip() //xflip to put the chamfer out rather than in
@@ -525,12 +546,10 @@ module NeoGrid_L_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
                     mask2d_chamfer(Wall_Thickness/3); //chamfer portion of the wall thickness
         }
         //clear the channels in both directions
-        //channel clear partial
-        tag("channel")attach(TOP, TOP, shiftout=0.01, align=FRONT)
-            channelDeleteTool([Material_Thickness, grid_size/2+Material_Thickness/2-grid_clearance/2+0.02, Channel_Depth+0.02]);
-        //channel clear full length
-        tag("channel")attach(TOP, TOP, shiftout=0.01, align=LEFT, spin=90)
-            channelDeleteTool([Material_Thickness, grid_size/2+Material_Thickness/2-grid_clearance/2+0.02, Channel_Depth+0.02]);
+        tag("channel")up(calculated_base_height-0.02) fwd(grid_size/4-grid_clearance/4-Material_Thickness/4)
+            channelDeleteTool([Material_Thickness, grid_size/2+Material_Thickness/2-grid_clearance/2+0.03, Channel_Depth+0.04], chamfer_edges=TOP, anchor=BOT);
+        tag("channel")up(calculated_base_height-0.02) zrot(90) back(grid_size/4-grid_clearance/4-Material_Thickness/4)
+            channelDeleteTool([Material_Thickness, grid_size/2+Material_Thickness/2-grid_clearance/2+0.03, Channel_Depth+0.04], chamfer_edges=TOP, anchor=BOT);
         }//end gridfinity base
 }
 
