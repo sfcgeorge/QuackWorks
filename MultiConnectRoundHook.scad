@@ -3,9 +3,7 @@ Credit to @David D on Printables and Jonathan at Keep Making for Multiconnect an
 Licensed Creative Commons 4.0 Attribution Non-Commercial Sharable with Attribution
 */
 
-
-
-/*[Mo]*/
+/*[Round Hook specific parameters]*/
 // Enable edge beveling
 enableMinkowski = true;
 
