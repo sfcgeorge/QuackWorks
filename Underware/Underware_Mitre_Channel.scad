@@ -50,16 +50,29 @@ Channel_Length_Units = 6;
 
 */
 
+//inside mitre channel
 color_this(Global_Color) 
     left(3)
-    half_of(UP+LEFT, s=Channel_Length_Units*Grid_Size*2+10)
-        path_sweep(topProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Length_of_Longest_Edge_1*2-50+14.032*2- (Channel_Internal_Height-12)*2]), anchor=TOP, orient=BOT);
+    half_of(UP+LEFT, s=Channel_Length_Units*Grid_Size*2)
+        path_sweep(topProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Length_of_Longest_Edge_1*2-10.968*2-(Channel_Internal_Height-12)*2]), anchor=TOP, orient=BOT);
 
     color_this(Global_Color) 
         down(3)yrot(-90) xrot(180)
-            half_of(UP+LEFT, s=Channel_Length_Units*Grid_Size*2+10)
-            path_sweep(topProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Length_of_Longest_Edge_2+14.032*2+14 - (Channel_Internal_Height-12)*2]), anchor=TOP, orient=BOT);
+            half_of(UP+LEFT, s=Channel_Length_Units*Grid_Size*2)
+            path_sweep(topProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Length_of_Longest_Edge_2*2-10.968*2-(Channel_Internal_Height-12)*2]), anchor=TOP, orient=BOT);
 
+//outside mitre channel
+color_this(Global_Color)
+back(30)zrot(180) {
+half_of(DOWN+RIGHT, s=Channel_Length_Units*Grid_Size*2)
+    path_sweep(topProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Length_of_Longest_Edge_1*2]), anchor=TOP, orient=BOT);
+
+color_this(Global_Color)
+up(5)
+rot([180,-90,0])
+    half_of(DOWN+RIGHT, s=Channel_Length_Units*Grid_Size*2)
+    path_sweep(topProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Length_of_Longest_Edge_2*2]), anchor=TOP, orient=BOT);
+}
 
 //BEGIN PROFILES - Must match across all files
 
