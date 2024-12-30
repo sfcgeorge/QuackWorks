@@ -132,7 +132,7 @@ color_this(Global_Color)
         left(Show_Attached ? 0 : channelWidth/2)
             straightChannelBase(lengthMM = Channel_Length_Units * Grid_Size, widthMM = channelWidth, anchor=BOT);
 if(Base_Top_or_Both != "Base")
-#color_this(Global_Color)
+color_this(Global_Color)
         right(Show_Attached ? 0 : channelWidth/2 + 5)
         up(Show_Attached ? interlockFromFloor : Add_Label ? 0.01 : 0)
             diff("text")
