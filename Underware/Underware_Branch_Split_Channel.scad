@@ -120,12 +120,13 @@ Base_Screw_Hole_Cone = false;
 
 if(Base_Top_or_Both != "Top")
     color_this(Global_Color)
-        //left(partSeparation/2) 
+        back(Straight_Section_Length_in_Units*Grid_Size/2)
             branchSplitChannelBase(widthMM = channelWidth, unitsOver = Branch_Units_Out, unitsUp = Branch_Units_Up, outputDirection = Y_Output_Direction, straightDistance = Y_Straight_Distance, anchor=BOT);
 
 if(Base_Top_or_Both != "Base")
     color_this(Global_Color)
-        //right(partSeparation/2) 
+        fwd(Straight_Section_Length_in_Units*Grid_Size/2)
+        zrot(180)            
             yChannelTop(widthMM = channelWidth, unitsOver = Branch_Units_Out, unitsUp = Branch_Units_Up, heightMM = Channel_Internal_Height, outputDirection = Y_Output_Direction, straightDistance = Y_Straight_Distance, anchor=TOP+RIGHT, orient=BOT);
 
 
@@ -149,10 +150,10 @@ module mountPoint(style = "Threaded Snap Connector"){
 //Branch Split Channel Base
 module branchSplitChannelBase(unitsOver = 1, unitsUp=3, outputDirection = "Forward", straightDistance = Grid_Size, widthMM, anchor, spin, orient){
     attachable(anchor, spin, orient, size=[unitsOver*Grid_Size*2+channelWidth,unitsUp*Grid_Size+straightDistance*2, baseHeight]){
-        //fwd(unitsUp*Grid_Size/2+straightDistance)
+        
         endPositionX = unitsOver * Grid_Size * Straight_Channel_Width_in_Units / 2 + Branch_Channel_Width_in_Units * Grid_Size/2;
         endPositionY = unitsUp*Grid_Size+Grid_Size+(Branch_Channel_Width_in_Units*Grid_Size-Grid_Size)+Branch_Units_Extra_Length*Grid_Size;
-
+        fwd(unitsUp*Grid_Size/2+straightDistance)
         down(baseHeight/2)
             diff("holes channel_clear"){
                  //straight section
@@ -226,27 +227,55 @@ module branchSplitChannelBase(unitsOver = 1, unitsUp=3, outputDirection = "Forwa
 
 module yChannelTop(unitsOver = 1, unitsUp=3, heightMM = 12, outputDirection = "Forward", straightDistance = Grid_Size, widthMM, anchor, spin, orient){
     attachable(anchor, spin, orient, size=[unitsOver*Grid_Size*2+channelWidth,unitsUp*Grid_Size+straightDistance*2, topHeight + (heightMM-12)]){
+        endPositionX = unitsOver * Grid_Size * Straight_Channel_Width_in_Units / 2 + Branch_Channel_Width_in_Units * Grid_Size/2;
+        endPositionY = unitsUp*Grid_Size+Grid_Size+(Branch_Channel_Width_in_Units*Grid_Size-Grid_Size)+Branch_Units_Extra_Length*Grid_Size;
+
         fwd(unitsUp*Grid_Size/2+straightDistance)
         down((topHeight + (heightMM-12))/2)
-            diff("holes"){
-                xflip_copy() 
+            diff("holes channel_clear"){
+                //straight section
+                path_sweep(topProfile(widthMM = widthMM), turtle(["ymove", Straight_Section_Length_in_Units*Grid_Size]));
+                //straight section clear
+                tag("channel_clear") fwd(0.01)path_sweep(topDeleteProfile(widthMM = widthMM), turtle(["ymove", Straight_Section_Length_in_Units*Grid_Size+0.02]));
                 {
+                    //branch channel
                     right_half(s=max(unitsUp*Grid_Size*4,unitsOver*Grid_Size*4)) {//s should be a number larger than twice the size of the object's largest axis. Thew some random numbers in here for now. If mirror issues surface, this is likely the culprit. 
-                        path_sweep2d(topProfile(widthMM = widthMM, heightMM = heightMM), 
+                        path_sweep2d(topProfile(widthMM = Branch_Channel_Width_in_Units*Grid_Size), 
                             path= outputDirection == "Forward" ? [
                                 [0,0], //start
-                                [0,straightDistance*sign(unitsUp)+0.1], //distance forward or back. 0.05 is a subtle cheat that allows for a perfect side shift without a bad polygon
-                                [unitsOver*Grid_Size,unitsUp*Grid_Size+Grid_Size*sign(unitsUp)-straightDistance*sign(unitsUp)-0.1], //movement to position before last straight
-                                [unitsOver*Grid_Size,unitsUp*Grid_Size+Grid_Size*sign(unitsUp)] //last position either out the angle or straight out
+                                [0,straightDistance+0.1], //distance forward or back. 0.05 is a subtle cheat that allows for a perfect side shift without a bad polygon
+                                [endPositionX, endPositionY-straightDistance-Branch_Units_Extra_Length*Grid_Size+0.1], //movement to position before last straight
+                                [endPositionX, endPositionY] //last position either out the angle or straight out
                             ] :
                             [ //90 degree path
                                 [0,0], //start
                                 [0,straightDistance*sign(unitsUp)+0.1], //distance forward or back. 0.05 is a subtle cheat that allows for a perfect side shift without a bad polygon
-                                [unitsOver*Grid_Size+Grid_Size/2*sign(unitsOver)-straightDistance*sign(unitsOver),unitsUp*Grid_Size+Grid_Size/2*sign(unitsUp)], //movement to position before last straight
-                                [unitsOver*Grid_Size+Grid_Size/2*sign(unitsOver),unitsUp*Grid_Size+Grid_Size/2*sign(unitsUp)] //last position either out the angle or straight out
+                                [unitsOver * Grid_Size + Grid_Size / 2 - straightDistance, unitsUp * Grid_Size + Grid_Size / 2], //movement to position before last straight
+                                [unitsOver*Grid_Size+Grid_Size/2,unitsUp*Grid_Size+Grid_Size/2] //last position either out the angle or straight out
                             ]
-                            );
-                    }}
+                        );
+                    }
+                    //branch channel delete
+                    tag("channel_clear") 
+                    right_half(s=max(unitsUp*Grid_Size*4,unitsOver*Grid_Size*4)) {//s should be a number larger than twice the size of the object's largest axis. Thew some random numbers in here for now. If mirror issues surface, this is likely the culprit. 
+                        path_sweep2d(topDeleteProfile(widthMM = Branch_Channel_Width_in_Units*Grid_Size), 
+                            path= outputDirection == "Forward" ? [
+                                [0,0], //start
+                                [0,straightDistance+0.1], //distance forward or back. 0.05 is a subtle cheat that allows for a perfect side shift without a bad polygon
+                                [endPositionX, endPositionY-straightDistance-Branch_Units_Extra_Length*Grid_Size+0.1], //movement to position before last straight
+                                [endPositionX, endPositionY] //last position either out the angle or straight out
+                            ] :
+                            [ //90 degree path
+                                [0,0], //start
+                                [0,straightDistance*sign(unitsUp)+0.1], //distance forward or back. 0.05 is a subtle cheat that allows for a perfect side shift without a bad polygon
+                                [unitsOver * Grid_Size + Grid_Size / 2 - straightDistance, unitsUp * Grid_Size + Grid_Size / 2], //movement to position before last straight
+                                [unitsOver*Grid_Size+Grid_Size/2,unitsUp*Grid_Size+Grid_Size/2] //last position either out the angle or straight out
+                            ]
+                        );
+                    }
+
+                }
+
             }
         children();
     }
