@@ -12,6 +12,13 @@ Credit to
     @Lyric on Printables for the flush connector idea
     @fawix on GitHub for her contributions on parameter descriptors
 
+Release Notes
+    - 2024-12-06 
+        - Initial Release
+    2024-12-28
+        - Added internal mitre corner
+        - Fixed bug with top length calculation
+
 */
 
 include <BOSL2/std.scad>
