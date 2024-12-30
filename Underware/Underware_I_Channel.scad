@@ -27,6 +27,7 @@ include <BOSL2/threading.scad>
 
 /*[Choose Part]*/
 Base_Top_or_Both = "Both"; // [Base, Top, Both]
+Profile_Type = "v2"; // [Original, v2]
 
 /*[Mounting Options]*/
 //How do you intend to mount the channels to a surface such as Honeycomb Storage Wall or Multiboard? See options at https://handsonkatie.com/underware-2-0-the-made-to-measure-collection/
@@ -99,6 +100,9 @@ interlockOverlap = 3.09; //distance that the top and base overlap each other
 interlockFromFloor = 6.533; //distance from the bottom of the base to the bottom of the top when interlocked
 partSeparation = 10;
 
+selectTopProfile = Profile_Type == "Original" ? topProfileHalf(Channel_Internal_Height) : topProfileInverseHalf(Channel_Internal_Height);
+selectBaseProfile = Profile_Type == "Original" ? baseProfileHalf() : baseProfileInverseHalf();
+
 /*[Visual Options]*/
 Debug_Show_Grid = false;
 //View the parts as they attach. Note that you must disable this before exporting for printing. 
@@ -145,7 +149,7 @@ if(Base_Top_or_Both != "Base")
 //STRAIGHT CHANNELS
 module straightChannelBase(lengthMM, widthMM, anchor, spin, orient){
     attachable(anchor, spin, orient, size=[widthMM, lengthMM, baseHeight]){
-        fwd(lengthMM/2) down(maxY(baseProfileHalf)/2)
+        fwd(lengthMM/2) down(maxY(selectBaseProfile)/2)
         diff("holes")
         zrot(90) path_sweep(baseProfile(widthMM = widthMM), turtle(["xmove", lengthMM]))
         tag("holes")  right(lengthMM/2) grid_copies(spacing=Grid_Size, inside=rect([lengthMM-1,Grid_Size*Channel_Width_in_Units-1])) 
@@ -183,16 +187,16 @@ module straightChannelTop(lengthMM, widthMM, heightMM = 12, anchor, spin, orient
 //take the two halves of base and merge them
 function baseProfile(widthMM = 25) = 
     union(
-        left((widthMM-25)/2,baseProfileHalf), 
-        right((widthMM-25)/2,mirror([1,0],baseProfileHalf)), //fill middle if widening from standard 25mm
+        left((widthMM-25)/2,selectBaseProfile), 
+        right((widthMM-25)/2,mirror([1,0],selectBaseProfile)), //fill middle if widening from standard 25mm
         back(3.5/2,rect([widthMM-25+0.02,3.5]))
     );
 
 //take the two halves of base and merge them
 function topProfile(widthMM = 25, heightMM = 12) = 
     union(
-        left((widthMM-25)/2,topProfileHalf(heightMM)), 
-        right((widthMM-25)/2,mirror([1,0],topProfileHalf(heightMM))), //fill middle if widening from standard 25mm
+        left((widthMM-25)/2,selectTopProfile), 
+        right((widthMM-25)/2,mirror([1,0],selectTopProfile)), //fill middle if widening from standard 25mm
         back(topHeight-1 + heightMM-12 , rect([widthMM-25+0.02,2])) 
     );
 
@@ -210,7 +214,7 @@ function topDeleteProfile(widthMM, heightMM = 12) =
         back(4.474 + (heightMM-12)/2,rect([widthMM-25+0.02,8.988 + heightMM - 12])) 
     );
 
-baseProfileHalf = 
+function baseProfileHalf() = 
     fwd(-7.947, //take Katie's exact measurements for half the profile and use fwd to place flush on the Y axis
         //profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
         [
@@ -231,29 +235,13 @@ baseProfileHalf =
             [0,-7.947] //Point 15
         ]
 );
-/* Original Profile
-function topProfileHalf(heightMM = 12) =
-        back(1.414,//profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
-        [
-            [0,7.554 + (heightMM - 12)],//-0.017 per Katie's diagram. Moved to zero
-            [0,9.554 + (heightMM - 12)],
-            [-8.517,9.554 + (heightMM - 12)],
-            [-12.517,5.554 + (heightMM - 12)],
-            [-12.517,-1.414],
-            [-11.166,-1.414],
-            [-11.166,-0.592],
-            [-11.459,-0.297],
-            [-11.459,1.422],
-            [-10.517,1.683],
-            [-10.517,4.725 + (heightMM - 12)],
-            [-7.688,7.554 + (heightMM - 12)]
-        ]
-        );
-*/
+
+
 
 topChamfer = Additional_Holding_Strength < .4 ? 0 : 1;
 
 function topProfileHalf(heightMM = 12) =
+        let(topChamfer = Additional_Holding_Strength < .4 ? 0 : 1)
         back(1.414,//profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
         [
             [0,7.554 + (heightMM - 12)],//Point 1 (-0.017 per Katie's diagram. Moved to zero)
@@ -268,6 +256,47 @@ function topProfileHalf(heightMM = 12) =
             [-10.517+Additional_Holding_Strength/2,1.683],//Point 10
             [-10.517+Additional_Holding_Strength/2, 4.725 + (heightMM - 12)],//Point 11
             [-7.688,7.554 + (heightMM - 12)]//Point 12
+        ]
+        );
+
+function baseProfileInverseHalf() = 
+    let(snapWallThickness = 0.6, snapCaptureStrength = 0.5)
+    fwd(-7.947, //take Katie's exact measurements for half the profile and use fwd to place flush on the Y axis
+        //profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
+        [
+            [0,-4.447], //Point 1
+            [-8.5,-4.447], //Point 2
+            [-9.5,-3.447],  //Point 3
+            [-10.5+snapWallThickness,-1.6], 
+            [-11.8+snapWallThickness-snapCaptureStrength,-1.6],
+            [-11.8+snapWallThickness-snapCaptureStrength,-0.6],
+            [-11.5+snapWallThickness,-0.3],
+            [-11.5+snapWallThickness,1.422],
+            [-12.5,1.683],
+            [-12.5,-4.448], //Point 12
+            [-10.5,-6.448], //Point 13
+            [-10.5,-7.947], //Point 14
+            [0,-7.947] //Point 15
+        ]
+);
+
+//An inside clamping profile alternative
+function topProfileInverseHalf(heightMM = 12) =
+        let(snapWallThickness = 0.6, snapCaptureStrength = 0.5)
+        back(1.414,//profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
+        [
+            [0,7.554 + (heightMM - 12)],//Point 1 (-0.017 per Katie's diagram. Moved to zero)
+            [0,9.554 + (heightMM - 12)],//Point 2
+            [-8.517,9.554 + (heightMM - 12)],//Point 3 
+            [-12.5,5.554 + (heightMM - 12)],//Point 4
+            [-12.5,1.683], 
+            [-11.5+snapWallThickness,1.422],
+            [-11.5+snapWallThickness,-0.3],
+            [-11.8+snapWallThickness-snapCaptureStrength,-0.6],
+            [-11.8+snapWallThickness-snapCaptureStrength,-1.4],
+            [-10.5+snapWallThickness*1.5,-1.4],
+            [-10.5+snapWallThickness*1.5, 4.725 + (heightMM - 12)],//Point 11
+            [-7.688+snapWallThickness*1.5,7.554 + (heightMM - 12)]//Point 12
         ]
         );
 
