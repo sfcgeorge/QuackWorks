@@ -131,11 +131,11 @@ Base_Screw_Hole_Cone = false;
 
 if(Base_Top_or_Both != "Top")
 color_this("Purple")
-        left(Show_Attached ? 0 : channelWidth/2)
+        left(Show_Attached ? 0 : channelWidth/2+5)
             straightChannelBase(lengthMM = Channel_Length_Units * Grid_Size, widthMM = channelWidth, anchor=BOT);
 if(Base_Top_or_Both != "Base")
 color_this(Global_Color)
-        right(Show_Attached ? 0 : channelWidth/2)
+        right(Show_Attached ? 0 : channelWidth/2+5)
         up(Show_Attached ? interlockFromFloor : Add_Label ? 0.01 : 0)
             diff("text")
             straightChannelTop(lengthMM = Channel_Length_Units * Grid_Size, widthMM = channelWidth, heightMM = Channel_Internal_Height, anchor=Show_Attached ? BOT : TOP, orient=Show_Attached ? TOP : BOT)
