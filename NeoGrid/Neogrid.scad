@@ -36,7 +36,8 @@ Channel_Depth = 20;
 Wall_Thickness = 4;
 
 /*[Material Holding Options]*/
-Retention_Spike = true;
+//Print a retention spike inside the channels to firmly hold softer material like MDF.
+Retention_Spike = false;
 //Adjust the size of the spike. Spike auto-calculates to 1/3 the thickness of the material.
 Spike_Scale = 1;
 
