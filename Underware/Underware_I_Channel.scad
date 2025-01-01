@@ -283,7 +283,7 @@ function topProfileInverseHalf(heightMM = 12) =
         );
 
 function baseProfileInverseHalf() = 
-    let(snapWallThickness = 1, snapCaptureStrength = 0.5)
+    let(snapWallThickness = 1, snapCaptureStrength = 0.5, baseChamfer = 0.5)
     fwd(-7.947, //take Katie's exact measurements for half the profile and use fwd to place flush on the Y axis
         //profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
         [
@@ -294,7 +294,8 @@ function baseProfileInverseHalf() =
             [-11.8+snapWallThickness-snapCaptureStrength,-2.4], //snap floor outer
             [-11.8+snapWallThickness-snapCaptureStrength,-0.6],//snap lock inner
             [-11.5+snapWallThickness,-0.3],//snap lock outer
-            [-11.5+snapWallThickness,1.4],//snap ceiling inner
+            [-11.5+snapWallThickness,1.4-baseChamfer],//snap ceiling inner
+            [-11.7,1.683],//snap ceiling chamfer point
             [-12.5,1.683], //snap ceiling outer
             [-12.5,-4.448], //Point 12
             [-10.5,-6.448], //Point 13
