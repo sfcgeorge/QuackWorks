@@ -12,6 +12,9 @@ Notes:
 
 include <BOSL2/std.scad>
 include <BOSL2/walls.scad>
+/* [Slot Type] */
+//How do you intend to mount the item holder to a surface such as Multipoint connections or DrewD's Multiconnect?
+Connection_Type = "Multipoint"; // [Multipoint, Multiconnect]
 
 /* [Internal Dimensions] */
 //Height (in mm) from the top of the back to the base of the internal floor
@@ -113,9 +116,22 @@ totalCenterX = internalWidth/2;
 translate(v = [-internalWidth/2,0,0]) 
     basket();
     //slotted back
+if(Connection_Type == "Multipoint"){
 translate([-max(totalWidth,distanceBetweenSlots)/2,0,-baseThickness])
-    multiconnectBack(backWidth = totalWidth, backHeight = totalHeight, distanceBetweenSlots = distanceBetweenSlots);
-
+    makebackPlate(
+        backWidth = totalWidth, 
+        backHeight = totalHeight, 
+        distanceBetweenSlots = distanceBetweenSlots,
+        backThickness=4.8);
+}
+if(Connection_Type == "Multiconnect"){
+    translate([-max(totalWidth,distanceBetweenSlots)/2,0,-baseThickness])
+    makebackPlate(
+        backWidth = totalWidth, 
+        backHeight = totalHeight, 
+        distanceBetweenSlots = distanceBetweenSlots,
+        backThickness=6.5);
+}
 //Create Basket
 module basket() {
     difference() {
@@ -163,11 +179,12 @@ module basket() {
 
 //BEGIN MODULES
 //Slotted back Module
-module multiconnectBack(backWidth, backHeight, distanceBetweenSlots)
+module makebackPlate(backWidth, backHeight, distanceBetweenSlots, backThickness)
 {
+    
     //slot count calculates how many slots can fit on the back. Based on internal width for buffer. 
     //slot width needs to be at least the distance between slot for at least 1 slot to generate
-    let (backWidth = max(backWidth,distanceBetweenSlots), backHeight = max(backHeight, 25),slotCount = floor(backWidth/distanceBetweenSlots)- subtractedSlots, backThickness = 6.5){
+    let (backWidth = max(backWidth,distanceBetweenSlots), backHeight = max(backHeight, 25),slotCount = floor(backWidth/distanceBetweenSlots)- subtractedSlots){
         difference() {
             translate(v = [0,-backThickness,0]) 
             cuboid(size = [backWidth,backThickness,backHeight], rounding=edgeRounding, except_edges=BACK, anchor=FRONT+LEFT+BOT);
@@ -175,23 +192,79 @@ module multiconnectBack(backWidth, backHeight, distanceBetweenSlots)
             //Note: I kept doing math until it looked right. It's possible this can be simplified.
             for (slotNum = [0:1:slotCount-1]) {
                 translate(v = [distanceBetweenSlots/2+(backWidth/distanceBetweenSlots-slotCount)*distanceBetweenSlots/2+slotNum*distanceBetweenSlots,-2.35+slotDepthMicroadjustment,backHeight-13]) {
-                    slotTool(backHeight);
+                    if(Connection_Type == "Multipoint"){
+                        multiPointSlotTool(totalHeight);
+                    }
+                    if(Connection_Type == "Multiconnect"){
+                        multiConnectSlotTool(totalHeight);
+                    }
                 }
             }
         }
+    }   
+}
+module multiConnectSlotTool(totalHeight) {
+    //In slotTool, added a new variable distanceOffset which is set by the option:
+    distanceOffset = onRampHalfOffset ? distanceBetweenSlots / 2 : 0;
+    scale(v = slotTolerance)
+    //slot minus optional dimple with optional on-ramp
+    let (slotProfile = [[0,0],[10.15,0],[10.15,1.2121],[7.65,3.712],[7.65,5],[0,5]])
+    difference() {
+        union() {
+            //round top
+            rotate(a = [90,0,0,]) 
+                rotate_extrude($fn=50) 
+                    polygon(points = slotProfile);
+            //long slot
+            translate(v = [0,0,0]) 
+                rotate(a = [180,0,0]) 
+                linear_extrude(height = totalHeight+1) 
+                    union(){
+                        polygon(points = slotProfile);
+                        mirror([1,0,0])
+                            polygon(points = slotProfile);
+                    }
+            //on-ramp
+            if(onRampEnabled)
+                for(y = [1:onRampEveryXSlots:totalHeight/distanceBetweenSlots])
+                    //then modify the translate within the on-ramp code to include the offset
+                    translate(v = [0,-5,(-y*distanceBetweenSlots)+distanceOffset])
+                        rotate(a = [-90,0,0]) 
+                            cylinder(h = 5, r1 = 12, r2 = 10.15);
+        }
+        //dimple
+        if (slotQuickRelease == false)
+            scale(v = dimpleScale) 
+            rotate(a = [90,0,0,]) 
+                rotate_extrude($fn=50) 
+                    polygon(points = [[0,0],[0,1.5],[1.5,0]]);
     }
-    //Create Slot Tool
-    module slotTool(totalHeight) {
-        //In slotTool, added a new variable distanceOffset which is set by the option:
-        distanceOffset = onRampHalfOffset ? distanceBetweenSlots / 2 : 0;
-        scale(v = slotTolerance)
-        //slot minus optional dimple with optional on-ramp
-        let (slotProfile = [[0,0],[10.15,0],[10.15,1.2121],[7.65,3.712],[7.65,5],[0,5]])
-        difference() {
-            union() {
-                //round top
-                rotate(a = [90,0,0,]) 
-                    rotate_extrude($fn=50) 
+}
+
+module multiPointSlotTool(totalHeight) {
+    slotBaseRadius = 17.0 / 2.0;  // wider width of the inner part of the channel
+    slotSkinRadius = 13.75 / 2.0;  // narrower part of the channel near the skin of the model
+    slotBaseCatchDepth = .2;  // innermost before the chamfer, base to chamfer height
+    slotBaseToSkinChamferDepth = 2.2;  // middle part of the chamfer
+    slotSkinDepth = .1;  // top or skinmost part of the channel
+    distanceOffset = onRampHalfOffset ? distanceBetweenSlots / 2 : 0;
+    octogonScale = 1/sin(67.5);  // math convenience function to convert an octogon hypotenuse to the short length
+    let (slotProfile = [
+        [0,0],
+        [slotBaseRadius,0],
+        [slotBaseRadius, slotBaseCatchDepth],
+        [slotSkinRadius, slotBaseCatchDepth + slotBaseToSkinChamferDepth],
+        [slotSkinRadius, slotBaseCatchDepth + slotBaseToSkinChamferDepth + slotSkinDepth],
+        [0, slotBaseCatchDepth + slotBaseToSkinChamferDepth + slotSkinDepth]
+    ])
+    union() {
+        //octagonal top. difference on union because we need to support the dimples cut in.
+        difference(){
+            //union of top and rail.
+            union(){
+                scale([octogonScale,1,octogonScale])
+                rotate(a = [90,67.5,0,]) 
+                    rotate_extrude($fn=8) 
                         polygon(points = slotProfile);
                 //long slot
                 translate(v = [0,0,0]) 
@@ -202,20 +275,73 @@ module multiconnectBack(backWidth, backHeight, distanceBetweenSlots)
                             mirror([1,0,0])
                                 polygon(points = slotProfile);
                         }
-                //on-ramp
-                if(onRampEnabled)
-                    for(y = [1:onRampEveryXSlots:totalHeight/distanceBetweenSlots])
-                        //then modify the translate within the on-ramp code to include the offset
-                        translate(v = [0,-5,(-y*distanceBetweenSlots)+distanceOffset])
-                            rotate(a = [-90,0,0]) 
-                                cylinder(h = 5, r1 = 12, r2 = 10.15);
             }
-            //dimple
-            if (slotQuickRelease == false)
-                scale(v = dimpleScale) 
-                rotate(a = [90,0,0,]) 
-                    rotate_extrude($fn=50) 
-                        polygon(points = [[0,0],[0,1.5],[1.5,0]]);
+            //dimples on each catch point
+            if (!slotQuickRelease){
+                for(z = [1:onRampEveryXSlots:totalHeight/distanceBetweenSlots ])
+                {
+                    echo("building on z", z);
+                    yMultipointSlotDimples(z, slotBaseRadius, distanceBetweenSlots, distanceOffset);
+                }
+            }
         }
+        //on-ramp
+        if(onRampEnabled)
+            union(){
+                for(y = [1:onRampEveryXSlots:totalHeight/distanceBetweenSlots])
+                {
+                    // create the main entry hexagons
+                    translate(v = [0,-5,(-y*distanceBetweenSlots)+distanceOffset])
+                    scale([octogonScale,1,octogonScale])
+                        rotate(a = [-90,67.5,0]) 
+                            cylinder(h=5, r=slotBaseRadius, $fn=8);
+                    
+                // make the required "pop-in" locking channel dimples.
+                xSlotDimples(y, slotBaseRadius, distanceBetweenSlots, distanceOffset);
+                mirror([1,0,0])
+                     xSlotDimples(y, slotBaseRadius, distanceBetweenSlots, distanceOffset);
+                }
+            }
     }
 }
+
+module xSlotDimples(y, slotBaseRadius, distanceBetweenSlots, distanceOffset){
+    //Multipoint dimples are truncated (on top and side) pyramids
+    //this function makes one pair of them
+    dimple_pitch = 4.5 / 2; //distance between locking dimples
+    difference(){
+        translate(v = [slotBaseRadius ,0,(-y*distanceBetweenSlots)+distanceOffset+dimple_pitch])
+            rotate(a = [90,45,90]) 
+            rotate_extrude($fn=4) 
+                polygon(points = [[0,0],[0,1.5],[1.7,0]]);
+        translate(v = [slotBaseRadius+.75, -2, (-y*distanceBetweenSlots)+distanceOffset-1])
+                cube(4);
+        translate(v = [slotBaseRadius-2, 0, (-y*distanceBetweenSlots)+distanceOffset-1])
+                cube(7);
+        }
+        difference(){
+        translate(v = [slotBaseRadius ,0,(-y*distanceBetweenSlots)+distanceOffset-dimple_pitch])
+            rotate(a = [90,45,90]) 
+            rotate_extrude($fn=4) 
+                polygon(points = [[0,0],[0,1.5],[1.7,0]]);
+        translate(v = [slotBaseRadius+.75, -2, (-y*distanceBetweenSlots)+distanceOffset-3])
+                cube(4);
+        translate(v = [slotBaseRadius-2, 0, (-y*distanceBetweenSlots)+distanceOffset-5])
+                cube(10);
+        }
+}
+module yMultipointSlotDimples(z, slotBaseRadius, distanceBetweenSlots, distanceOffset){
+    //This creates the multipoint point out dimples within the channel.
+    octogonScale = 1/sin(67.5);
+    difference(){
+        translate(v = [0,0,((-z+.5)*distanceBetweenSlots)+distanceOffset])
+            scale([octogonScale,1,octogonScale])
+                rotate(a = [-90,67.5,0]) 
+                    rotate_extrude($fn=8) 
+                        polygon(points = [[0,0],[0,-1.5],[5,0]]);
+        translate(v = [0,0,((-z+.5)*distanceBetweenSlots)+distanceOffset])
+            cube([10,3,3], center=true);
+        translate(v = [0,0,((-z+.5)*distanceBetweenSlots)+distanceOffset])
+           cube([3,3,10], center=true);
+    }
+}   

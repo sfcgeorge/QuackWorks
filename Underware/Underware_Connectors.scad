@@ -34,6 +34,9 @@ Snap_Thread_Height = 3.6;
 //Length of the threaded portion of small screw. MB is 6mm thick and the recessed hole in base channels is 1mm deep.
 Thread_Length_Sm = 6.5;
 
+Bolt_Selection = "All"; // [All, Small MB Screw, Small MB Screw split, Small MB T Screw, Small MB T Screw tool]
+
+
 /*[Advanced Options]*/
 //Color of part (color names found at https://en.wikipedia.org/wiki/Web_colors)
 Global_Color = "SlateBlue";
@@ -76,7 +79,7 @@ if(Show_Part == "Snap Connector")
     make_ThreadedSnap(offset = Snap_Connector_Height, anchor=BOT);
 
 //Small MB Screw based on step file
-if(Show_Part == "Bolts")
+if(Show_Part == "Bolts" && (Bolt_Selection == "All" || Bolt_Selection == "Small MB Screw")){
 recolor(Global_Color)
 diff()
 fwd(30)
@@ -84,9 +87,10 @@ cyl(d=12,h=2.5, $fn=6, anchor=BOT, chamfer2=0.6){
     attach(TOP, BOT) trapezoidal_threaded_rod(d=Outer_Diameter_Sm, l=Thread_Length_Sm, pitch=Pitch_Sm, flank_angle = Flank_Angle_Sm, thread_depth = Thread_Depth_Sm, $fn=50, bevel2 = true, blunt_start=false);
     tag("remove")attach(BOT, BOT, inside=true, shiftout=0.01) cyl(h=16.01, d= Inner_Hole_Diameter_Sm, $fn=25, chamfer1=-1);
 }
+}
 
 //Small MB Screw split
-if(Show_Part == "Bolts"){
+if(Show_Part == "Bolts" && (Bolt_Selection == "All" || Bolt_Selection == "Small MB Screw split")){
     recolor(Global_Color)
     diff()
     {
@@ -101,15 +105,16 @@ if(Show_Part == "Bolts"){
 }
 
 //Small MB T Screw
-if(Show_Part == "Bolts")
+if(Show_Part == "Bolts" && (Bolt_Selection == "All" || Bolt_Selection == "Small MB T Screw")){
 recolor(Global_Color)
 diff()
 back(30)
 up(2)yrot(90)left_half(x=2)right_half(x=-2)cuboid([4,14,2.5], chamfer=0.75, edges=[LEFT+FRONT, RIGHT+FRONT, RIGHT+BACK, LEFT+BACK], anchor=BOT){
     attach(TOP, BOT) trapezoidal_threaded_rod(d=Outer_Diameter_Sm, l=Thread_Length_Sm, pitch=Pitch_Sm, flank_angle = Flank_Angle_Sm, thread_depth = Thread_Depth_Sm, $fn=50, bevel2 = true, blunt_start=false);
 }
+}
 
-if(Show_Part == "Bolts")
+if(Show_Part == "Bolts" && (Bolt_Selection == "All" || Bolt_Selection == "Small MB T Screw tool")){
 //Small MB T Screw tool
 recolor(Global_Color)
 back(50)
@@ -123,6 +128,7 @@ back(50)
             position([LEFT+BOT])fillet(l=11, r=1.5, spin=180, orient=BACK);
         }
     }
+}
 
 
 //Large MB Screw based on step file (not used yet)
