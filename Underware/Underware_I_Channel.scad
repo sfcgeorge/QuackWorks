@@ -27,7 +27,7 @@ include <BOSL2/threading.scad>
 
 /*[Choose Part]*/
 Base_Top_or_Both = "Both"; // [Base, Top, Both]
-Profile_Type = "v2"; // [Original, v2]
+Profile_Type = "v2.5"; // [Original, v2.5]
 
 /*[Mounting Options]*/
 //How do you intend to mount the channels to a surface such as Honeycomb Storage Wall or Multiboard? See options at https://handsonkatie.com/underware-2-0-the-made-to-measure-collection/
@@ -89,6 +89,8 @@ Global_Color = "SlateBlue";
 Override_Width_Using_Internal_MM = 0; 
 //Slop in thread. Increase to make threading easier. Decrease to make threading harder.
 Slop = 0.075;
+
+/*[Beta Features]*/
 //BETA FEATURE: Change snap profile for strong holding strength. Not backwards compatible.
 Additional_Holding_Strength = 0.0;//[0:0.1:1.5]
 
@@ -129,12 +131,12 @@ Base_Screw_Hole_Cone = false;
 MultipointBase_Screw_Hole_Outer_Diameter = 16;
 
 if(Base_Top_or_Both != "Top")
-color_this(Global_Color)
-        left(Show_Attached ? 0 : channelWidth/2)
+color_this("Purple")
+        left(Show_Attached ? 0 : channelWidth/2+5)
             straightChannelBase(lengthMM = Channel_Length_Units * Grid_Size, widthMM = channelWidth, anchor=BOT);
 if(Base_Top_or_Both != "Base")
 color_this(Global_Color)
-        right(Show_Attached ? 0 : channelWidth/2 + 5)
+        right(Show_Attached ? 0 : channelWidth/2+5)
         up(Show_Attached ? interlockFromFloor : Add_Label ? 0.01 : 0)
             diff("text")
             straightChannelTop(lengthMM = Channel_Length_Units * Grid_Size, widthMM = channelWidth, heightMM = Channel_Internal_Height, anchor=Show_Attached ? BOT : TOP, orient=Show_Attached ? TOP : BOT)
@@ -261,46 +263,48 @@ function topProfileHalf(heightMM = 12) =
         ]
         );
 
-function baseProfileInverseHalf() = 
-    let(snapWallThickness = 0.6, snapCaptureStrength = 0.5)
-    fwd(-7.947, //take Katie's exact measurements for half the profile and use fwd to place flush on the Y axis
-        //profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
-        [
-            [0,-4.447], //Point 1
-            [-8.5,-4.447], //Point 2
-            [-9.5,-3.447],  //Point 3
-            [-10.5+snapWallThickness,-1.6], 
-            [-11.8+snapWallThickness-snapCaptureStrength,-1.6],
-            [-11.8+snapWallThickness-snapCaptureStrength,-0.6],
-            [-11.5+snapWallThickness,-0.3],
-            [-11.5+snapWallThickness,1.422],
-            [-12.5,1.683],
-            [-12.5,-4.448], //Point 12
-            [-10.5,-6.448], //Point 13
-            [-10.5,-7.947], //Point 14
-            [0,-7.947] //Point 15
-        ]
-);
-
 //An inside clamping profile alternative
 function topProfileInverseHalf(heightMM = 12) =
-        let(snapWallThickness = 0.6, snapCaptureStrength = 0.5)
+        let(snapWallThickness = 1, snapCaptureStrength = 0.5)
         back(1.414,//profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
         [
             [0,7.554 + (heightMM - 12)],//Point 1 (-0.017 per Katie's diagram. Moved to zero)
             [0,9.554 + (heightMM - 12)],//Point 2
             [-8.517,9.554 + (heightMM - 12)],//Point 3 
             [-12.5,5.554 + (heightMM - 12)],//Point 4
-            [-12.5,1.683], 
-            [-11.5+snapWallThickness,1.422],
-            [-11.5+snapWallThickness,-0.3],
-            [-11.8+snapWallThickness-snapCaptureStrength,-0.6],
-            [-11.8+snapWallThickness-snapCaptureStrength,-1.4],
-            [-10.5+snapWallThickness*1.5,-1.4],
+            [-12.5,2], //snap ceiling outer
+            [-11.5+snapWallThickness,1.8], //snap ceiling inner
+            [-11.5+snapWallThickness,-0.3], //snap lock outer
+            [-11.8+snapWallThickness-snapCaptureStrength,-0.6], //snap lock inner
+            [-11.8+snapWallThickness-snapCaptureStrength,-1.4], //snap floor outer
+            [-10.5+snapWallThickness-snapCaptureStrength,-2], //snap chamfer outer
+            [-10.5+snapWallThickness*1.5,-2], //snap floor inner
             [-10.5+snapWallThickness*1.5, 4.725 + (heightMM - 12)],//Point 11
             [-7.688+snapWallThickness*1.5,7.554 + (heightMM - 12)]//Point 12
         ]
         );
+
+function baseProfileInverseHalf() = 
+    let(snapWallThickness = 1, snapCaptureStrength = 0.5, baseChamfer = 0.5)
+    fwd(-7.947, //take Katie's exact measurements for half the profile and use fwd to place flush on the Y axis
+        //profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
+        [
+            [0,-4.447], //Point 1
+            [-8.5,-4.447], //Point 2
+            [-10+snapWallThickness,-3.447],  //Point 3
+            [-10+snapWallThickness,-2.4], //snap floor inner
+            [-11.8+snapWallThickness-snapCaptureStrength,-2.4], //snap floor outer
+            [-11.8+snapWallThickness-snapCaptureStrength,-0.6],//snap lock inner
+            [-11.5+snapWallThickness,-0.3],//snap lock outer
+            [-11.5+snapWallThickness,1.4-baseChamfer],//snap ceiling inner
+            [-11.7,1.683],//snap ceiling chamfer point
+            [-12.5,1.683], //snap ceiling outer
+            [-12.5,-4.448], //Point 12
+            [-10.5,-6.448], //Point 13
+            [-10.5,-7.947], //Point 14
+            [0,-7.947] //Point 15
+        ]
+);
 
 baseDeleteProfileHalf = 
     fwd(-7.947, //take Katie's exact measurements for half the profile of the inside
