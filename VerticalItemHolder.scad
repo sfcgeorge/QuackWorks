@@ -106,6 +106,8 @@ leftLateralCapture = 3;
 wallThickness = 2; //.1
 //Thickness of bin  (in mm)
 baseThickness = 3; //.1
+//Only generate the backer mounting plate
+backPlateOnly = false;
 
 /*[Slot Customization]*/
 onRampHalfOffset = true;
@@ -142,6 +144,7 @@ totalCenterX = internalWidth/2;
 
 if(!debugCutoutTool)
 union(){
+    if(!backPlateOnly)
     //move to center
     translate(v = [-internalWidth/2,0,0]) 
         basket();
