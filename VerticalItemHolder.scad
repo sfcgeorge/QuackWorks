@@ -1,6 +1,27 @@
 /*Created by Andy Levesque
-Credit to @David D on Printables and Jonathan at Keep Making for Multiconnect and Multiboard, respectively
-Licensed Creative Commons 4.0 Attribution Non-Commercial Sharable with Attribution
+
+This code is licensed Creative Commons 4.0 Attribution Non-Commercial Sharable with Attribution
+References to Multipoint are for the Multiboard ecosystem by Jonathan at Keep Making. The Multipoint mount system is licensed under https://www.multiboard.io/license.
+
+Credit to 
+    @David D on Printables for Multiconnect
+    Jonathan at Keep Making for Multiboard
+    @fawix on GitHub for her contributions on parameter descriptors
+    @SnazzyGreenWarrior on GitHub for their contributions on the Multipoint-compatible mount
+
+Change Log:
+- 2024-08-10 
+    - Initial release
+- 2024-12-08
+    - Multiconnect on-ramps now in-between grids for easier mounting
+    - Rounded edges to Item Holder
+    - Thanks @user_2270779674 on MakerWorld!
+    - Multiconnect On-Ramps at 1/2 grid intervals for more contact points
+    - Rounding added to edges
+- 2025-01-02
+    - Multipoint mounting
+    - Thanks @SnazzyGreenWarrior!
+
 
 Notes:
 - Slot test fit - For a slot test fit, set the following parameters
@@ -12,9 +33,10 @@ Notes:
 
 include <BOSL2/std.scad>
 include <BOSL2/walls.scad>
+
 /* [Slot Type] */
 //How do you intend to mount the item holder to a surface such as Multipoint connections or DrewD's Multiconnect?
-Connection_Type = "Multipoint"; // [Multipoint, Multiconnect]
+Connection_Type = "Multiconnect"; // [Multipoint, Multiconnect]
 
 /* [Internal Dimensions] */
 //Height (in mm) from the top of the back to the base of the internal floor
@@ -105,6 +127,12 @@ onRampEnabled = true;
 onRampEveryXSlots = 1;
 
 /* [Hidden] */
+debugCutoutTool = false;
+
+if(debugCutoutTool){
+    if(Connection_Type == "Multiconnect") multiConnectSlotTool(totalHeight);
+    else multiPointSlotTool(totalHeight);
+}
 
 //Calculated
 totalHeight = internalHeight+baseThickness;
@@ -112,26 +140,30 @@ totalDepth = internalDepth + wallThickness;
 totalWidth = internalWidth + wallThickness*2;
 totalCenterX = internalWidth/2;
 
-//move to center
-translate(v = [-internalWidth/2,0,0]) 
-    basket();
-    //slotted back
-if(Connection_Type == "Multipoint"){
-translate([-max(totalWidth,distanceBetweenSlots)/2,0,-baseThickness])
-    makebackPlate(
-        backWidth = totalWidth, 
-        backHeight = totalHeight, 
-        distanceBetweenSlots = distanceBetweenSlots,
-        backThickness=4.8);
+if(!debugCutoutTool)
+union(){
+    //move to center
+    translate(v = [-internalWidth/2,0,0]) 
+        basket();
+        //slotted back
+    if(Connection_Type == "Multipoint"){
+    translate([-max(totalWidth,distanceBetweenSlots)/2,0.01,-baseThickness])
+        makebackPlate(
+            backWidth = totalWidth, 
+            backHeight = totalHeight, 
+            distanceBetweenSlots = distanceBetweenSlots,
+            backThickness=4.8);
+    }
+    if(Connection_Type == "Multiconnect"){
+        translate([-max(totalWidth,distanceBetweenSlots)/2,0.01,-baseThickness])
+        makebackPlate(
+            backWidth = totalWidth, 
+            backHeight = totalHeight, 
+            distanceBetweenSlots = distanceBetweenSlots,
+            backThickness=6.5);
+    }
 }
-if(Connection_Type == "Multiconnect"){
-    translate([-max(totalWidth,distanceBetweenSlots)/2,0,-baseThickness])
-    makebackPlate(
-        backWidth = totalWidth, 
-        backHeight = totalHeight, 
-        distanceBetweenSlots = distanceBetweenSlots,
-        backThickness=6.5);
-}
+
 //Create Basket
 module basket() {
     difference() {
@@ -310,23 +342,23 @@ module xSlotDimples(y, slotBaseRadius, distanceBetweenSlots, distanceOffset){
     //this function makes one pair of them
     dimple_pitch = 4.5 / 2; //distance between locking dimples
     difference(){
-        translate(v = [slotBaseRadius ,0,(-y*distanceBetweenSlots)+distanceOffset+dimple_pitch])
+        translate(v = [slotBaseRadius-0.01,0,(-y*distanceBetweenSlots)+distanceOffset+dimple_pitch])
             rotate(a = [90,45,90]) 
             rotate_extrude($fn=4) 
                 polygon(points = [[0,0],[0,1.5],[1.7,0]]);
         translate(v = [slotBaseRadius+.75, -2, (-y*distanceBetweenSlots)+distanceOffset-1])
                 cube(4);
-        translate(v = [slotBaseRadius-2, 0, (-y*distanceBetweenSlots)+distanceOffset-1])
+        translate(v = [slotBaseRadius-2, 0.01, (-y*distanceBetweenSlots)+distanceOffset-1])
                 cube(7);
         }
         difference(){
-        translate(v = [slotBaseRadius ,0,(-y*distanceBetweenSlots)+distanceOffset-dimple_pitch])
+        translate(v = [slotBaseRadius-0.01,0,(-y*distanceBetweenSlots)+distanceOffset-dimple_pitch])
             rotate(a = [90,45,90]) 
             rotate_extrude($fn=4) 
                 polygon(points = [[0,0],[0,1.5],[1.7,0]]);
-        translate(v = [slotBaseRadius+.75, -2, (-y*distanceBetweenSlots)+distanceOffset-3])
+        translate(v = [slotBaseRadius+.75, -2.01, (-y*distanceBetweenSlots)+distanceOffset-3])
                 cube(4);
-        translate(v = [slotBaseRadius-2, 0, (-y*distanceBetweenSlots)+distanceOffset-5])
+        translate(v = [slotBaseRadius-2, 0.01, (-y*distanceBetweenSlots)+distanceOffset-5])
                 cube(10);
         }
 }
@@ -334,7 +366,7 @@ module yMultipointSlotDimples(z, slotBaseRadius, distanceBetweenSlots, distanceO
     //This creates the multipoint point out dimples within the channel.
     octogonScale = 1/sin(67.5);
     difference(){
-        translate(v = [0,0,((-z+.5)*distanceBetweenSlots)+distanceOffset])
+        translate(v = [0,0.01,((-z+.5)*distanceBetweenSlots)+distanceOffset])
             scale([octogonScale,1,octogonScale])
                 rotate(a = [-90,67.5,0]) 
                     rotate_extrude($fn=8) 

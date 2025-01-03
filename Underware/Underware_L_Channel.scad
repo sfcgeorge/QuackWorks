@@ -13,11 +13,10 @@ Credit to
     First and foremost - Katie and her community at Hands on Katie on Youtube, Patreon, and Discord
     @David D on Printables for Multiconnect
     Jonathan at Keep Making for Multiboard
-    @cosmicdust on MakerWorld and @freakadings_1408562 on Printables for the idea of diagonals (forward and turn)
     @siyrahfall+1155967 on Printables for the idea of top exit holes
     @Lyric on Printables for the flush connector idea
-    @fawix on GitHub for her contributions on parameter descriptors
-
+    @fawix on GitHub for their contributions on parameter descriptors
+    @macarie on GitHub for their L Channel enhancements
 */
 
 include <BOSL2/std.scad>
@@ -29,13 +28,13 @@ Base_Top_or_Both = "Both"; // [Base, Top, Both]
 
 /*[Channel Size]*/
 //Width of channel in units (default unit is 25mm)
-Channel_Depth_in_Units = 1;
+Channel_Width_in_Units = 1;
 //Height (Z axis) inside the channel (in mm)
 Channel_Internal_Height = 12; //[12:6:72]
-//Number of grids extending from the corner grid in units (default unit is 25mm)
-L_Channel_Length_in_Units = 1;
-//Number of grids extending from the corner grid in units (default unit is 25mm)
-L_Channel_Width_in_Units = 1;
+//Number of grids extending along the Y axis from the corner grid in units (default unit is 25mm)
+L_Channel_Length_in_Units_Y_Axis = 1;
+//Number of grids extending along the X axis from the corner grid in units (default unit is 25mm)
+L_Channel_Length_in_Units_X_Axis = 1;
 
 /*[Mounting Options]*/
 //How do you intend to mount the channels to a surface such as Honeycomb Storage Wall or Multiboard? See options at https://handsonkatie.com/underware-2-0-the-made-to-measure-collection/
@@ -54,7 +53,7 @@ Wood_Screw_Head_Diameter = 7;
 Wood_Screw_Head_Height = 1.75;
 
 /*[Advanced Options]*/
-//Units of measurement (in mm) for hole and length spacing. Multiboard is 25mm. Untested
+//Units of measurement (in mm) for hole and length spacing. Multiboard is 25mm.
 Grid_Size = 25;
 //Color of part (color names found at https://en.wikipedia.org/wiki/Web_colors)
 Global_Color = "SlateBlue";
@@ -98,12 +97,12 @@ Base_Screw_Hole_Cone = false;
 if(Base_Top_or_Both != "Top")
 color_this(Global_Color)
     left(Show_Attached ? 0 : partSeparation)
-        lChannelBase(lengthMM = L_Channel_Length_in_Units ? L_Channel_Length_in_Units * Grid_Size : fallbackSize, widthMM = L_Channel_Width_in_Units ? L_Channel_Width_in_Units * Grid_Size : fallbackSize, depthMM = Channel_Depth_in_Units * Grid_Size, anchor=Show_Attached ? BOT : BOT+RIGHT);
+        lChannelBase(lengthMM = L_Channel_Length_in_Units_Y_Axis ? L_Channel_Length_in_Units_Y_Axis * Grid_Size : fallbackSize, widthMM = L_Channel_Length_in_Units_X_Axis ? L_Channel_Length_in_Units_X_Axis * Grid_Size : fallbackSize, depthMM = Channel_Width_in_Units * Grid_Size, anchor=Show_Attached ? BOT : BOT+RIGHT);
 if(Base_Top_or_Both != "Base")
 color_this(Global_Color)
     up(Show_Attached ? interlockFromFloor : 0)
     right(Show_Attached ? 0 : partSeparation)
-        lChannelTop(lengthMM = L_Channel_Length_in_Units ? L_Channel_Length_in_Units * Grid_Size : fallbackSize, widthMM = L_Channel_Width_in_Units ? L_Channel_Width_in_Units * Grid_Size : fallbackSize, depthMM = Channel_Depth_in_Units * Grid_Size, heightMM = Channel_Internal_Height, anchor= Show_Attached ? BOT : TOP+RIGHT, orient=Show_Attached ? TOP : BOT);
+        lChannelTop(lengthMM = L_Channel_Length_in_Units_Y_Axis ? L_Channel_Length_in_Units_Y_Axis * Grid_Size : fallbackSize, widthMM = L_Channel_Length_in_Units_X_Axis ? L_Channel_Length_in_Units_X_Axis * Grid_Size : fallbackSize, depthMM = Channel_Width_in_Units * Grid_Size, heightMM = Channel_Internal_Height, anchor= Show_Attached ? BOT : TOP+RIGHT, orient=Show_Attached ? TOP : BOT);
 
 /*
 
