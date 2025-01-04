@@ -1,13 +1,18 @@
 /*Created by Andy Levesque
 
-Licensed Creative Commons 4.0 Attribution Non-Commercial Sharable with Attribution
+This code is licensed Creative Commons 4.0 Attribution Non-Commercial Sharable with Attribution
 
 Documentation available at https://handsonkatie.com/underware-2-0-the-made-to-measure-collection/
+
+References to Multipoint are for the Multiboard ecosystem by Jonathan at Keep Making. The Multipoint mount system is licensed under https://www.multiboard.io/license.
+
 
 Credit to 
     @David D on Printables for Multiconnect
     Jonathan at Keep Making for Multiboard
     @fawix on GitHub for her contributions on parameter descriptors
+    @SnazzyGreenWarrior on GitHub for their contributions on the Multipoint-compatible mount
+
 
 Change Log:
 - 2024-12-06 
@@ -24,6 +29,9 @@ Change Log:
     - Updated (in mm) to (by mm) for clarity
 -2024-12-13
     -Ability to override slot distance from edge
+- 2025-01-02
+    - Multipoint mounting
+    - Thanks @SnazzyGreenWarrior!
 
 Notes:
 - Slot test fit - For a slot test fit, set the following parameters
@@ -35,6 +43,11 @@ Notes:
 
 include <BOSL2/std.scad>
 include <BOSL2/walls.scad>
+
+/* [Beta Feature - Slot Type] */
+//Multipoint in Beta - Please share feedback! How do you intend to mount the item holder to a surface such as Multipoint connections or DavidD's Multiconnect?
+Connection_Type = "Multiconnect"; // [Multipoint, Multiconnect]
+
 
 /* [Internal Dimensions] */
 //Depth (by mm): internal dimension along the Z axis of print orientation. Measured from the top to the base of the internal floor, equivalent to the depth of the item you wish to hold when mounted horizontally.
@@ -104,6 +117,9 @@ leftLateralCapture = 3;
 wallThickness = 2; //.1
 //Thickness of item holder base (by mm)
 baseThickness = 3; //.1
+//Only generate the backer mounting plate
+backPlateOnly = false;
+
 
 /*[Slot Customization]*/
 //Offset the multiconnect on-ramps to be between grid slots rather than on the slot
@@ -131,27 +147,55 @@ Multiconnect_Stop_Distance_From_Back = 13;
 
 /* [Hidden] */
 Wall_Type = "Solid"; //["Hex","Solid"]
+debugCutoutTool = false;
 
+if(debugCutoutTool){
+    if(Connection_Type == "Multiconnect") multiConnectSlotTool(totalHeight);
+    else multiPointSlotTool(totalHeight);
+}
 
+//UNDERWARE SPECIFIC CODE
+//Underware Conversion
+//Depth and Height in the lateral version are switched to match the orientation of the item holder (vertical mounting vs. horizontal). This sets them back so the same code (vertical) is used between the two
+internalDepth = Internal_Height;
+internalHeight = Internal_Depth;
+internalWidth = Internal_Width;
+//Due to horizontal mounting, do not allow users to do on-ramps every slot unless half offset is enabled
 onRampEveryXSlots = 
     onRampHalfOffset ? On_Ramp_Every_X_Slots : 
     On_Ramp_Every_X_Slots == 1 ? 2 : On_Ramp_Every_X_Slots;
+//UNDERWARE SPECIFIC CODE
+
 
 //Calculated
-totalDepth = Internal_Depth+baseThickness;
-totalHeight = Internal_Height + wallThickness;
-totalWidth = Internal_Width + wallThickness*2;
-totalCenterX = Internal_Width/2;
+totalHeight = internalHeight+baseThickness;
+totalDepth = internalDepth + wallThickness;
+totalWidth = internalWidth + wallThickness*2;
+totalCenterX = internalWidth/2;
 
-//move to center
+if(!debugCutoutTool)
 union(){
-translate(v = [-Internal_Width/2,0,0]) 
-    basket();
+    if(!backPlateOnly)
+        //move to center
+        translate(v = [-internalWidth/2,0,0]) 
+            basket();
     //slotted back
-    translate([0,0.02,totalDepth/2-baseThickness]) 
-    rotate([0,Slot_From_Top ? 180 : 0,0])
-    translate([-totalWidth/2,0,-totalDepth/2])//center
-    multiconnectBack(backWidth = totalWidth, backHeight = totalDepth, distanceBetweenSlots = distanceBetweenSlots, slotStopFromBack = Multiconnect_Stop_Distance_From_Back);
+    if(Connection_Type == "Multipoint"){
+    translate([-max(totalWidth,distanceBetweenSlots)/2,0.01,-baseThickness])
+        makebackPlate(
+            backWidth = totalWidth, 
+            backHeight = totalHeight, 
+            distanceBetweenSlots = distanceBetweenSlots,
+            backThickness=4.8);
+    }
+    if(Connection_Type == "Multiconnect"){
+        translate([-max(totalWidth,distanceBetweenSlots)/2,0.01,-baseThickness])
+        makebackPlate(
+            backWidth = totalWidth, 
+            backHeight = totalHeight, 
+            distanceBetweenSlots = distanceBetweenSlots,
+            backThickness=6.5);
+    }
 }
 
 //Create Basket
@@ -161,50 +205,51 @@ module basket() {
             //bottom
             translate([-wallThickness,0,-baseThickness])
                 if (bottomCutout == true || Wall_Type == "Solid") //cutouts are not compatible with hex panels at this time. Need to build a frame first. 
-                    cuboid([Internal_Width + wallThickness*2, Internal_Height + wallThickness,baseThickness], anchor=FRONT+LEFT+BOT, rounding=edgeRounding, edges = [BOTTOM+LEFT,BOTTOM+RIGHT,BOTTOM+BACK,LEFT+BACK,RIGHT+BACK]);
+                    cuboid([internalWidth + wallThickness*2, internalDepth + wallThickness,baseThickness], anchor=FRONT+LEFT+BOT, rounding=edgeRounding, edges = [BOTTOM+LEFT,BOTTOM+RIGHT,BOTTOM+BACK,LEFT+BACK,RIGHT+BACK]);
                 else    
                      fwd(wallThickness)hex_panel([Internal_Width + wallThickness*2,Internal_Height+wallThickness*2, baseThickness], strut = 1, spacing = 5, frame= wallThickness, anchor=FRONT+LEFT+BOT);
 
             //left wall
             translate([-wallThickness,0,0])
                 if (leftCutout == true || Wall_Type == "Solid") //cutouts are not compatible with hex panels at this time. Need to build a frame first. 
-                    cuboid([wallThickness, Internal_Height + wallThickness, Internal_Depth], anchor=FRONT+LEFT+BOT, rounding=edgeRounding, edges = [TOP+LEFT,TOP+BACK,BACK+LEFT]);
+                   cuboid([wallThickness, internalDepth + wallThickness, internalHeight], anchor=FRONT+LEFT+BOT, rounding=edgeRounding, edges = [TOP+LEFT,TOP+BACK,BACK+LEFT]);
                 else    
                      fwd(wallThickness)hex_panel([Internal_Depth, Internal_Height + wallThickness*2,wallThickness], strut = 1, spacing = 7, frame= wallThickness, orient=RIGHT, anchor=FRONT+RIGHT+BOT);
 
             //right wall
-            translate([Internal_Width,0,0])
+            translate([internalWidth,0,0])
                 if (rightCutout == true || Wall_Type == "Solid") //cutouts are not compatible with hex panels at this time. Need to build a frame first. 
-                    cuboid([wallThickness, Internal_Height + wallThickness, Internal_Depth], anchor=FRONT+LEFT+BOT, rounding=edgeRounding, edges = [TOP+RIGHT,TOP+BACK,BACK+RIGHT]);
+                    cuboid([wallThickness, internalDepth + wallThickness, internalHeight], anchor=FRONT+LEFT+BOT, rounding=edgeRounding, edges = [TOP+RIGHT,TOP+BACK,BACK+RIGHT]);
                 else    
                      fwd(wallThickness)hex_panel([Internal_Depth, Internal_Height + wallThickness*2,wallThickness], strut = 1, spacing = 7, frame= wallThickness, orient=RIGHT, anchor=FRONT+RIGHT+BOT);
 
             //front wall            
-            translate([0,Internal_Height,0])
+            translate([0,internalDepth,0])
                 if (frontCutout == true || Wall_Type == "Solid") //cutouts are not compatible with hex panels at this time. Need to build a frame first. 
-                    cuboid([Internal_Width,wallThickness,Internal_Depth], anchor=FRONT+LEFT+BOT, rounding=edgeRounding, edges = [TOP+BACK]);
+                    cuboid([internalWidth,wallThickness,internalHeight], anchor=FRONT+LEFT+BOT, rounding=edgeRounding, edges = [TOP+BACK]);
                 else    
                     back(wallThickness)zrot(-90) hex_panel([Internal_Depth,Internal_Width,wallThickness], strut = 1, spacing = 7, frame= wallThickness,orient=RIGHT, anchor=FRONT+RIGHT+BOT);
         }
 
         //frontCaptureDeleteTool for item holders
             if (frontCutout == true)
-                translate([frontLateralCapture,Internal_Height-1,frontLowerCapture])
-                    cube([Internal_Width-frontLateralCapture*2,wallThickness+2,Internal_Depth-frontLowerCapture-frontUpperCapture+0.01]);
+                translate([frontLateralCapture,internalDepth-1,frontLowerCapture])
+                    cube([internalWidth-frontLateralCapture*2,wallThickness+2,internalHeight-frontLowerCapture-frontUpperCapture+0.01]);
             if (bottomCutout == true)
                 translate(v = [bottomSideCapture,bottomBackCapture,-baseThickness-1]) 
-                    cube([Internal_Width-bottomSideCapture*2,Internal_Height-bottomFrontCapture-bottomBackCapture,baseThickness+2]);
+                    cube([internalWidth-bottomSideCapture*2,internalDepth-bottomFrontCapture-bottomBackCapture,baseThickness+2]);
+                    //frontCaptureDeleteTool for item holders
             if (rightCutout == true)
                 translate([-wallThickness-1,rightLateralCapture,rightLowerCapture])
-                    cube([wallThickness+2,Internal_Height-rightLateralCapture*2,Internal_Depth-rightLowerCapture-rightUpperCapture+0.01]);
+                    cube([wallThickness+2,internalDepth-rightLateralCapture*2,internalHeight-rightLowerCapture-rightUpperCapture+0.01]);
             if (leftCutout == true)
-                translate([Internal_Width-1,leftLateralCapture,leftLowerCapture])
-                    cube([wallThickness+2,Internal_Height-leftLateralCapture*2,Internal_Depth-leftLowerCapture-leftUpperCapture+0.01]);
+                translate([internalWidth-1,leftLateralCapture,leftLowerCapture])
+                    cube([wallThickness+2,internalDepth-leftLateralCapture*2,internalHeight-leftLowerCapture-leftUpperCapture+0.01]);
             if (cordCutout == true) {
-                translate(v = [Internal_Width/2+cordCutoutLateralOffset,Internal_Height/2+cordCutoutDepthOffset,-baseThickness-1]) {
+                translate(v = [internalWidth/2+cordCutoutLateralOffset,internalDepth/2+cordCutoutDepthOffset,-baseThickness-1]) {
                     union(){
                         cylinder(h = baseThickness + frontLowerCapture + 2, r = cordCutoutDiameter/2);
-                        translate(v = [-cordCutoutDiameter/2,0,0]) cube([cordCutoutDiameter,Internal_Width/2+wallThickness+1,baseThickness + frontLowerCapture + 2]);
+                        translate(v = [-cordCutoutDiameter/2,0,0]) cube([cordCutoutDiameter,internalWidth/2+wallThickness+1,baseThickness + frontLowerCapture + 2]);
                     }
                 }
             }
@@ -215,11 +260,11 @@ module basket() {
 
 //BEGIN MODULES
 //Slotted back Module
-module multiconnectBack(backWidth, backHeight, distanceBetweenSlots, slotStopFromBack = 13)
+module makebackPlate(backWidth, backHeight, distanceBetweenSlots, backThickness, slotStopFromBack = 13)
 {
     //slot count calculates how many slots can fit on the back. Based on internal width for buffer. 
     //slot width needs to be at least the distance between slot for at least 1 slot to generate
-    let (backWidth = max(backWidth,distanceBetweenSlots), backHeight = max(backHeight, 25),slotCount = floor(backWidth/distanceBetweenSlots) - subtractedSlots, backThickness = 6.5){
+    let (backWidth = max(backWidth,distanceBetweenSlots), backHeight = max(backHeight, 25),slotCount = floor(backWidth/distanceBetweenSlots)- subtractedSlots){
         difference() {
             translate(v = [0,-backThickness,0]) 
             cuboid(size = [backWidth,backThickness,backHeight], rounding=edgeRounding, except_edges=BACK, anchor=FRONT+LEFT+BOT);
@@ -227,48 +272,158 @@ module multiconnectBack(backWidth, backHeight, distanceBetweenSlots, slotStopFro
             //Note: I kept doing math until it looked right. It's possible this can be simplified.
             for (slotNum = [0:1:slotCount-1]) {
                 translate(v = [distanceBetweenSlots/2+(backWidth/distanceBetweenSlots-slotCount)*distanceBetweenSlots/2+slotNum*distanceBetweenSlots,-2.35+slotDepthMicroadjustment,backHeight-Multiconnect_Stop_Distance_From_Back]) {
-                    slotTool(backHeight);
+                    if(Connection_Type == "Multipoint"){
+                        multiPointSlotTool(totalHeight);
+                    }
+                    if(Connection_Type == "Multiconnect"){
+                        multiConnectSlotTool(totalHeight);
                 }
             }
         }
     }
-    //Create Slot Tool
-    module slotTool(totalDepth) {
-        //In slotTool, added a new variable distanceOffset which is set by the option:
-        distanceOffset = onRampHalfOffset ? distanceBetweenSlots / 2 : 0;
+    }
+}
 
-        scale(v = slotTolerance)
-        //slot minus optional dimple with optional on-ramp
-        let (slotProfile = [[0,0],[10.15,0],[10.15,1.2121],[7.65,3.712],[7.65,5],[0,5]])
-        difference() {
-            union() {
-                //round top
-                rotate(a = [90,0,0,]) 
-                    rotate_extrude($fn=50) 
+//Create Slot Tool
+module multiConnectSlotTool(totalHeight) {
+    //In slotTool, added a new variable distanceOffset which is set by the option:
+    distanceOffset = onRampHalfOffset ? distanceBetweenSlots / 2 : 0;
+    scale(v = slotTolerance)
+    //slot minus optional dimple with optional on-ramp
+    let (slotProfile = [[0,0],[10.15,0],[10.15,1.2121],[7.65,3.712],[7.65,5],[0,5]])
+    difference() {
+        union() {
+            //round top
+            rotate(a = [90,0,0,]) 
+                rotate_extrude($fn=50) 
+                    polygon(points = slotProfile);
+            //long slot
+            translate(v = [0,0,0]) 
+                rotate(a = [180,0,0]) 
+                linear_extrude(height = totalHeight+1) 
+                    union(){
+                        polygon(points = slotProfile);
+                        mirror([1,0,0])
+                            polygon(points = slotProfile);
+                    }
+            //on-ramp
+            if(onRampEnabled)
+                for(y = [1:onRampEveryXSlots:totalHeight/distanceBetweenSlots])
+                    //then modify the translate within the on-ramp code to include the offset
+                    translate(v = [0,-5,(-y*distanceBetweenSlots)+distanceOffset])
+                        rotate(a = [-90,0,0]) 
+                            cylinder(h = 5, r1 = 12, r2 = 10.15);
+        }
+        //dimple
+        if (slotQuickRelease == false)
+            scale(v = dimpleScale) 
+            rotate(a = [90,0,0,]) 
+                rotate_extrude($fn=50) 
+                    polygon(points = [[0,0],[0,1.5],[1.5,0]]);
+    }
+}
+
+module multiPointSlotTool(totalHeight) {
+    slotBaseRadius = 17.0 / 2.0;  // wider width of the inner part of the channel
+    slotSkinRadius = 13.75 / 2.0;  // narrower part of the channel near the skin of the model
+    slotBaseCatchDepth = .2;  // innermost before the chamfer, base to chamfer height
+    slotBaseToSkinChamferDepth = 2.2;  // middle part of the chamfer
+    slotSkinDepth = .1;  // top or skinmost part of the channel
+    distanceOffset = onRampHalfOffset ? distanceBetweenSlots / 2 : 0;
+    octogonScale = 1/sin(67.5);  // math convenience function to convert an octogon hypotenuse to the short length
+    let (slotProfile = [
+        [0,0],
+        [slotBaseRadius,0],
+        [slotBaseRadius, slotBaseCatchDepth],
+        [slotSkinRadius, slotBaseCatchDepth + slotBaseToSkinChamferDepth],
+        [slotSkinRadius, slotBaseCatchDepth + slotBaseToSkinChamferDepth + slotSkinDepth],
+        [0, slotBaseCatchDepth + slotBaseToSkinChamferDepth + slotSkinDepth]
+    ])
+    union() {
+        //octagonal top. difference on union because we need to support the dimples cut in.
+        difference(){
+            //union of top and rail.
+            union(){
+                scale([octogonScale,1,octogonScale])
+                rotate(a = [90,67.5,0,]) 
+                    rotate_extrude($fn=8) 
                         polygon(points = slotProfile);
                 //long slot
                 translate(v = [0,0,0]) 
                     rotate(a = [180,0,0]) 
-                    linear_extrude(height = totalDepth+1) 
+                    linear_extrude(height = totalHeight+1) 
                         union(){
                             polygon(points = slotProfile);
                             mirror([1,0,0])
                                 polygon(points = slotProfile);
                         }
-                //on-ramp
-                if(onRampEnabled)
-                    for(y = [1:onRampEveryXSlots:totalDepth/distanceBetweenSlots])
-                        //then modify the translate within the on-ramp code to include the offset
-                        translate(v = [0,-5,(-y*distanceBetweenSlots)+distanceOffset])
-                            rotate(a = [-90,0,0]) 
-                                cylinder(h = 5, r1 = 12, r2 = 10.15);
             }
-            //dimple
-            if (slotQuickRelease == false)
-                scale(v = dimpleScale) 
-                rotate(a = [90,0,0,]) 
-                    rotate_extrude($fn=50) 
-                        polygon(points = [[0,0],[0,1.5],[1.5,0]]);
+            //dimples on each catch point
+            if (!slotQuickRelease){
+                for(z = [1:onRampEveryXSlots:totalHeight/distanceBetweenSlots ])
+                {
+                    echo("building on z", z);
+                    yMultipointSlotDimples(z, slotBaseRadius, distanceBetweenSlots, distanceOffset);
+                }
+            }
         }
+        //on-ramp
+        if(onRampEnabled)
+            union(){
+                for(y = [1:onRampEveryXSlots:totalHeight/distanceBetweenSlots])
+                {
+                    // create the main entry hexagons
+                    translate(v = [0,-5,(-y*distanceBetweenSlots)+distanceOffset])
+                    scale([octogonScale,1,octogonScale])
+                        rotate(a = [-90,67.5,0]) 
+                            cylinder(h=5, r=slotBaseRadius, $fn=8);
+                    
+                // make the required "pop-in" locking channel dimples.
+                xSlotDimples(y, slotBaseRadius, distanceBetweenSlots, distanceOffset);
+                mirror([1,0,0])
+                     xSlotDimples(y, slotBaseRadius, distanceBetweenSlots, distanceOffset);
+                }
+            }
     }
 }
+
+module xSlotDimples(y, slotBaseRadius, distanceBetweenSlots, distanceOffset){
+    //Multipoint dimples are truncated (on top and side) pyramids
+    //this function makes one pair of them
+    dimple_pitch = 4.5 / 2; //distance between locking dimples
+    difference(){
+        translate(v = [slotBaseRadius-0.01,0,(-y*distanceBetweenSlots)+distanceOffset+dimple_pitch])
+            rotate(a = [90,45,90]) 
+            rotate_extrude($fn=4) 
+                polygon(points = [[0,0],[0,1.5],[1.7,0]]);
+        translate(v = [slotBaseRadius+.75, -2, (-y*distanceBetweenSlots)+distanceOffset-1])
+                cube(4);
+        translate(v = [slotBaseRadius-2, 0.01, (-y*distanceBetweenSlots)+distanceOffset-1])
+                cube(7);
+        }
+        difference(){
+        translate(v = [slotBaseRadius-0.01,0,(-y*distanceBetweenSlots)+distanceOffset-dimple_pitch])
+            rotate(a = [90,45,90]) 
+            rotate_extrude($fn=4) 
+                polygon(points = [[0,0],[0,1.5],[1.7,0]]);
+        translate(v = [slotBaseRadius+.75, -2.01, (-y*distanceBetweenSlots)+distanceOffset-3])
+                cube(4);
+        translate(v = [slotBaseRadius-2, 0.01, (-y*distanceBetweenSlots)+distanceOffset-5])
+                cube(10);
+        }
+}
+module yMultipointSlotDimples(z, slotBaseRadius, distanceBetweenSlots, distanceOffset){
+    //This creates the multipoint point out dimples within the channel.
+    octogonScale = 1/sin(67.5);
+    difference(){
+        translate(v = [0,0.01,((-z+.5)*distanceBetweenSlots)+distanceOffset])
+            scale([octogonScale,1,octogonScale])
+                rotate(a = [-90,67.5,0]) 
+                    rotate_extrude($fn=8) 
+                        polygon(points = [[0,0],[0,-1.5],[5,0]]);
+        translate(v = [0,0,((-z+.5)*distanceBetweenSlots)+distanceOffset])
+            cube([10,3,3], center=true);
+        translate(v = [0,0,((-z+.5)*distanceBetweenSlots)+distanceOffset])
+           cube([3,3,10], center=true);
+    }
+}   

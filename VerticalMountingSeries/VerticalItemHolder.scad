@@ -34,8 +34,8 @@ Notes:
 include <BOSL2/std.scad>
 include <BOSL2/walls.scad>
 
-/* [Slot Type] */
-//How do you intend to mount the item holder to a surface such as Multipoint connections or DrewD's Multiconnect?
+/* [Beta Feature - Slot Type] */
+//Multipoint in Beta - Please share feedback! How do you intend to mount the item holder to a surface such as Multipoint connections or DavidD's Multiconnect?
 Connection_Type = "Multiconnect"; // [Multipoint, Multiconnect]
 
 /* [Internal Dimensions] */
@@ -126,7 +126,9 @@ slotDepthMicroadjustment = 0; //[-.5:0.05:.5]
 //enable a slot on-ramp for easy mounting of tall items
 onRampEnabled = true;
 //frequency of slots for on-ramp. 1 = every slot; 2 = every 2 slots; etc.
-onRampEveryXSlots = 1;
+On_Ramp_Every_X_Slots = 1;
+//Distance from the back of the item holder to where the multiconnect stops (i.e., where the dimple is) (by mm)
+Multiconnect_Stop_Distance_From_Back = 13;
 
 /* [Hidden] */
 debugCutoutTool = false;
@@ -135,6 +137,8 @@ if(debugCutoutTool){
     if(Connection_Type == "Multiconnect") multiConnectSlotTool(totalHeight);
     else multiPointSlotTool(totalHeight);
 }
+
+onRampEveryXSlots = On_Ramp_Every_X_Slots;
 
 //Calculated
 totalHeight = internalHeight+baseThickness;
@@ -214,9 +218,8 @@ module basket() {
 
 //BEGIN MODULES
 //Slotted back Module
-module makebackPlate(backWidth, backHeight, distanceBetweenSlots, backThickness)
+module makebackPlate(backWidth, backHeight, distanceBetweenSlots, backThickness, slotStopFromBack = 13)
 {
-    
     //slot count calculates how many slots can fit on the back. Based on internal width for buffer. 
     //slot width needs to be at least the distance between slot for at least 1 slot to generate
     let (backWidth = max(backWidth,distanceBetweenSlots), backHeight = max(backHeight, 25),slotCount = floor(backWidth/distanceBetweenSlots)- subtractedSlots){
@@ -226,7 +229,7 @@ module makebackPlate(backWidth, backHeight, distanceBetweenSlots, backThickness)
             //Loop through slots and center on the item
             //Note: I kept doing math until it looked right. It's possible this can be simplified.
             for (slotNum = [0:1:slotCount-1]) {
-                translate(v = [distanceBetweenSlots/2+(backWidth/distanceBetweenSlots-slotCount)*distanceBetweenSlots/2+slotNum*distanceBetweenSlots,-2.35+slotDepthMicroadjustment,backHeight-13]) {
+                translate(v = [distanceBetweenSlots/2+(backWidth/distanceBetweenSlots-slotCount)*distanceBetweenSlots/2+slotNum*distanceBetweenSlots,-2.35+slotDepthMicroadjustment,backHeight-Multiconnect_Stop_Distance_From_Back]) {
                     if(Connection_Type == "Multipoint"){
                         multiPointSlotTool(totalHeight);
                     }
@@ -238,6 +241,8 @@ module makebackPlate(backWidth, backHeight, distanceBetweenSlots, backThickness)
         }
     }   
 }
+
+//Create Slot Tool
 module multiConnectSlotTool(totalHeight) {
     //In slotTool, added a new variable distanceOffset which is set by the option:
     distanceOffset = onRampHalfOffset ? distanceBetweenSlots / 2 : 0;
@@ -313,7 +318,7 @@ module multiPointSlotTool(totalHeight) {
             }
             //dimples on each catch point
             if (!slotQuickRelease){
-                for(z = [1:onRampEveryXSlots:totalHeight/distanceBetweenSlots ])
+                for(z = [1:On_Ramp_Every_X_Slots:totalHeight/distanceBetweenSlots ])
                 {
                     echo("building on z", z);
                     yMultipointSlotDimples(z, slotBaseRadius, distanceBetweenSlots, distanceOffset);
@@ -323,7 +328,7 @@ module multiPointSlotTool(totalHeight) {
         //on-ramp
         if(onRampEnabled)
             union(){
-                for(y = [1:onRampEveryXSlots:totalHeight/distanceBetweenSlots])
+                for(y = [1:On_Ramp_Every_X_Slots:totalHeight/distanceBetweenSlots])
                 {
                     // create the main entry hexagons
                     translate(v = [0,-5,(-y*distanceBetweenSlots)+distanceOffset])
