@@ -18,6 +18,7 @@ include <BOSL2/rounding.scad>
 
 /*[Part Selection)]*/
 Select_Part = "Straight"; //[Drawer Wall Mounts, Straight, Straight End, X Intersection, T Intersection, L Intersection, Vertical Trim]
+Top_or_Bottom = "Both"; //[Top, Bottom, Both]
 
 /*[Base Options]*/
 //Not yet implemented
@@ -150,37 +151,47 @@ if(Select_Part == "Drawer Wall Mounts"){
 }
 
 if(Select_Part == "Straight"){
+    if(Top_or_Bottom != "Top") 
     fwd(quantup(Channel_Length, grid_size)/2+Part_Separation) 
         NeoGrid_Straight_Thru_Base(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size, Channel_Length = Channel_Length);
+    if(Top_or_Bottom != "Bottom") 
     back(Channel_Length/2+Part_Separation)
         NeoGrid_Straight_Thru_Top(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size, Channel_Length = Channel_Length);
 }
 if(Select_Part == "X Intersection"){
-        left(part_placement)
+    if(Top_or_Bottom != "Top") 
+    left(part_placement)
         NeoGrid_X_Intersection_Base(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
+    if(Top_or_Bottom != "Bottom") 
     right(part_placement)
         NeoGrid_X_Intersection_Top(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
 }
 
 if(Select_Part == "T Intersection"){
+    if(Top_or_Bottom != "Top") 
     left(part_placement)
         NeoGrid_T_Intersection_Base(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
+    if(Top_or_Bottom != "Bottom") 
     right(part_placement)
         NeoGrid_T_Intersection_Top(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
 
 }
 
 if(Select_Part == "Straight End"){
+    if(Top_or_Bottom != "Top") 
     left(part_placement)
         NeoGrid_Straight_End_Base(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
+    if(Top_or_Bottom != "Bottom") 
     right(part_placement)
         NeoGrid_Straight_End_Top(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
 
 }
 
 if(Select_Part == "L Intersection"){
+    if(Top_or_Bottom != "Top") 
     left(part_placement) 
         NeoGrid_L_Intersection_Base(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
+    if(Top_or_Bottom != "Bottom") 
     right(part_placement)
         NeoGrid_L_Intersection_Top(Material_Thickness, Channel_Depth = Channel_Depth, Wall_Thickness = Wall_Thickness, grid_size = grid_size);
 
