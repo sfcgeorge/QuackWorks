@@ -47,7 +47,11 @@ insideExtrusion = (Tile_Size-Tile_Inner_Size)/2-Outside_Extrusion; //0.7 default
 middleDistance = Tile_Thickness-Top_Capture_Initial_Inset*2;
 cornerChamfer = Top_Capture_Initial_Inset-Inside_Grid_Middle_Chamfer; //1.4 default
 
-//Build Grid Faster
+
+wonderboardGrid(Board_Width = Board_Width, Board_Height = Board_Height);
+
+module wonderboardGrid(Board_Width, Board_Height){
+    move([-Board_Width*Tile_Size/2, -Board_Height*Tile_Size/2, 0])
     render(convexity=2)
     for(i=[0: Board_Width-1]) {
       for(j=[0: Board_Height-1]) {
@@ -56,13 +60,12 @@ cornerChamfer = Top_Capture_Initial_Inset-Inside_Grid_Middle_Chamfer; //1.4 defa
             else wonderboardTileAp2();
       }
     }
+}
 
 /*
 //Build Grid
-*diff(){
-    grid_copies(spacing=Tile_Size, n=[Board_Width,Board_Height])
-        if(Render_Method == "2D") wonderboardTileAp1();
-        else wonderboardTileAp2();
+diff(){
+    wonderboardGrid(Board_Width = Board_Width, Board_Height = Board_Height);
 
     //All Intersections
     if(Bevel_Everywhere)
