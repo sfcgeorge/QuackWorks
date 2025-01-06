@@ -74,14 +74,16 @@ if(Connection_Type == "Multipoint"){
         maxBackWidth = totalWidth, 
         backHeight = totalHeight, 
         distanceBetweenSlots = distanceBetweenSlots,
-        backThickness=4.8);
+        backThickness=4.8,
+        enforceMaxWidth=false);
 }
 if(Connection_Type == "Multiconnect"){
     makebackPlate(
         maxBackWidth = totalWidth, 
         backHeight = totalHeight, 
         distanceBetweenSlots = distanceBetweenSlots,
-        backThickness=6.5);
+        backThickness=6.5,
+        enforceMaxWidth=false);
 }
 //Create Basket
 module cableHolder(trueHolderHeight, holderDiameter, postDiameter, extraHoldingEdgeLength, verticalResolution, horizontalResolution) {
@@ -123,33 +125,62 @@ module cableHolder(trueHolderHeight, holderDiameter, postDiameter, extraHoldingE
 
 //BEGIN MODULES
 //Slotted back Module
-//maxBackWidth
-module makebackPlate(maxBackWidth, backHeight, distanceBetweenSlots, backThickness)
+module makebackPlate(maxBackWidth, backHeight, distanceBetweenSlots, backThickness, slotStopFromBack = 13, enforceMaxWidth)
 {
     //every slot is a multiple of distanceBetweenSlots. The default of 25 accounts for the rail, and the ~5mm to either side.
     //first calculate the starting slot location based on the number of slots.
-    slotCount = floor(maxBackWidth/distanceBetweenSlots)- subtractedSlots;
-    trueWidth = slotCount * distanceBetweenSlots;
+    slotCount = floor(maxBackWidth/distanceBetweenSlots) - subtractedSlots;
+    // only use maxBackWidth if we have to, otherwise scale down by slots.
+    trueWidth = (enforceMaxWidth) ? maxBackWidth : slotCount * distanceBetweenSlots;
     trueBackHeight = max(backHeight, 25);
-    backPlateLeft = (-0.5 * trueWidth);
+    backPlateTranslation = [0,-backThickness, 0];
     
     //slot count calculates how many slots can fit on the back. Based on internal width for buffer. 
     //slot width needs to be at least the distance between slot for at least 1 slot to generate
-    translate([backPlateLeft,0,0])
     difference() {
-        translate(v = [0,-backThickness,0]) 
+        translate(v = backPlateTranslation) 
         cuboid(size = [trueWidth, backThickness, trueBackHeight], 
                rounding=edgeRounding, 
                except_edges=BACK, 
-               anchor=FRONT+LEFT+BOT
+               anchor=FRONT+BOT
               );
         //Loop through slots and center on the item
         //Note: I kept doing math until it looked right. It's possible this can be simplified.
-        for (slotLoc = [0.5:1:slotCount]) {  //using 0.5 increment on 1's so we can still create slots 'in the midde' of each column
+        if(slotCount % 2 == 1){
+            //odd number of slots, place on on x=0
+            translate(v = [0,
+                           -2.35 + slotDepthMicroadjustment,
+                           trueBackHeight-slotStopFromBack
+                          ])
+                {
+                if(Connection_Type == "Multipoint"){
+                    multiPointSlotTool(totalHeight);
+                }
+                if(Connection_Type == "Multiconnect"){
+                    multiConnectSlotTool(totalHeight);
+                }
+            }
+        }
+        remainingSlots = (slotCount % 2 == 1) ? (slotCount - 1) : slotCount; //now place this many slots offset from center
+        initialLoc = (slotCount % 2 == 1) ? 1 : 0.5;  // how far from center to start the incrementor?
+        for (slotLoc = [initialLoc:2:remainingSlots]) {
+            // place a slot left and right of center.
             echo("slotLoc", slotLoc)
             translate(v = [slotLoc * distanceBetweenSlots,
                            -2.35 + slotDepthMicroadjustment,
-                           trueBackHeight-13
+                           trueBackHeight-slotStopFromBack
+                          ])
+                {
+                if(Connection_Type == "Multipoint"){
+                    multiPointSlotTool(totalHeight);
+                }
+                if(Connection_Type == "Multiconnect"){
+                    multiConnectSlotTool(totalHeight);
+                }
+            }
+            translate(v = [slotLoc * distanceBetweenSlots * -1,
+                           -2.35 + slotDepthMicroadjustment,
+                           trueBackHeight-slotStopFromBack
                           ])
                 {
                 if(Connection_Type == "Multipoint"){
