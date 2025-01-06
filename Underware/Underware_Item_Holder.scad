@@ -205,28 +205,28 @@ module basket() {
     difference() {
         union() {
             //bottom
-            translate([-wallThickness,0,-baseThickness])
+            translate([-wallThickness,0,0])
                 if (bottomCutout == true || Wall_Type == "Solid") //cutouts are not compatible with hex panels at this time. Need to build a frame first. 
                     cuboid([internalWidth + wallThickness*2, internalDepth + wallThickness,baseThickness], anchor=FRONT+LEFT+BOT, rounding=edgeRounding, edges = [BOTTOM+LEFT,BOTTOM+RIGHT,BOTTOM+BACK,LEFT+BACK,RIGHT+BACK]);
                 else    
                      fwd(wallThickness)hex_panel([Internal_Width + wallThickness*2,Internal_Height+wallThickness*2, baseThickness], strut = 1, spacing = 5, frame= wallThickness, anchor=FRONT+LEFT+BOT);
 
             //left wall
-            translate([-wallThickness,0,0])
+            translate([-wallThickness,0,baseThickness])
                 if (leftCutout == true || Wall_Type == "Solid") //cutouts are not compatible with hex panels at this time. Need to build a frame first. 
                    cuboid([wallThickness, internalDepth + wallThickness, internalHeight], anchor=FRONT+LEFT+BOT, rounding=edgeRounding, edges = [TOP+LEFT,TOP+BACK,BACK+LEFT]);
                 else    
                      fwd(wallThickness)hex_panel([Internal_Depth, Internal_Height + wallThickness*2,wallThickness], strut = 1, spacing = 7, frame= wallThickness, orient=RIGHT, anchor=FRONT+RIGHT+BOT);
 
             //right wall
-            translate([internalWidth,0,0])
+            translate([internalWidth,0,baseThickness])
                 if (rightCutout == true || Wall_Type == "Solid") //cutouts are not compatible with hex panels at this time. Need to build a frame first. 
                     cuboid([wallThickness, internalDepth + wallThickness, internalHeight], anchor=FRONT+LEFT+BOT, rounding=edgeRounding, edges = [TOP+RIGHT,TOP+BACK,BACK+RIGHT]);
                 else    
                      fwd(wallThickness)hex_panel([Internal_Depth, Internal_Height + wallThickness*2,wallThickness], strut = 1, spacing = 7, frame= wallThickness, orient=RIGHT, anchor=FRONT+RIGHT+BOT);
 
             //front wall            
-            translate([0,internalDepth,0])
+            translate([0,internalDepth,baseThickness])
                 if (frontCutout == true || Wall_Type == "Solid") //cutouts are not compatible with hex panels at this time. Need to build a frame first. 
                     cuboid([internalWidth,wallThickness,internalHeight], anchor=FRONT+LEFT+BOT, rounding=edgeRounding, edges = [TOP+BACK]);
                 else    
@@ -238,7 +238,7 @@ module basket() {
                 translate([frontLateralCapture,internalDepth-1,frontLowerCapture])
                     cube([internalWidth-frontLateralCapture*2,wallThickness+2,internalHeight-frontLowerCapture-frontUpperCapture+0.01]);
             if (bottomCutout == true)
-                translate(v = [bottomSideCapture,bottomBackCapture,-baseThickness-1]) 
+                translate(v = [bottomSideCapture,bottomBackCapture,-1]) 
                     cube([internalWidth-bottomSideCapture*2,internalDepth-bottomFrontCapture-bottomBackCapture,baseThickness+2]);
                     //frontCaptureDeleteTool for item holders
             if (rightCutout == true)
@@ -248,7 +248,7 @@ module basket() {
                 translate([internalWidth-1,leftLateralCapture,leftLowerCapture])
                     cube([wallThickness+2,internalDepth-leftLateralCapture*2,internalHeight-leftLowerCapture-leftUpperCapture+0.01]);
             if (cordCutout == true) {
-                translate(v = [internalWidth/2+cordCutoutLateralOffset,internalDepth/2+cordCutoutDepthOffset,-baseThickness-1]) {
+                translate(v = [internalWidth/2+cordCutoutLateralOffset,internalDepth/2+cordCutoutDepthOffset,-1]) {
                     union(){
                         cylinder(h = baseThickness + frontLowerCapture + 2, r = cordCutoutDiameter/2);
                         translate(v = [-cordCutoutDiameter/2,0,0]) cube([cordCutoutDiameter,internalWidth/2+wallThickness+1,baseThickness + frontLowerCapture + 2]);
