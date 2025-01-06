@@ -187,7 +187,7 @@ union(){
             distanceBetweenSlots = distanceBetweenSlots,
             backThickness=4.8,
             enforceMaxWidth=true,
-            translateDownByWallThickness=true);
+            );
     }
     if(Connection_Type == "Multiconnect"){
         makebackPlate(
@@ -196,7 +196,7 @@ union(){
             distanceBetweenSlots = distanceBetweenSlots,
             backThickness=6.5,
             enforceMaxWidth=true,
-            translateDownByWallThickness=true);
+            );
     }
 }
 
@@ -262,7 +262,7 @@ module basket() {
 
 //BEGIN MODULES
 //Slotted back Module
-module makebackPlate(maxBackWidth, backHeight, distanceBetweenSlots, backThickness, slotStopFromBack = 13, enforceMaxWidth, translateDownByWallThickness)
+module makebackPlate(maxBackWidth, backHeight, distanceBetweenSlots, backThickness, slotStopFromBack = 13, enforceMaxWidth)
 {
     //every slot is a multiple of distanceBetweenSlots. The default of 25 accounts for the rail, and the ~5mm to either side.
     //first calculate the starting slot location based on the number of slots.
@@ -270,20 +270,10 @@ module makebackPlate(maxBackWidth, backHeight, distanceBetweenSlots, backThickne
     // only use maxBackWidth if we have to, otherwise scale down by slots.
     trueWidth = (enforceMaxWidth) ? maxBackWidth : slotCount * distanceBetweenSlots;
     trueBackHeight = max(backHeight, 25);
-    backPlateLeft = (-0.5 * trueWidth);
-    //backPlateBottom = (translateDownByWallThickness) ? backThickness : 0;
-    backPlateBottom = 0;
-    backPlateTranslation = [0,-backThickness, -backPlateBottom*.5];
-    echo("enforceMaxWidth = ", enforceMaxWidth);
-    echo("maxBackWidth = ", maxBackWidth);
-    echo("slotCount = ", slotCount);
-    echo("trueWidth = ", trueWidth);
-    echo("trueBackHeight = ", trueBackHeight);
-    echo("backPlateLeft = ", backPlateLeft);
+    backPlateTranslation = [0,-backThickness, 0];
     
     //slot count calculates how many slots can fit on the back. Based on internal width for buffer. 
     //slot width needs to be at least the distance between slot for at least 1 slot to generate
-    //translate([backPlateLeft,0,0])
     difference() {
         translate(v = backPlateTranslation) 
         cuboid(size = [trueWidth, backThickness, trueBackHeight], 
