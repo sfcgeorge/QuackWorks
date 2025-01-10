@@ -82,6 +82,12 @@ grid_clearance = Selected_Base == "Gridfinity" ? 0.5 : 1; //adjusted grid size f
 calculated_base_height = Selected_Base == "Gridfinity" ? 4.75+0.6 : //0.6 is the additional height for the gridfinity baseplate by default. Update this if parameterized. 
     Selected_Base == "Flat" ? Flat_Base_Thickness:
     0;
+
+text_depth = 1;
+text_size = 7;
+font = "Monsterrat:style=Bold";
+specs_text = str("th", Material_Thickness);
+    
 /*
 
 BEGIN DISPLAYS
@@ -265,6 +271,7 @@ BEGIN NEOGRID MODULES
 
 
 
+
 module channelDeleteTool(size, chamfer_edges = [BOT], spike_count = 1, anchor = CENTER, spin = 0, orient = UP){
     tag_scope()
     diff("spike"){
@@ -322,6 +329,7 @@ module NeoGrid_Straight_Thru_Base(Material_Thickness, Channel_Depth = 20, Wall_T
             attach(TOP, BOT, inside=true, shiftout=0.01)
                 channelDeleteTool([Material_Thickness, Channel_Length+0.02,Channel_Depth+0.02]);
             }
+        tag("remove")mirror([1,0,0])text3d(specs_text, size=text_size, font=font, h=1, anchor=CENTER, atype="ycenter");
     }
 }
 
