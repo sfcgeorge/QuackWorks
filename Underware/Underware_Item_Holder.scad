@@ -175,6 +175,15 @@ totalDepth = internalDepth + wallThickness;
 totalWidth = internalWidth + wallThickness*2;
 totalCenterX = internalWidth/2;
 
+*        makebackPlate(
+            maxBackWidth = totalWidth, 
+            backHeight = totalHeight, 
+            distanceBetweenSlots = distanceBetweenSlots,
+            backThickness= Connection_Type == "Multipoint" ? 4.8 : 6.5,
+            enforceMaxWidth=true,
+            slotStopFromBack = Multiconnect_Stop_Distance_From_Back
+            ) show_anchors();
+
 if(!debugCutoutTool)
 union(){
     if(!backPlateOnly)
@@ -182,27 +191,16 @@ union(){
         translate(v = [-internalWidth/2,0,0]) 
             basket();
     //slotted back
-    if(Connection_Type == "Multipoint"){
-        makebackPlate(
-            maxBackWidth = totalWidth, 
-            backHeight = totalHeight, 
-            distanceBetweenSlots = distanceBetweenSlots,
-            backThickness=4.8,
-            enforceMaxWidth=true,
-            slotStopFromBack = Multiconnect_Stop_Distance_From_Back
-            );
-    }
-    if(Connection_Type == "Multiconnect"){
+    makebackPlate(
+        maxBackWidth = totalWidth, 
+        backHeight = totalHeight, 
+        distanceBetweenSlots = distanceBetweenSlots,
+        backThickness= Connection_Type == "Multipoint" ? 4.8 : 6.5,
+        enforceMaxWidth=true,
+        slotStopFromBack = Multiconnect_Stop_Distance_From_Back,
+        anchor=BOT+BACK
+        );
 
-        makebackPlate(
-            maxBackWidth = totalWidth, 
-            backHeight = totalHeight, 
-            distanceBetweenSlots = distanceBetweenSlots,
-            backThickness=6.5,
-            enforceMaxWidth=true,
-            slotStopFromBack = Multiconnect_Stop_Distance_From_Back
-            );
-    }
 }
 
 //Create Basket
@@ -267,9 +265,8 @@ module basket() {
 
 //BEGIN MODULES
 //Slotted back Module
-module makebackPlate(maxBackWidth, backHeight, distanceBetweenSlots, backThickness, slotStopFromBack = 13, enforceMaxWidth)
+module makebackPlate(maxBackWidth, backHeight, distanceBetweenSlots, backThickness, slotStopFromBack = 13, enforceMaxWidth, anchor=CENTER, spin=0, orient=UP)
 {
-    
     //every slot is a multiple of distanceBetweenSlots. The default of 25 accounts for the rail, and the ~5mm to either side.
     //first calculate the starting slot location based on the number of slots.
     slotCount = floor(maxBackWidth/distanceBetweenSlots) - subtractedSlots;
@@ -277,65 +274,70 @@ module makebackPlate(maxBackWidth, backHeight, distanceBetweenSlots, backThickne
     trueWidth = (enforceMaxWidth) ? maxBackWidth : slotCount * distanceBetweenSlots;
     trueBackHeight = max(backHeight, 25);
     backPlateTranslation = [0,-backThickness, 0];
-    
-    //slot count calculates how many slots can fit on the back. Based on internal width for buffer. 
-    //slot width needs to be at least the distance between slot for at least 1 slot to generate
-    yrot(Slot_From_Top ? 180 : 0) up(Slot_From_Top ? -trueBackHeight : 0)
-    difference() {
-        translate(v = backPlateTranslation) 
-        cuboid(size = [trueWidth, backThickness, trueBackHeight], 
-               rounding=edgeRounding, 
-               except_edges=BACK, 
-               anchor=FRONT+BOT
-              );
-        //Loop through slots and center on the item
-        //Note: I kept doing math until it looked right. It's possible this can be simplified.
-        if(slotCount % 2 == 1){
-            //odd number of slots, place on on x=0
-            translate(v = [0,
-                           -2.35 + slotDepthMicroadjustment,
-                           trueBackHeight-slotStopFromBack
-                          ])
-                {
-                if(Connection_Type == "Multipoint"){
-                    multiPointSlotTool(totalHeight);
-                }
-                if(Connection_Type == "Multiconnect"){
-                    multiConnectSlotTool(totalHeight);
-                }
-            }
-        }
-        remainingSlots = (slotCount % 2 == 1) ? (slotCount - 1) : slotCount; //now place this many slots offset from center
-        initialLoc = (slotCount % 2 == 1) ? 1 : 0.5;  // how far from center to start the incrementor?
-        for (slotLoc = [initialLoc:2:remainingSlots]) {
-            // place a slot left and right of center.
-            echo("slotLoc", slotLoc)
-            translate(v = [slotLoc * distanceBetweenSlots,
-                           -2.35 + slotDepthMicroadjustment,
-                           trueBackHeight-slotStopFromBack
-                          ])
-                {
-                if(Connection_Type == "Multipoint"){
-                    multiPointSlotTool(totalHeight);
-                }
-                if(Connection_Type == "Multiconnect"){
-                    multiConnectSlotTool(totalHeight);
+    attachable(anchor, spin, orient, size=[trueWidth,backThickness,trueBackHeight]){
+        //final position for anchor alignment
+        translate(v = [0,backThickness/2,-trueBackHeight/2]) 
+        //flip if slotting from top
+        yrot(Slot_From_Top ? 180 : 0) up(Slot_From_Top ? -trueBackHeight : 0)
+        //slot count calculates how many slots can fit on the back. Based on internal width for buffer. 
+        //slot width needs to be at least the distance between slot for at least 1 slot to generate
+        difference() {
+            translate(v = backPlateTranslation) 
+            cuboid(size = [trueWidth, backThickness, trueBackHeight], 
+                rounding=edgeRounding, 
+                except_edges=BACK, 
+                anchor=FRONT+BOT
+                );
+            //Loop through slots and center on the item
+            //Note: I kept doing math until it looked right. It's possible this can be simplified.
+            if(slotCount % 2 == 1){
+                //odd number of slots, place on on x=0
+                translate(v = [0,
+                            -2.35 + slotDepthMicroadjustment,
+                            trueBackHeight-slotStopFromBack
+                            ])
+                    {
+                    if(Connection_Type == "Multipoint"){
+                        multiPointSlotTool(totalHeight);
+                    }
+                    if(Connection_Type == "Multiconnect"){
+                        multiConnectSlotTool(totalHeight);
+                    }
                 }
             }
-            translate(v = [slotLoc * distanceBetweenSlots * -1,
-                           -2.35 + slotDepthMicroadjustment,
-                           trueBackHeight-slotStopFromBack
-                          ])
-                {
-                if(Connection_Type == "Multipoint"){
-                    multiPointSlotTool(totalHeight);
+            remainingSlots = (slotCount % 2 == 1) ? (slotCount - 1) : slotCount; //now place this many slots offset from center
+            initialLoc = (slotCount % 2 == 1) ? 1 : 0.5;  // how far from center to start the incrementor?
+            for (slotLoc = [initialLoc:2:remainingSlots]) {
+                // place a slot left and right of center.
+                echo("slotLoc", slotLoc)
+                translate(v = [slotLoc * distanceBetweenSlots,
+                            -2.35 + slotDepthMicroadjustment,
+                            trueBackHeight-slotStopFromBack
+                            ])
+                    {
+                    if(Connection_Type == "Multipoint"){
+                        multiPointSlotTool(totalHeight);
+                    }
+                    if(Connection_Type == "Multiconnect"){
+                        multiConnectSlotTool(totalHeight);
+                    }
                 }
-                if(Connection_Type == "Multiconnect"){
-                    multiConnectSlotTool(totalHeight);
+                translate(v = [slotLoc * distanceBetweenSlots * -1,
+                            -2.35 + slotDepthMicroadjustment,
+                            trueBackHeight-slotStopFromBack
+                            ])
+                    {
+                    if(Connection_Type == "Multipoint"){
+                        multiPointSlotTool(totalHeight);
+                    }
+                    if(Connection_Type == "Multiconnect"){
+                        multiConnectSlotTool(totalHeight);
+                    }
                 }
             }
-        }
-    }   
+        }   
+        children();
+    }
 }
 
 //Create Slot Tool
