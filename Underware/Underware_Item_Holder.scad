@@ -127,7 +127,7 @@ backPlateOnly = false;
 //Offset the multiconnect on-ramps to be between grid slots rather than on the slot
 onRampHalfOffset = true;
 //Change slot orientation, when enabled slots to come from the top of the back, when disabled slots come from the bottom
-Slot_From_Top = true;
+Reverse_Slot_Direction = true;
 //Distance between Multiconnect slots on the back (25mm is standard for MultiBoard)
 distanceBetweenSlots = 25;
 //Reduce the number of slots
@@ -175,14 +175,6 @@ totalDepth = internalDepth + wallThickness;
 totalWidth = internalWidth + wallThickness*2;
 totalCenterX = internalWidth/2;
 
-*        makebackPlate(
-            maxBackWidth = totalWidth, 
-            backHeight = totalHeight, 
-            distanceBetweenSlots = distanceBetweenSlots,
-            backThickness= Connection_Type == "Multipoint" ? 4.8 : 6.5,
-            enforceMaxWidth=true,
-            slotStopFromBack = Multiconnect_Stop_Distance_From_Back
-            ) show_anchors();
 
 if(!debugCutoutTool)
 union(){
@@ -278,7 +270,7 @@ module makebackPlate(maxBackWidth, backHeight, distanceBetweenSlots, backThickne
         //final position for anchor alignment
         translate(v = [0,backThickness/2,-trueBackHeight/2]) 
         //flip if slotting from top
-        yrot(Slot_From_Top ? 180 : 0) up(Slot_From_Top ? -trueBackHeight : 0)
+        yrot(Reverse_Slot_Direction ? 180 : 0) up(Reverse_Slot_Direction ? -trueBackHeight : 0)
         //slot count calculates how many slots can fit on the back. Based on internal width for buffer. 
         //slot width needs to be at least the distance between slot for at least 1 slot to generate
         difference() {
@@ -375,7 +367,7 @@ module multiConnectSlotTool(totalHeight) {
             scale(v = dimpleScale) 
             rotate(a = [90,0,0,]) 
                 rotate_extrude($fn=50) 
-                    polygon(points = [[0,0],[0,1.5],[1.5,0]]);
+                    polygon(points = [[0,0],[0,1],[1,0]]);
     }
 }
 
