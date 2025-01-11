@@ -32,6 +32,8 @@ Change Log:
 - 2025-01-02
     - Multipoint mounting
     - Thanks @SnazzyGreenWarrior!
+- 2025-01-11
+    - Logic changes on slot placement
 
 Notes:
 - Slot test fit - For a slot test fit, set the following parameters
@@ -187,6 +189,7 @@ union(){
             distanceBetweenSlots = distanceBetweenSlots,
             backThickness=4.8,
             enforceMaxWidth=true,
+            slotStopFromBack = Multiconnect_Stop_Distance_From_Back
             );
     }
     if(Connection_Type == "Multiconnect"){
@@ -197,6 +200,7 @@ union(){
             distanceBetweenSlots = distanceBetweenSlots,
             backThickness=6.5,
             enforceMaxWidth=true,
+            slotStopFromBack = Multiconnect_Stop_Distance_From_Back
             );
     }
 }
