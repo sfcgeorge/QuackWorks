@@ -190,6 +190,7 @@ union(){
             );
     }
     if(Connection_Type == "Multiconnect"){
+
         makebackPlate(
             maxBackWidth = totalWidth, 
             backHeight = totalHeight, 
@@ -235,17 +236,17 @@ module basket() {
 
         //frontCaptureDeleteTool for item holders
             if (frontCutout == true)
-                translate([frontLateralCapture,internalDepth-1,frontLowerCapture])
+                translate([frontLateralCapture,internalDepth-1,frontLowerCapture+baseThickness])
                     cube([internalWidth-frontLateralCapture*2,wallThickness+2,internalHeight-frontLowerCapture-frontUpperCapture+0.01]);
             if (bottomCutout == true)
                 translate(v = [bottomSideCapture,bottomBackCapture,-1]) 
                     cube([internalWidth-bottomSideCapture*2,internalDepth-bottomFrontCapture-bottomBackCapture,baseThickness+2]);
                     //frontCaptureDeleteTool for item holders
             if (rightCutout == true)
-                translate([-wallThickness-1,rightLateralCapture,rightLowerCapture])
+                translate([-wallThickness-1,rightLateralCapture,rightLowerCapture+baseThickness])
                     cube([wallThickness+2,internalDepth-rightLateralCapture*2,internalHeight-rightLowerCapture-rightUpperCapture+0.01]);
             if (leftCutout == true)
-                translate([internalWidth-1,leftLateralCapture,leftLowerCapture])
+                translate([internalWidth-1,leftLateralCapture,leftLowerCapture+baseThickness])
                     cube([wallThickness+2,internalDepth-leftLateralCapture*2,internalHeight-leftLowerCapture-leftUpperCapture+0.01]);
             if (cordCutout == true) {
                 translate(v = [internalWidth/2+cordCutoutLateralOffset,internalDepth/2+cordCutoutDepthOffset,-1]) {
@@ -264,6 +265,7 @@ module basket() {
 //Slotted back Module
 module makebackPlate(maxBackWidth, backHeight, distanceBetweenSlots, backThickness, slotStopFromBack = 13, enforceMaxWidth)
 {
+    
     //every slot is a multiple of distanceBetweenSlots. The default of 25 accounts for the rail, and the ~5mm to either side.
     //first calculate the starting slot location based on the number of slots.
     slotCount = floor(maxBackWidth/distanceBetweenSlots) - subtractedSlots;
@@ -274,6 +276,7 @@ module makebackPlate(maxBackWidth, backHeight, distanceBetweenSlots, backThickne
     
     //slot count calculates how many slots can fit on the back. Based on internal width for buffer. 
     //slot width needs to be at least the distance between slot for at least 1 slot to generate
+    yrot(Slot_From_Top ? 180 : 0) up(Slot_From_Top ? -trueBackHeight : 0)
     difference() {
         translate(v = backPlateTranslation) 
         cuboid(size = [trueWidth, backThickness, trueBackHeight], 
