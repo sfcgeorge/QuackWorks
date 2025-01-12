@@ -18,7 +18,7 @@ Credit to
 include <BOSL2/std.scad>
 
 /*[Board Size]*/
-Full_or_Lite = "Full";//[Full, Lite]
+Full_or_Lite = "Lite";//[Full, Lite]
 Board_Width = 2;
 Board_Height= 2;
 
@@ -58,48 +58,51 @@ Tile_Inner_Size = Tile_Size - Tile_Inner_Size_Difference; //25mm default
 insideExtrusion = (Tile_Size-Tile_Inner_Size)/2-Outside_Extrusion; //0.7 default
 middleDistance = Tile_Thickness-Top_Capture_Initial_Inset*2;
 cornerChamfer = Top_Capture_Initial_Inset-Inside_Grid_Middle_Chamfer; //1.4 default
+tileChamfer = sqrt(Intersection_Distance^2*2);
 
 //GENERATE TILES
-*if(Full_or_Lite == "Full") wonderboardGrid(Board_Width = Board_Width, Board_Height = Board_Height);
+if(Full_or_Lite == "Full") wonderboardGrid(Board_Width = Board_Width, Board_Height = Board_Height);
 else wonderboardGridLite(Board_Width = Board_Width, Board_Height = Board_Height);
 
-connector_cutout_delete_tool();
+*connector_cutout_delete_tool() show_anchors(2);
 
-module connector_cutout_delete_tool(){
-    
+module connector_cutout_delete_tool(anchor=CENTER, spin=0, orient=UP){
     connector_cutout_radius = 2.6;
     connector_cutout_dimple_radius = 2.7;
     connector_cutout_separation = 2.5;
     connector_cutout_height = 2.4;
     dimple_radius = 0.75/2;
-    //connector cutout tool
-    render()
-    half_of(RIGHT, s=connector_cutout_dimple_radius*4)
-        linear_extrude(height = connector_cutout_height) 
-        union(){
-            left(0.1)
-            diff(){
-                $fn=50;
-                //primary round pieces
-                hull()
-                    xcopies(spacing=connector_cutout_radius*2)
-                        circle(r=connector_cutout_radius);
-                //inset clip
-                tag("remove")
-                right(connector_cutout_radius-connector_cutout_separation)
-                    ycopies(spacing = (connector_cutout_radius+connector_cutout_separation)*2)
-                        circle(r=connector_cutout_dimple_radius);
-                //dimple (ass) to force seam
-                
-                tag("remove")
-                right(connector_cutout_radius*2 + 0.45 )//move dimple in or out
-                    yflip_copy(offset=(dimple_radius+connector_cutout_radius)/2)//both sides of the dimpme
-                        rect([1,dimple_radius+connector_cutout_radius], rounding=[0,-connector_cutout_radius,-dimple_radius,0], $fn=32); //rect with rounding of inner flare and outer smoothing
+    attachable(anchor, spin, orient, size=[connector_cutout_radius*2-0.1 ,connector_cutout_radius*2,connector_cutout_height]){
+        //connector cutout tool
+        translate([-connector_cutout_radius+0.05,0,-connector_cutout_height/2])
+        render()
+        half_of(RIGHT, s=connector_cutout_dimple_radius*4)
+            linear_extrude(height = connector_cutout_height) 
+            union(){
+                left(0.1)
+                diff(){
+                    $fn=50;
+                    //primary round pieces
+                    hull()
+                        xcopies(spacing=connector_cutout_radius*2)
+                            circle(r=connector_cutout_radius);
+                    //inset clip
+                    tag("remove")
+                    right(connector_cutout_radius-connector_cutout_separation)
+                        ycopies(spacing = (connector_cutout_radius+connector_cutout_separation)*2)
+                            circle(r=connector_cutout_dimple_radius);
+                    //dimple (ass) to force seam
+                    //tag("remove")
+                    //right(connector_cutout_radius*2 + 0.45 )//move dimple in or out
+                    //    yflip_copy(offset=(dimple_radius+connector_cutout_radius)/2)//both sides of the dimpme
+                    //        rect([1,dimple_radius+connector_cutout_radius], rounding=[0,-connector_cutout_radius,-dimple_radius,0], $fn=32); //rect with rounding of inner flare and outer smoothing
 
+                }
+                //outward flare fillet for easier insertion
+                rect([1,connector_cutout_separation*2-(connector_cutout_dimple_radius-connector_cutout_separation)], rounding=[0,-.25,-.25,0], $fn=32, corner_flip=true, anchor=LEFT);
             }
-            //outward flare fillet for easier insertion
-            rect([1,connector_cutout_separation*2-(connector_cutout_dimple_radius-connector_cutout_separation)], rounding=[0,-.25,-.25,0], $fn=32, corner_flip=true, anchor=LEFT);
-        }
+        children();
+    }
 }
         
 module wonderboardGridLite(Board_Width, Board_Height){
@@ -128,13 +131,13 @@ module wonderboardGrid(Board_Width, Board_Height){
         grid_copies(spacing=Tile_Size, size=[Board_Width*Tile_Size,Board_Height*Tile_Size])
             down(0.01)
             zrot(45)
-                cuboid([Intersection_Distance,Intersection_Distance,Tile_Thickness+0.02], anchor=BOT);
+                cuboid([tileChamfer,tileChamfer,Tile_Thickness+0.02], anchor=BOT);
         if(Bevel_Edges)
         tag("remove")
         move_copies([[Tile_Size*Board_Width/2,Tile_Size*Board_Height/2,0],[-Tile_Size*Board_Width/2,Tile_Size*Board_Height/2,0],[Tile_Size*Board_Width/2,-Tile_Size*Board_Height/2,0],[-Tile_Size*Board_Width/2,-Tile_Size*Board_Height/2,0]])
             down(0.01)
             zrot(45)
-                cuboid([Intersection_Distance,Intersection_Distance,Tile_Thickness+0.02], anchor=BOT);
+                cuboid([tileChamfer,tileChamfer,Tile_Thickness+0.02], anchor=BOT);
         if(Screw_Mounting)
         tag("remove")
         move_copies([[Tile_Size*Board_Width/2-Tile_Size,Tile_Size*Board_Height/2-Tile_Size,0],[-Tile_Size*Board_Width/2+Tile_Size,Tile_Size*Board_Height/2-Tile_Size,0],[Tile_Size*Board_Width/2-Tile_Size,-Tile_Size*Board_Height/2+Tile_Size,0],[-Tile_Size*Board_Width/2+Tile_Size,-Tile_Size*Board_Height/2+Tile_Size,0]])
