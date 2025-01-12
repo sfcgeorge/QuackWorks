@@ -16,6 +16,7 @@ include <BOSL2/std.scad>
 /*[Board Size]*/
 Board_Width = 2;
 Board_Height= 2;
+Full_or_Lite = "Full";//[Full, Lite]
 
 /*[Style and Mounting]*/
 Bevel_Everywhere = true;
@@ -48,11 +49,27 @@ middleDistance = Tile_Thickness-Top_Capture_Initial_Inset*2;
 cornerChamfer = Top_Capture_Initial_Inset-Inside_Grid_Middle_Chamfer; //1.4 default
 
 
-wonderboardGrid(Board_Width = Board_Width, Board_Height = Board_Height);
+if(Full_or_Lite == "Full") wonderboardGrid(Board_Width = Board_Width, Board_Height = Board_Height);
+else wonderboardGridLite(Board_Width = Board_Width, Board_Height = Board_Height);
+
+module wonderboardGridLite(Board_Width, Board_Height){
+    move([-Board_Width*Tile_Size/2, -Board_Height*Tile_Size/2,-Tile_Thickness+4])
+    render(convexity=2)
+    top_half(z=Tile_Thickness-4, s=max(Tile_Size*Board_Width,Tile_Size*Board_Height)*2)
+    union()
+    for(i=[0: Board_Width-1]) {
+      for(j=[0: Board_Height-1]) {
+        translate([Tile_Size/2+i*Tile_Size, Tile_Size/2+j*Tile_Size])
+          if(Render_Method == "2D") wonderboardTileAp1();
+            else wonderboardTileAp2();
+      }
+    }
+}
 
 module wonderboardGrid(Board_Width, Board_Height){
     move([-Board_Width*Tile_Size/2, -Board_Height*Tile_Size/2, 0])
     render(convexity=2)
+    union()
     for(i=[0: Board_Width-1]) {
       for(j=[0: Board_Height-1]) {
         translate([Tile_Size/2+i*Tile_Size, Tile_Size/2+j*Tile_Size])
