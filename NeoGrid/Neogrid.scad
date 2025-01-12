@@ -25,6 +25,8 @@ Top_or_Bottom = "Both"; //[Top, Bottom, Both]
 Selected_Base = "Gridfinity"; //[Gridfinity, Flat, None]
 //Thickness of the flat baseplate (by mm)
 Flat_Base_Thickness = 1.4; //0.1
+//Emboss the material thickness on the bottom of the baseplate.
+Print_Specs = true;
 
 /*[Material Size]*/
 //Material Thickness (by mm)
