@@ -25,6 +25,7 @@ Board_Height= 2;
 /*[Style and Mounting]*/
 Bevel_Everywhere = false;
 Bevel_Edges = true;
+Connector_Holes = true;
 
 /*[Tile Parameters]*/
 Tile_Size = 28;
@@ -53,6 +54,15 @@ Inside_Grid_Top_Chamfer = 0.4;
 Inside_Grid_Middle_Chamfer = 1;
 Top_Capture_Initial_Inset = 2.4;
 
+
+//Begin connector cutout profile
+connector_cutout_radius = 2.6;
+connector_cutout_dimple_radius = 2.7;
+connector_cutout_separation = 2.5;
+connector_cutout_height = 2.4;
+dimple_radius = 0.75/2;
+lite_cutout_distance_from_top = 1;
+
 calculatedCornerSquare = sqrt(Tile_Size^2+Tile_Size^2)-2*sqrt(Intersection_Distance^2/2);
 Tile_Inner_Size = Tile_Size - Tile_Inner_Size_Difference; //25mm default
 insideExtrusion = (Tile_Size-Tile_Inner_Size)/2-Outside_Extrusion; //0.7 default
@@ -64,16 +74,12 @@ tileChamfer = sqrt(Intersection_Distance^2*2);
 if(Full_or_Lite == "Full") wonderboardGrid(Board_Width = Board_Width, Board_Height = Board_Height);
 else wonderboardGridLite(Board_Width = Board_Width, Board_Height = Board_Height);
 
-*connector_cutout_delete_tool() show_anchors(2);
+//!connector_cutout_delete_tool() show_anchors(2);
 
 module connector_cutout_delete_tool(anchor=CENTER, spin=0, orient=UP){
-    connector_cutout_radius = 2.6;
-    connector_cutout_dimple_radius = 2.7;
-    connector_cutout_separation = 2.5;
-    connector_cutout_height = 2.4;
-    dimple_radius = 0.75/2;
     attachable(anchor, spin, orient, size=[connector_cutout_radius*2-0.1 ,connector_cutout_radius*2,connector_cutout_height]){
         //connector cutout tool
+        tag_scope()
         translate([-connector_cutout_radius+0.05,0,-connector_cutout_height/2])
         render()
         half_of(RIGHT, s=connector_cutout_dimple_radius*4)
@@ -91,7 +97,7 @@ module connector_cutout_delete_tool(anchor=CENTER, spin=0, orient=UP){
                     right(connector_cutout_radius-connector_cutout_separation)
                         ycopies(spacing = (connector_cutout_radius+connector_cutout_separation)*2)
                             circle(r=connector_cutout_dimple_radius);
-                    //dimple (ass) to force seam
+                    //dimple (ass) to force seam. Only needed for positive connector piece (not delete tool)
                     //tag("remove")
                     //right(connector_cutout_radius*2 + 0.45 )//move dimple in or out
                     //    yflip_copy(offset=(dimple_radius+connector_cutout_radius)/2)//both sides of the dimpme
@@ -128,24 +134,36 @@ module wonderboardGrid(Board_Width, Board_Height){
         }
         if(Bevel_Everywhere)
         tag("remove")
-        grid_copies(spacing=Tile_Size, size=[Board_Width*Tile_Size,Board_Height*Tile_Size])
-            down(0.01)
-            zrot(45)
-                cuboid([tileChamfer,tileChamfer,Tile_Thickness+0.02], anchor=BOT);
+            grid_copies(spacing=Tile_Size, size=[Board_Width*Tile_Size,Board_Height*Tile_Size])
+                down(0.01)
+                zrot(45)
+                    cuboid([tileChamfer,tileChamfer,Tile_Thickness+0.02], anchor=BOT);
         if(Bevel_Edges)
-        tag("remove")
-        move_copies([[Tile_Size*Board_Width/2,Tile_Size*Board_Height/2,0],[-Tile_Size*Board_Width/2,Tile_Size*Board_Height/2,0],[Tile_Size*Board_Width/2,-Tile_Size*Board_Height/2,0],[-Tile_Size*Board_Width/2,-Tile_Size*Board_Height/2,0]])
-            down(0.01)
-            zrot(45)
-                cuboid([tileChamfer,tileChamfer,Tile_Thickness+0.02], anchor=BOT);
+            tag("remove")
+            move_copies([[Tile_Size*Board_Width/2,Tile_Size*Board_Height/2,0],[-Tile_Size*Board_Width/2,Tile_Size*Board_Height/2,0],[Tile_Size*Board_Width/2,-Tile_Size*Board_Height/2,0],[-Tile_Size*Board_Width/2,-Tile_Size*Board_Height/2,0]])
+                down(0.01)
+                zrot(45)
+                    cuboid([tileChamfer,tileChamfer,Tile_Thickness+0.02], anchor=BOT);
         if(Screw_Mounting)
-        tag("remove")
-        move_copies([[Tile_Size*Board_Width/2-Tile_Size,Tile_Size*Board_Height/2-Tile_Size,0],[-Tile_Size*Board_Width/2+Tile_Size,Tile_Size*Board_Height/2-Tile_Size,0],[Tile_Size*Board_Width/2-Tile_Size,-Tile_Size*Board_Height/2+Tile_Size,0],[-Tile_Size*Board_Width/2+Tile_Size,-Tile_Size*Board_Height/2+Tile_Size,0]])
-
-        up(Tile_Thickness+0.01)
-        cyl(d=Screw_Head_Diameter, h=Screw_Head_Inset, anchor=TOP)
-            attach(BOT, TOP) cyl(d2=Screw_Head_Diameter, d1=Screw_Diameter, h=sqrt((Screw_Head_Diameter/2-Screw_Diameter/2)^2))
-                attach(BOT, TOP) cyl(d=Screw_Diameter, h=Tile_Thickness+0.02);
+            tag("remove")
+            move_copies([[Tile_Size*Board_Width/2-Tile_Size,Tile_Size*Board_Height/2-Tile_Size,0],[-Tile_Size*Board_Width/2+Tile_Size,Tile_Size*Board_Height/2-Tile_Size,0],[Tile_Size*Board_Width/2-Tile_Size,-Tile_Size*Board_Height/2+Tile_Size,0],[-Tile_Size*Board_Width/2+Tile_Size,-Tile_Size*Board_Height/2+Tile_Size,0]])
+            up(Tile_Thickness+0.01)
+                cyl(d=Screw_Head_Diameter, h=Screw_Head_Inset, anchor=TOP)
+                    attach(BOT, TOP) cyl(d2=Screw_Head_Diameter, d1=Screw_Diameter, h=sqrt((Screw_Head_Diameter/2-Screw_Diameter/2)^2))
+                        attach(BOT, TOP) cyl(d=Screw_Diameter, h=Tile_Thickness+0.02);
+        if(Connector_Holes){
+            tag("remove")
+            up(Full_or_Lite == "Full" ? Tile_Thickness/2 : Tile_Thickness-connector_cutout_height/2-lite_cutout_distance_from_top)
+            xflip_copy(offset = -Tile_Size*Board_Width/2-0.005)
+                ycopies(spacing=Tile_Size, l=Board_Height*Tile_Size-Tile_Size*2)
+                    connector_cutout_delete_tool(anchor=LEFT);
+            tag("remove")
+            up(Full_or_Lite == "Full" ? Tile_Thickness/2 : Tile_Thickness-connector_cutout_height/2-lite_cutout_distance_from_top)
+            yflip_copy(offset = -Tile_Size*Board_Height/2-0.005)
+                xcopies(spacing=Tile_Size, l=Board_Width*Tile_Size-Tile_Size*2)
+                    zrot(90)
+                        connector_cutout_delete_tool(anchor=LEFT);
+        }
 
     }//end diff
 }
