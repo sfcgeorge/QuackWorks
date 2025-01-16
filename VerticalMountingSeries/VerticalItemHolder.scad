@@ -274,14 +274,14 @@ module makebackPlate(backWidth, backHeight, distanceBetweenSlots, backThickness,
                 for (slotNum = [0:1:slotCount-1]) {
                     translate(v = [distanceBetweenSlots/2+(backWidth/distanceBetweenSlots-slotCount)*distanceBetweenSlots/2+slotNum*distanceBetweenSlots, 0, backHeight + 0.46 - GOEWS_Cleat_height_from_top_of_back + 11.24]) {
                         rotate([90, 0, 0])
-                            cylinder(h = backThickness + 0.1, r = 5.76, $fn = 256);
+                            cylinder(h = backThickness + 0.1, r = 7, $fn = 256);
                     }
                 }
                 // Remove back plate cut outs for screw heads
                 for (slotNum = [0:1:slotCount-1]) {
                     translate(v = [distanceBetweenSlots/2+(backWidth/distanceBetweenSlots-slotCount)*distanceBetweenSlots/2+slotNum*distanceBetweenSlots, -4, backHeight + 0.46 - GOEWS_Cleat_height_from_top_of_back + 11.24]) {
                         rotate([-90, 0, 0])
-                            cylinder(h = 4.1, r = 9.675, $fn = 256);
+                            cylinder(h = 4.1, r = 10, $fn = 256);
                     }
                 }
             }
