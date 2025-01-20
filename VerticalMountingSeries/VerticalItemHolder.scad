@@ -39,10 +39,6 @@ include <BOSL2/walls.scad>
 //Multipoint in Beta - Please share feedback! How do you intend to mount the item holder to a surface such as Multipoint connections or DavidD's Multiconnect?
 Connection_Type = "GOEWS"; // [Multipoint, Multiconnect, GOEWS]
 
-/*[GOEWS Customization]*/
-GOEWS_Cleat_position = "normal"; // [normal, top, bottom, custom]
-GOEWS_Cleat_custom_height_from_top_of_back = 11.24;
-
 /* [Internal Dimensions] */
 //Height (in mm) from the top of the back to the base of the internal floor
 internalHeight = 50.0; //.1
@@ -134,6 +130,10 @@ onRampEnabled = true;
 On_Ramp_Every_X_Slots = 1;
 //Distance from the back of the item holder to where the multiconnect stops (i.e., where the dimple is) (by mm)
 Multiconnect_Stop_Distance_From_Back = 13;
+
+/*[GOEWS Customization]*/
+GOEWS_Cleat_position = "normal"; // [normal, top, bottom, custom]
+GOEWS_Cleat_custom_height_from_top_of_back = 11.24;
 
 /* [Hidden] */
 debugCutoutTool = false;

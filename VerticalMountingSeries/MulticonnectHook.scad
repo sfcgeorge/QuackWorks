@@ -1,6 +1,13 @@
 /*Created by Andy Levesque
 Credit to @David D on Printables and Jonathan at Keep Making for Multiconnect and Multiboard, respectively
 Licensed Creative Commons 4.0 Attribution Non-Commercial Sharable with Attribution
+
+Change Log:
+- 2024-09-18 
+    - Initial release
+2025-01-20
+    - Added rounded edges to the top of the hook (thanks @deTTriTTus!)
+
 */
 
 include <BOSL2/std.scad>
@@ -14,8 +21,8 @@ hookLipHeight = 4;
 hookLipThickness = 3;
 hookBottomThickness = 5;
 backHeight = 35;
-hookRadius = 0;
-backRadius = 0;
+hookRadius = 2;
+backRadius = 2;
 
 
 /*[Slot Customization]*/
