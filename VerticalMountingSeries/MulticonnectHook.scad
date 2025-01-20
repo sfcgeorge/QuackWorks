@@ -3,6 +3,8 @@ Credit to @David D on Printables and Jonathan at Keep Making for Multiconnect an
 Licensed Creative Commons 4.0 Attribution Non-Commercial Sharable with Attribution
 */
 
+include <BOSL2/std.scad>
+
 /* [Standard Parameters] */
 hookWidth = 25;
 hookInternalDepth = 25;
@@ -12,6 +14,9 @@ hookLipHeight = 4;
 hookLipThickness = 3;
 hookBottomThickness = 5;
 backHeight = 35;
+hookRadius = 0;
+backRadius = 0;
+
 
 /*[Slot Customization]*/
 //Distance between Multiconnect slots on the back (25mm is standard for MultiBoard)
@@ -32,6 +37,7 @@ onRampEveryXSlots = 1;
 
 /*[Hidden]*/
 backWidth = max(distanceBetweenSlots,hookWidth);
+subDivTopEdges=66;
 
 //Hook
 union(){
@@ -40,10 +46,10 @@ union(){
         multiconnectBack(backWidth = backWidth, backHeight = backHeight, distanceBetweenSlots = distanceBetweenSlots);
     //hook base
     translate(v = [-hookWidth/2,0,0]) 
-        cube(size = [hookWidth,hookInternalDepth+hookLipThickness,hookBottomThickness]);
+        topRoundedCube(size = [hookWidth,hookInternalDepth+hookLipThickness,hookBottomThickness], r = hookRadius);
     //hook lip
     translate(v = [-hookWidth/2,hookInternalDepth,0]) 
-        cube(size = [hookWidth,hookLipThickness,hookLipHeight+hookBottomThickness]);
+        topRoundedCube(size = [hookWidth,hookLipThickness,hookLipHeight+hookBottomThickness], r = hookRadius);
 }
 
 //BEGIN MODULES
@@ -54,7 +60,7 @@ module multiconnectBack(backWidth, backHeight, distanceBetweenSlots)
     //slot width needs to be at least the distance between slot for at least 1 slot to generate
     let (backWidth = max(backWidth,distanceBetweenSlots), backHeight = max(backHeight, 25),slotCount = floor(backWidth/distanceBetweenSlots), backThickness = 6.5){
         difference() {
-            translate(v = [0,-backThickness,0]) cube(size = [backWidth,backThickness,backHeight]);
+            translate(v = [0,-backThickness,0]) topRoundedCube(size = [backWidth,backThickness,backHeight], r = backRadius);
             //Loop through slots and center on the item
             //Note: I kept doing math until it looked right. It's possible this can be simplified.
             for (slotNum = [0:1:slotCount-1]) {
@@ -99,4 +105,11 @@ module multiconnectBack(backWidth, backHeight, distanceBetweenSlots)
                         polygon(points = [[0,0],[0,1.5],[1.5,0]]);
         }
     }
+}
+
+module topRoundedCube(size, r) {
+    diff()
+        cube(size = size)
+            edge_mask([TOP+LEFT, TOP+RIGHT])
+            rounding_edge_mask(l=size[1],r=r,$fn=subDivTopEdges);
 }
