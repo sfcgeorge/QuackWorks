@@ -66,6 +66,7 @@ Wood_Screw_Head_Height = 1.75;
 /*[Advanced]*/
 //Size of the grid (by mm). 42mm by default for gridfinity. Other sized not tested. 
 grid_size = 42;
+embed_specs = true;
 
 //Additional channel length beyond center for partial channels. This allows slop in cutting dividers. 
 Partial_Channel_Buffer = 3;
@@ -85,10 +86,11 @@ calculated_base_height = Selected_Base == "Gridfinity" ? 4.75+0.6 : //0.6 is the
     Selected_Base == "Flat" ? Flat_Base_Thickness:
     0;
 
-text_depth = 1;
+text_depth = 0.2;
 text_size = 7;
 font = "Monsterrat:style=Bold";
 specs_text = str("th", Material_Thickness);
+
     
 /*
 
@@ -308,7 +310,7 @@ module NeoGrid_Straight_Thru_Top(Material_Thickness, Channel_Depth = 20, Wall_Th
 
 module NeoGrid_Straight_Thru_Base(Material_Thickness, Channel_Depth = 20, Wall_Thickness = 4, Channel_Length = 42, grid_size = 42){
     //Straight Channel
-    diff(){
+    diff("remove text"){
         //Gridfinity Base
         if(Selected_Base == "Gridfinity")
             gridfinity_bin_bottom_grid( x = 1, y = quantup(Channel_Length, grid_size)/grid_size, anchor=BOT);
@@ -331,7 +333,7 @@ module NeoGrid_Straight_Thru_Base(Material_Thickness, Channel_Depth = 20, Wall_T
             attach(TOP, BOT, inside=true, shiftout=0.01)
                 channelDeleteTool([Material_Thickness, Channel_Length+0.02,Channel_Depth+0.02]);
             }
-        tag("remove")mirror([1,0,0])text3d(specs_text, size=text_size, font=font, h=1, anchor=CENTER, atype="ycenter");
+        if(embed_specs) tag("text")mirror([1,0,0])text3d(specs_text, size=text_size, font=font, h=text_depth, anchor=CENTER, atype="ycenter");
     }
 }
 
@@ -355,7 +357,7 @@ module NeoGrid_X_Intersection_Top(Material_Thickness, Channel_Depth = 20, Wall_T
 
 module NeoGrid_X_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_Thickness = 4, grid_size = 42){
     //X Intersection Base
-    diff("channel chamf"){ //small trick here. External chamfers auto-apply the "remove" tag. This is a workaround to keep the chamfers on the channel walls by renaming the remove tag.
+    diff("channel chamf text"){ //small trick here. External chamfers auto-apply the "remove" tag. This is a workaround to keep the chamfers on the channel walls by renaming the remove tag.
         //Gridfinity Base 1x1 for all intersections.
         if(Selected_Base == "Gridfinity")
             gridfinity_bin_bottom_grid(x=1,y=1, anchor=BOT);
@@ -390,6 +392,7 @@ module NeoGrid_X_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
             channelDeleteTool([Material_Thickness, grid_size+0.01, Channel_Depth+0.04], spike_count=2, chamfer_edges=[TOP], anchor=BOT);
         tag("channel")zrot(90) up(calculated_base_height-0.02)
             channelDeleteTool([Material_Thickness, grid_size+0.01, Channel_Depth+0.04], spike_count=2, chamfer_edges=[TOP], anchor=BOT);
+        if(embed_specs) tag("text")mirror([1,0,0])text3d(specs_text, size=text_size, font=font, h=text_depth, anchor=CENTER, atype="ycenter");
         }//end gridfinity base
 }
 
@@ -421,7 +424,7 @@ module NeoGrid_T_Intersection_Top(Material_Thickness, Channel_Depth = 20, Wall_T
 
 module NeoGrid_T_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_Thickness = 4, grid_size = 42){
     //X Intersection Base
-    diff("channel chamf"){ //small trick here. External chamfers auto-apply the "remove" tag. This is a workaround to keep the chamfers on the channel walls by renaming the remove tag.
+    diff("channel chamf text"){ //small trick here. External chamfers auto-apply the "remove" tag. This is a workaround to keep the chamfers on the channel walls by renaming the remove tag.
         //Gridfinity Base 1x1 for all intersections.
         if(Selected_Base == "Gridfinity")
             gridfinity_bin_bottom_grid(x=1,y=1, anchor=BOT);
@@ -459,6 +462,7 @@ module NeoGrid_T_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
         //channel clear full length
         tag("channel")zrot(90)up(calculated_base_height-0.02)
             channelDeleteTool([Material_Thickness, grid_size+0.02, Channel_Depth+0.02], spike_count=2, chamfer_edges=[TOP], anchor=BOT);
+        if(embed_specs) tag("text")mirror([1,0,0])text3d(specs_text, size=text_size, font=font, h=text_depth, anchor=CENTER, atype="ycenter");
         }//end gridfinity base
 }
 
@@ -479,7 +483,7 @@ module NeoGrid_Straight_End_Top(Material_Thickness, Channel_Depth = 20, Wall_Thi
 
 module NeoGrid_Straight_End_Base(Material_Thickness, Channel_Depth = 20, Wall_Thickness = 4, grid_size = 42){
     //Straight Channel
-    diff(){
+    diff("remove text"){
         //Gridfinity Base
         if(Selected_Base == "Gridfinity")
             gridfinity_bin_bottom_grid( x = 1, y = quantup(Channel_Length, grid_size)/grid_size, anchor=BOT);
@@ -500,6 +504,8 @@ module NeoGrid_Straight_End_Base(Material_Thickness, Channel_Depth = 20, Wall_Th
                 attach(TOP, BOT, inside=true, shiftout=0.01, spin=90, align=LEFT)
                     channelDeleteTool([ Material_Thickness, grid_size-Partial_Channel_Buffer+0.02, Channel_Depth+0.02]);
             }
+        if(embed_specs) tag("text")mirror([1,0,0])text3d(specs_text, size=text_size, font=font, h=text_depth, anchor=CENTER, atype="ycenter");
+
     }
 }
 
@@ -536,7 +542,7 @@ module NeoGrid_L_Intersection_Top(Material_Thickness, Channel_Depth = 20, Wall_T
 
 module NeoGrid_L_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_Thickness = 4, grid_size = 42){
     //X Intersection Base
-    diff("channel"){ //small trick here. External chamfers auto-apply the "remove" tag. This is a workaround to keep the chamfers on the channel walls by renaming the remove tag.
+    diff("channel text"){ //small trick here. External chamfers auto-apply the "remove" tag. This is a workaround to keep the chamfers on the channel walls by renaming the remove tag.
         //Gridfinity Base 1x1 for all intersections.
         if(Selected_Base == "Gridfinity")
             gridfinity_bin_bottom_grid(x=1,y=1, anchor=BOT);
@@ -572,6 +578,8 @@ module NeoGrid_L_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
             channelDeleteTool([Material_Thickness, grid_size/2+Material_Thickness/2-grid_clearance/2+0.03, Channel_Depth+0.04], chamfer_edges=TOP, anchor=BOT);
         tag("channel")up(calculated_base_height-0.02) zrot(90) back(grid_size/4-grid_clearance/4-Material_Thickness/4)
             channelDeleteTool([Material_Thickness, grid_size/2+Material_Thickness/2-grid_clearance/2+0.03, Channel_Depth+0.04], chamfer_edges=TOP, anchor=BOT);
+        if(embed_specs) tag("text")mirror([1,0,0])text3d(specs_text, size=text_size, font=font, h=text_depth, anchor=CENTER, atype="ycenter");
+
         }//end gridfinity base
 }
 
