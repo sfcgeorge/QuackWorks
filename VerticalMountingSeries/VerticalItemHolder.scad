@@ -21,7 +21,8 @@ Change Log:
 - 2025-01-02
     - Multipoint mounting
     - Thanks @SnazzyGreenWarrior!
-
+- 2025-01-16
+    - Added GOEWS cleats option (@andrew_3d)
 
 Notes:
 - Slot test fit - For a slot test fit, set the following parameters
@@ -36,7 +37,11 @@ include <BOSL2/walls.scad>
 
 /* [Beta Feature - Slot Type] */
 //Multipoint in Beta - Please share feedback! How do you intend to mount the item holder to a surface such as Multipoint connections or DavidD's Multiconnect?
-Connection_Type = "Multiconnect"; // [Multipoint, Multiconnect]
+Connection_Type = "GOEWS"; // [Multipoint, Multiconnect, GOEWS]
+
+/*[GOEWS Customization]*/
+GOEWS_Cleat_position = "normal"; // [normal, top, bottom, custom]
+GOEWS_Cleat_custom_height_from_top_of_back = 11.24;
 
 /* [Internal Dimensions] */
 //Height (in mm) from the top of the back to the base of the internal floor
@@ -169,6 +174,15 @@ union(){
             distanceBetweenSlots = distanceBetweenSlots,
             backThickness=6.5);
     }
+    if(Connection_Type == "GOEWS"){
+        translate([-max(totalWidth,distanceBetweenSlots)/2,0.01,-baseThickness])
+        makebackPlate(
+            backWidth = totalWidth, 
+            backHeight = totalHeight, 
+            distanceBetweenSlots = 42,
+            backThickness=7
+        );
+    }
 }
 
 //Create Basket
@@ -223,23 +237,82 @@ module makebackPlate(backWidth, backHeight, distanceBetweenSlots, backThickness,
     //slot count calculates how many slots can fit on the back. Based on internal width for buffer. 
     //slot width needs to be at least the distance between slot for at least 1 slot to generate
     let (backWidth = max(backWidth,distanceBetweenSlots), backHeight = max(backHeight, 25),slotCount = floor(backWidth/distanceBetweenSlots)- subtractedSlots){
-        difference() {
-            translate(v = [0,-backThickness,0]) 
-            cuboid(size = [backWidth,backThickness,backHeight], rounding=edgeRounding, except_edges=BACK, anchor=FRONT+LEFT+BOT);
-            //Loop through slots and center on the item
-            //Note: I kept doing math until it looked right. It's possible this can be simplified.
-            for (slotNum = [0:1:slotCount-1]) {
-                translate(v = [distanceBetweenSlots/2+(backWidth/distanceBetweenSlots-slotCount)*distanceBetweenSlots/2+slotNum*distanceBetweenSlots,-2.35+slotDepthMicroadjustment,backHeight-Multiconnect_Stop_Distance_From_Back]) {
-                    if(Connection_Type == "Multipoint"){
-                        multiPointSlotTool(totalHeight);
+        if(Connection_Type != "GOEWS"){
+            difference() {
+                translate(v = [0,-backThickness,0]) 
+                cuboid(size = [backWidth,backThickness,backHeight], rounding=edgeRounding, except_edges=BACK, anchor=FRONT+LEFT+BOT);
+                //Loop through slots and center on the item
+                //Note: I kept doing math until it looked right. It's possible this can be simplified.
+                for (slotNum = [0:1:slotCount-1]) {
+                    translate(v = [distanceBetweenSlots/2+(backWidth/distanceBetweenSlots-slotCount)*distanceBetweenSlots/2+slotNum*distanceBetweenSlots,-2.35+slotDepthMicroadjustment,backHeight-Multiconnect_Stop_Distance_From_Back]) {
+                        if(Connection_Type == "Multipoint"){
+                            multiPointSlotTool(totalHeight);
+                        }
+                        if(Connection_Type == "Multiconnect"){
+                            multiConnectSlotTool(totalHeight);
+                        }
                     }
-                    if(Connection_Type == "Multiconnect"){
-                        multiConnectSlotTool(totalHeight);
+                }
+            }
+        } else {
+            // GOEWS
+            GOEWS_Cleat_custom_height_from_top_of_back = (GOEWS_Cleat_position == "normal") ? 11.24 : (GOEWS_Cleat_position == "top") ? 0 :  (GOEWS_Cleat_position == "bottom") ? backHeight - 13.15 : GOEWS_Cleat_custom_height_from_top_of_back;
+            
+            difference() {
+                union() {
+                    // Back plate
+                    translate(v = [0,-backThickness,0]) 
+                    cuboid(size = [backWidth,backThickness,backHeight], rounding=edgeRounding, except_edges=BACK, anchor=FRONT+LEFT+BOT);
+                    //Loop through slots and center on the item
+                    //Note: I kept doing math until it looked right. It's possible this can be simplified.
+                    // Add cleats
+                    for (slotNum = [0:1:slotCount-1]) {
+                        translate(v = [distanceBetweenSlots/2+(backWidth/distanceBetweenSlots-slotCount)*distanceBetweenSlots/2+slotNum*distanceBetweenSlots,-1 * backThickness,backHeight-GOEWS_Cleat_custom_height_from_top_of_back]) {
+                            GOEWSCleatTool(totalHeight);
+                        }
+                    }
+                };
+                // Remove back plate cut outs for screw threads
+                for (slotNum = [0:1:slotCount-1]) {
+                    translate(v = [distanceBetweenSlots/2+(backWidth/distanceBetweenSlots-slotCount)*distanceBetweenSlots/2+slotNum*distanceBetweenSlots, 0, backHeight + 0.46 - GOEWS_Cleat_custom_height_from_top_of_back + 11.24]) {
+                        rotate([90, 0, 0])
+                            cylinder(h = backThickness + 0.1, r = 7, $fn = 256);
+                    }
+                }
+                // Remove back plate cut outs for screw heads
+                for (slotNum = [0:1:slotCount-1]) {
+                    translate(v = [distanceBetweenSlots/2+(backWidth/distanceBetweenSlots-slotCount)*distanceBetweenSlots/2+slotNum*distanceBetweenSlots, -4, backHeight + 0.46 - GOEWS_Cleat_custom_height_from_top_of_back + 11.24]) {
+                        rotate([-90, 0, 0])
+                            cylinder(h = 4.1, r = 10, $fn = 256);
                     }
                 }
             }
         }
     }   
+}
+
+//Create GOEWS cleats
+module GOEWSCleatTool(totalHeight) {
+    difference() {
+        // main profile
+        rotate(a = [180,0,0]) 
+            linear_extrude(height = 13.15) 
+                let (cleatProfile = [[0,0],[15.1,0],[17.6,2.5],[15.1,5],[0,5]])
+                union(){
+                    polygon(points = cleatProfile);
+                    mirror([1,0,0])
+                        polygon(points = cleatProfile);
+                };
+        // angled slice off bottom
+        translate([-17.6, -8, -26.3])
+            rotate([45, 0, 0])
+                translate([0, 5, 0])
+                    cube([35.2, 10, 15]);
+        // cutout
+        translate([0, -0.005, 2.964])
+            rotate([90, 0, 0])
+                cylinder(h = 6, r = 9.5, $fn = 256);
+    }
 }
 
 //Create Slot Tool
