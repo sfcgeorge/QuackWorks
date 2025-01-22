@@ -34,6 +34,10 @@ Change Log:
     - Thanks @SnazzyGreenWarrior!
 - 2025-01-11
     - Logic changes on slot placement
+- 2025-01-20
+    - Added Clamshell mode
+    - Added backplate only option
+    - Adjusted slot stop variable to be based on item floor rather than holder edge
 
 Notes:
 - Slot test fit - For a slot test fit, set the following parameters
@@ -46,10 +50,17 @@ Notes:
 include <BOSL2/std.scad>
 include <BOSL2/walls.scad>
 
-/* [Beta Feature - Slot Type] */
+/* [Slot Type] */
 //Multipoint in Beta - Please share feedback! How do you intend to mount the item holder to a surface such as Multipoint connections or DavidD's Multiconnect?
 Connection_Type = "Multiconnect"; // [Multipoint, Multiconnect]
 
+/*[BETA - Clamshell mode]*/
+//Clamshell mode is when you want to enclose the item with two separate holders. This calculates the distance between the two holders while also aligning with the mounting points.
+ClamShell_Mode = true;
+//total width of the item to be mounted
+total_item_width = 150;
+//Extra room between the two holders (total between the two sides). Recommended to be at least 0.3mm. 
+item_slop = 0.3;
 
 /* [Internal Dimensions] */
 //Depth (by mm): internal dimension along the Z axis of print orientation. Measured from the top to the base of the internal floor, equivalent to the depth of the item you wish to hold when mounted horizontally.
@@ -146,14 +157,21 @@ onRampEnabled = false;
 On_Ramp_Every_X_Slots = 1;
 //Distance from the back of the item holder to where the multiconnect stops (i.e., where the dimple is) (by mm)
 Multiconnect_Stop_Distance_From_Back = 13;
+//Minimum distance the center of a mount point can be from the edge of the item holder (by mm)
+Minimum_Safe_Mount_Clearance_From_Edge = 13;
 
 /* [Hidden] */
 Wall_Type = "Solid"; //["Hex","Solid"]
 debugCutoutTool = false;
+debugItemRepresentation = true;
 
 if(debugCutoutTool){
     if(Connection_Type == "Multiconnect") multiConnectSlotTool(totalHeight);
     else multiPointSlotTool(totalHeight);
+}
+
+if(debugItemRepresentation){
+    %up(baseThickness+item_slop) cuboid([total_item_width, internalDepth,  internalHeight], anchor=FRONT+RIGHT, orient=RIGHT);
 }
 
 //UNDERWARE SPECIFIC CODE
@@ -174,6 +192,15 @@ totalHeight = internalHeight+baseThickness;
 totalDepth = internalDepth + wallThickness;
 totalWidth = internalWidth + wallThickness*2;
 totalCenterX = internalWidth/2;
+ 
+
+//calculate total working space, respecting minimum mounting value.
+//The mounting points should be 'inside' the total width. Therefore, we are rounding down to the next mounting points on both sides
+mount_point_distance = quantdn(total_item_width+baseThickness*2+item_slop*2-(Minimum_Safe_Mount_Clearance_From_Edge)*2, distanceBetweenSlots);
+echo(str("Mount Point Distance: ", mount_point_distance));
+new_mount_point_inward_adjustement = (total_item_width - mount_point_distance+item_slop )/2;
+echo(str("New Mount Point Inward Adjustment: ", new_mount_point_inward_adjustement));
+
 
 
 if(!debugCutoutTool)
@@ -187,12 +214,34 @@ union(){
         maxBackWidth = totalWidth, 
         backHeight = totalHeight, 
         distanceBetweenSlots = distanceBetweenSlots,
-        backThickness= Connection_Type == "Multipoint" ? 4.8 : 6.5,
+        backThickness= Connection_Type == "Multipoint" ? 4.8 : 
+            Connection_Type == "Multiconnect" ? 6.5 :
+            6,
         enforceMaxWidth=true,
-        slotStopFromBack = Multiconnect_Stop_Distance_From_Back,
+        slotStopFromBack = ClamShell_Mode ? new_mount_point_inward_adjustement : Multiconnect_Stop_Distance_From_Back,
         anchor=BOT+BACK
         );
+}
 
+if(ClamShell_Mode)
+up(total_item_width+item_slop+baseThickness*2) rot([0,180,0])
+union(){
+    if(!backPlateOnly)
+        //move to center
+        translate(v = [-internalWidth/2,0,0]) 
+            basket();
+    //slotted back
+    makebackPlate(
+        maxBackWidth = totalWidth, 
+        backHeight = totalHeight, 
+        distanceBetweenSlots = distanceBetweenSlots,
+        backThickness= Connection_Type == "Multipoint" ? 4.8 : 
+            Connection_Type == "Multiconnect" ? 6.5 :
+            6,
+        enforceMaxWidth=true,
+        slotStopFromBack = ClamShell_Mode ? new_mount_point_inward_adjustement : Multiconnect_Stop_Distance_From_Back,
+        anchor=BOT+BACK
+        );
 }
 
 //Create Basket
@@ -257,7 +306,7 @@ module basket() {
 
 //BEGIN MODULES
 //Slotted back Module
-module makebackPlate(maxBackWidth, backHeight, distanceBetweenSlots, backThickness, slotStopFromBack = 13, enforceMaxWidth, anchor=CENTER, spin=0, orient=UP)
+module makebackPlate(maxBackWidth, backHeight, distanceBetweenSlots, backThickness, slotStopFromBack = 13-baseThickness, enforceMaxWidth, anchor=CENTER, spin=0, orient=UP)
 {
     //every slot is a multiple of distanceBetweenSlots. The default of 25 accounts for the rail, and the ~5mm to either side.
     //first calculate the starting slot location based on the number of slots.
@@ -286,7 +335,7 @@ module makebackPlate(maxBackWidth, backHeight, distanceBetweenSlots, backThickne
                 //odd number of slots, place on on x=0
                 translate(v = [0,
                             -2.35 + slotDepthMicroadjustment,
-                            trueBackHeight-slotStopFromBack
+                            trueBackHeight-slotStopFromBack-baseThickness
                             ])
                     {
                     if(Connection_Type == "Multipoint"){
@@ -304,7 +353,7 @@ module makebackPlate(maxBackWidth, backHeight, distanceBetweenSlots, backThickne
                 echo("slotLoc", slotLoc)
                 translate(v = [slotLoc * distanceBetweenSlots,
                             -2.35 + slotDepthMicroadjustment,
-                            trueBackHeight-slotStopFromBack
+                            trueBackHeight-slotStopFromBack-baseThickness
                             ])
                     {
                     if(Connection_Type == "Multipoint"){
@@ -316,7 +365,7 @@ module makebackPlate(maxBackWidth, backHeight, distanceBetweenSlots, backThickne
                 }
                 translate(v = [slotLoc * distanceBetweenSlots * -1,
                             -2.35 + slotDepthMicroadjustment,
-                            trueBackHeight-slotStopFromBack
+                            trueBackHeight-slotStopFromBack-baseThickness
                             ])
                     {
                     if(Connection_Type == "Multipoint"){
