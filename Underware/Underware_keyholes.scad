@@ -19,7 +19,7 @@ include <BOSL2/threading.scad>
 
 /*[Choose Part]*/
 //How do you intend to mount the channels to a surface such as Honeycomb Storage Wall or Multiboard? See options at https://handsonkatie.com/underware-2-0-the-made-to-measure-collection/
-Show_Part = "Snap Keyhole"; // [Snap Keyhole]
+Show_Part = "Snap Keyhole"; // [Snap Keyhole, Keyhole Test]
 
 /*[Options: Thread Snap Connector ]*/
 //Height (in mm) the snap connector rests above the board. 3mm is standard. 0mm results in a flush fit. 
@@ -52,7 +52,6 @@ distanceBetweenKeyholeEntranceCenters = 144;
 MOUNTING PARTS
 
 */
-
 if(Show_Part == "Snap Keyhole"){
     octogonScale = 1/sin(67.5);
     innerMostDiameter = (11.4465 * 2) * octogonScale;
@@ -63,26 +62,57 @@ if(Show_Part == "Snap Keyhole"){
     keyhole2Offset = (remainingOffset2 < offsetToEdge) ? remainingOffset2 : (remainingOffset2 * 0.5 );
     
     recolor(Global_Color)
-    make_ThreadedSnap(offset = Snap_Connector_Height, anchor=BOT, keyholeOffset=keyhole1Offset);
-    fwd(25 - keyhole2Offset + keyhole1Offset) make_ThreadedSnap(offset = Snap_Connector_Height, anchor=BOT, keyholeOffset=keyhole2Offset);
+    make_keyhole(offset = Snap_Connector_Height, anchor=BOT, keyholeOffset=keyhole1Offset);
+    fwd(25 - keyhole2Offset + keyhole1Offset) make_keyhole(offset = Snap_Connector_Height, anchor=BOT, keyholeOffset=keyhole2Offset);
     
+};
+if(Show_Part == "Keyhole Test"){
+    recolor(Global_Color)
+    make_keyhole(offset = Snap_Connector_Height, anchor=BOT, keyholeOffset=0, isTest=true);
+};
+
+module make_keyhole (offset = 3, anchor=BOT,spin=0,orient=UP, keyholeOffset, isTest=false){
+    left(0.2+keyholeTotalDepth/2) yrot(-90) right_half()
+        make_keyhole_stem() 
+            attach(TOP, TOP) 
+                fwd(keyholeOffset){
+                    if(isTest){
+                        cyl(r=11.4465, h= 1.97);
+                    }
+                    else{
+                    snapConnectBacker(
+                            offset = offset, 
+                            holdingTolerance = Snap_Holding_Tolerance, 
+                            anchor = TOP, 
+                            orient = UP);
+                    }
+                }
+    right(0.2+keyholeTotalDepth/2) yrot(90) left_half()
+        make_keyhole_stem()
+            attach(TOP, TOP)
+                fwd(keyholeOffset){
+                    if(isTest){
+                        cyl(r=11.4465, h= 1.97);
+                    }
+                    else{
+                        snapConnectBacker(
+                            offset = offset, 
+                            holdingTolerance = Snap_Holding_Tolerance, 
+                            anchor = TOP, 
+                            orient = UP);
+                    }
+                }
+    cuboid([0.42,keyholeEntraceDiameter,0.2], anchor=BOT);
 }
 
-//THREADED SNAP
-module make_ThreadedSnap (offset = 3, anchor=BOT,spin=0,orient=UP, keyholeOffset){
-    left(0.2)yrot(-90)right_half()
-    cyl(d=keyholeEntraceDiameter, h=keyholeTotalDepth-keyholeEntranceDepth, anchor=BOT)
-        position(TOP) cyl(d=keyholeSlotDiameter, h=keyholeEntranceDepth, anchor=BOT)
-            position(TOP) fwd(keyholeOffset) snapConnectBacker(
-                offset = offset, 
-                holdingTolerance = Snap_Holding_Tolerance, anchor=TOP, orient=DOWN) ;
-    right(0.2)yrot(90)left_half()
-    cyl(d=keyholeEntraceDiameter, h=keyholeTotalDepth-keyholeEntranceDepth, anchor=BOT)
-        position(TOP) cyl(d=keyholeSlotDiameter, h=keyholeEntranceDepth, anchor=BOT)
-            position(TOP) fwd(keyholeOffset) snapConnectBacker(
-                offset = offset, 
-                holdingTolerance = Snap_Holding_Tolerance, anchor=TOP, orient=DOWN) ;
-    cuboid([0.42,keyholeEntraceDiameter,0.2], anchor=BOT);
+module make_keyhole_stem(anchor=CENTER, spin=0, orient=UP) {
+    attachable(anchor, spin, orient, d=keyholeEntraceDiameter, h=keyholeTotalDepth) {
+        down(keyholeEntranceDepth/2)
+            cyl(d=keyholeEntraceDiameter, h=keyholeTotalDepth-keyholeEntranceDepth)
+            attach(TOP, BOT) 
+                cyl(d=keyholeSlotDiameter, h=keyholeEntranceDepth);
+        children();
+    }
 }
 
 module snapConnectBacker(offset = 0, holdingTolerance=1, anchor=CENTER, spin=0, orient=UP){
