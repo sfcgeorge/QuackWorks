@@ -42,7 +42,7 @@ keyholeEntranceDepth=2.55;
 // Diameter of the larger keyhole opening
 keyholeEntraceDiameter=7.5;
 // diameter of the smaller keyhole slot
-keyholeSlotDiameter=4;
+keyholeSlotDiameter=4.1;
 // Pick a point on a keyhole and measure (in mm) from that point to the same point on the other hole
 distanceBetweenKeyholeEntranceCenters = 144; 
 
