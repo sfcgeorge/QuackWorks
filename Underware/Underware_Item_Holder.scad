@@ -34,6 +34,8 @@ Change Log:
     - Thanks @SnazzyGreenWarrior!
 - 2025-01-11
     - Logic changes on slot placement
+- 2025-01-24
+    - Wide backplates (> 75mm) produced incorrect slot counts.
 
 Notes:
 - Slot test fit - For a slot test fit, set the following parameters
@@ -305,11 +307,10 @@ module makebackPlate(maxBackWidth, backHeight, distanceBetweenSlots, backThickne
                 }
             }
         }
-        remainingSlots = (slotCount % 2 == 1) ? (slotCount - 1) : slotCount; //now place this many slots offset from center
+        remainingSlots = (slotCount % 2 == 1) ? (slotCount - 1)/2 : slotCount/2; //now place this many slots offset from center
         initialLoc = (slotCount % 2 == 1) ? 1 : 0.5;  // how far from center to start the incrementor?
-        for (slotLoc = [initialLoc:2:remainingSlots]) {
+        for (slotLoc = [initialLoc:1:remainingSlots]) {
             // place a slot left and right of center.
-            echo("slotLoc", slotLoc)
             translate(v = [slotLoc * distanceBetweenSlots,
                            -2.35 + slotDepthMicroadjustment,
                            trueBackHeight-slotStopFromBack
