@@ -53,6 +53,7 @@ MOUNTING PARTS
 
 */
 if(Show_Part == "Snap Keyhole"){
+    // Do all the math to handle keyhole offsets for the held item
     octogonScale = 1/sin(67.5);
     innerMostDiameter = (11.4465 * 2) * octogonScale;
     remainingOffset = 25 - (distanceBetweenKeyholeEntranceCenters % 25);
@@ -61,17 +62,24 @@ if(Show_Part == "Snap Keyhole"){
     keyhole1Offset = (remainingOffset2 < offsetToEdge) ? 0 : (remainingOffset2 * -0.5 );
     keyhole2Offset = (remainingOffset2 < offsetToEdge) ? remainingOffset2 : (remainingOffset2 * 0.5 );
     
+    // make the parts
     recolor(Global_Color)
-    make_keyhole(offset = Snap_Connector_Height, anchor=BOT, keyholeOffset=keyhole1Offset);
-    fwd(25 - keyhole2Offset + keyhole1Offset) make_keyhole(offset = Snap_Connector_Height, anchor=BOT, keyholeOffset=keyhole2Offset);
+    make_keyhole_part(  offset = Snap_Connector_Height, 
+                        anchor=BOT, 
+                        keyholeOffset=keyhole1Offset);
+    fwd(25 - keyhole2Offset + keyhole1Offset) 
+        make_keyhole_part(  offset = Snap_Connector_Height, 
+                            anchor=BOT, 
+                            keyholeOffset=keyhole2Offset);
     
 };
 if(Show_Part == "Keyhole Test"){
     recolor(Global_Color)
-    make_keyhole(offset = Snap_Connector_Height, anchor=BOT, keyholeOffset=0, isTest=true);
+    make_keyhole_part(offset = Snap_Connector_Height, anchor=BOT, keyholeOffset=0, isTest=true);
 };
 
-module make_keyhole (offset = 3, anchor=BOT,spin=0,orient=UP, keyholeOffset, isTest=false){
+// Main assembly for the keyhole maker. Link a stem to a snap, Make a small bridge.
+module make_keyhole_part (offset = 3, anchor=BOT,spin=0,orient=UP, keyholeOffset, isTest=false){
     left(0.2+keyholeTotalDepth/2) yrot(-90) right_half()
         make_keyhole_stem() 
             attach(TOP, TOP) 
@@ -105,6 +113,7 @@ module make_keyhole (offset = 3, anchor=BOT,spin=0,orient=UP, keyholeOffset, isT
     cuboid([0.42,keyholeEntraceDiameter,0.2], anchor=BOT);
 }
 
+// keyhole stem as a BOSL2 attachable.
 module make_keyhole_stem(anchor=CENTER, spin=0, orient=UP) {
     attachable(anchor, spin, orient, d=keyholeEntraceDiameter, h=keyholeTotalDepth) {
         down(keyholeEntranceDepth/2)
