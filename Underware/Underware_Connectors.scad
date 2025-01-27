@@ -76,6 +76,7 @@ MOUNTING PARTS
 
 if(Show_Part == "Snap Connector")
     recolor(Global_Color)
+    split_Part(split_width =16) zrot(45)
     make_ThreadedSnap(offset = Snap_Connector_Height, anchor=BOT);
 
 //Small MB Screw based on step file
@@ -150,6 +151,12 @@ module make_ThreadedSnap (offset = 3, anchor=BOT,spin=0,orient=UP){
     }
     children();
     }
+}
+
+module split_Part(split_distance=0.4, split_width=5){
+    right(split_distance/2) yrot(90) left_half() children();
+    left(split_distance/2) yrot(-90) right_half() children();
+    cuboid([split_distance+0.02,split_width,0.2], anchor=BOT);
 }
 
 
