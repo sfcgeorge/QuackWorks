@@ -61,14 +61,16 @@ ClamShell_Mode = true;
 total_item_width = 150;
 //Extra room between the two holders (total between the two sides). Recommended to be at least 0.3mm. 
 item_slop = 0.3;
+//Minimum distance the center of a mount point can be from the edge of the item holder (by mm). Decreasing less than 10 may cause the slot to clip out the edge (which is usually fine).
+Minimum_Safe_Mount_Clearance_From_Edge = 10;
 
 /* [Internal Dimensions] */
 //Depth (by mm): internal dimension along the Z axis of print orientation. Measured from the top to the base of the internal floor, equivalent to the depth of the item you wish to hold when mounted horizontally.
-Internal_Depth = 50.0;
+Internal_Depth = 50.0; //.1
 //Width (by mm): internal dimension along the X axis of print orientation. Measured from left to right, equivalent to the width of the item you wish to hold when mounted horizontally.
-Internal_Width = 50.0; 
+Internal_Width = 50.0; //.1
 //Height (by mm): internal dimension along the Y axis of print orientation. Measured from the front to the back, equivalent to the thickness of the item you wish to hold when mounted horizontally.
-Internal_Height = 15.0;
+Internal_Height = 15.0; //.1
 
 /*[Style Customizations]*/
 //Edge rounding (by mm)
@@ -112,7 +114,7 @@ rightLowerCapture = 7;
 //Distance downward (Z axis) from the top (by mm) that captures the top right of the item. Use zero (0) for a cutout top. May require printing supports if used. 
 rightUpperCapture = 0;
 //Distance inward (Y axis) from the sides (by mm) that captures the right sides of the item
-rightLateralCapture = 3;
+rightLateralCapture = 3; //.1
 
 
 /* [Left Cutout Customizations] */
@@ -157,13 +159,11 @@ onRampEnabled = false;
 On_Ramp_Every_X_Slots = 1;
 //Distance from the back of the item holder to where the multiconnect stops (i.e., where the dimple is) (by mm)
 Multiconnect_Stop_Distance_From_Back = 13;
-//Minimum distance the center of a mount point can be from the edge of the item holder (by mm)
-Minimum_Safe_Mount_Clearance_From_Edge = 13;
 
 /* [Hidden] */
 Wall_Type = "Solid"; //["Hex","Solid"]
 debugCutoutTool = false;
-debugItemRepresentation = true;
+debugItemRepresentation = false;
 
 if(debugCutoutTool){
     if(Connection_Type == "Multiconnect") multiConnectSlotTool(totalHeight);
@@ -171,7 +171,7 @@ if(debugCutoutTool){
 }
 
 if(debugItemRepresentation){
-    %up(baseThickness+item_slop) cuboid([total_item_width, internalDepth,  internalHeight], anchor=FRONT+RIGHT, orient=RIGHT);
+    %up(baseThickness+item_slop) cuboid([total_item_width, internalDepth,  internalWidth], anchor=FRONT+RIGHT, orient=RIGHT);
 }
 
 //UNDERWARE SPECIFIC CODE
