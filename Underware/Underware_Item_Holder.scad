@@ -34,6 +34,10 @@ Change Log:
     - Thanks @SnazzyGreenWarrior!
 - 2025-01-11
     - Logic changes on slot placement
+- 2025-01-20
+    - Added Clamshell mode
+    - Added backplate only option
+    - Adjusted slot stop variable to be based on item floor rather than holder edge
 - 2025-01-24
     - Wide backplates (> 75mm) produced incorrect slot counts.
 
@@ -48,18 +52,27 @@ Notes:
 include <BOSL2/std.scad>
 include <BOSL2/walls.scad>
 
-/* [Beta Feature - Slot Type] */
+/* [Slot Type] */
 //Multipoint in Beta - Please share feedback! How do you intend to mount the item holder to a surface such as Multipoint connections or DavidD's Multiconnect?
 Connection_Type = "Multiconnect"; // [Multipoint, Multiconnect]
 
+/*[BETA - Clamshell mode]*/
+//Clamshell mode is when you want to enclose the item with two separate holders. This calculates the distance between the two holders while also aligning with the mounting points.
+ClamShell_Mode = true;
+//total width of the item to be mounted
+total_item_width = 150;
+//Extra room between the two holders (total between the two sides). Recommended to be at least 0.3mm. 
+item_slop = 0.3;
+//Minimum distance the center of a mount point can be from the edge of the item holder (by mm). Decreasing less than 10 may cause the slot to clip out the edge (which is usually fine).
+Minimum_Safe_Mount_Clearance_From_Edge = 10;
 
 /* [Internal Dimensions] */
 //Depth (by mm): internal dimension along the Z axis of print orientation. Measured from the top to the base of the internal floor, equivalent to the depth of the item you wish to hold when mounted horizontally.
-Internal_Depth = 50.0;
+Internal_Depth = 50.0; //.1
 //Width (by mm): internal dimension along the X axis of print orientation. Measured from left to right, equivalent to the width of the item you wish to hold when mounted horizontally.
-Internal_Width = 50.0; 
+Internal_Width = 50.0; //.1
 //Height (by mm): internal dimension along the Y axis of print orientation. Measured from the front to the back, equivalent to the thickness of the item you wish to hold when mounted horizontally.
-Internal_Height = 15.0;
+Internal_Height = 15.0; //.1
 
 /*[Style Customizations]*/
 //Edge rounding (by mm)
@@ -103,7 +116,7 @@ rightLowerCapture = 7;
 //Distance downward (Z axis) from the top (by mm) that captures the top right of the item. Use zero (0) for a cutout top. May require printing supports if used. 
 rightUpperCapture = 0;
 //Distance inward (Y axis) from the sides (by mm) that captures the right sides of the item
-rightLateralCapture = 3;
+rightLateralCapture = 3; //.1
 
 
 /* [Left Cutout Customizations] */
@@ -129,7 +142,7 @@ backPlateOnly = false;
 //Offset the multiconnect on-ramps to be between grid slots rather than on the slot
 onRampHalfOffset = true;
 //Change slot orientation, when enabled slots to come from the top of the back, when disabled slots come from the bottom
-Slot_From_Top = true;
+Reverse_Slot_Direction = true;
 //Distance between Multiconnect slots on the back (25mm is standard for MultiBoard)
 distanceBetweenSlots = 25;
 //Reduce the number of slots
@@ -152,10 +165,15 @@ Multiconnect_Stop_Distance_From_Back = 13;
 /* [Hidden] */
 Wall_Type = "Solid"; //["Hex","Solid"]
 debugCutoutTool = false;
+debugItemRepresentation = false;
 
 if(debugCutoutTool){
     if(Connection_Type == "Multiconnect") multiConnectSlotTool(totalHeight);
     else multiPointSlotTool(totalHeight);
+}
+
+if(debugItemRepresentation){
+    %up(baseThickness+item_slop) cuboid([total_item_width, internalDepth,  internalWidth], anchor=FRONT+RIGHT, orient=RIGHT);
 }
 
 //UNDERWARE SPECIFIC CODE
@@ -176,6 +194,16 @@ totalHeight = internalHeight+baseThickness;
 totalDepth = internalDepth + wallThickness;
 totalWidth = internalWidth + wallThickness*2;
 totalCenterX = internalWidth/2;
+ 
+
+//calculate total working space, respecting minimum mounting value.
+//The mounting points should be 'inside' the total width. Therefore, we are rounding down to the next mounting points on both sides
+mount_point_distance = quantdn(total_item_width+baseThickness*2+item_slop*2-(Minimum_Safe_Mount_Clearance_From_Edge)*2, distanceBetweenSlots);
+echo(str("Mount Point Distance: ", mount_point_distance));
+new_mount_point_inward_adjustement = (total_item_width - mount_point_distance+item_slop )/2;
+echo(str("New Mount Point Inward Adjustment: ", new_mount_point_inward_adjustement));
+
+
 
 if(!debugCutoutTool)
 union(){
@@ -184,27 +212,38 @@ union(){
         translate(v = [-internalWidth/2,0,0]) 
             basket();
     //slotted back
-    if(Connection_Type == "Multipoint"){
-        makebackPlate(
-            maxBackWidth = totalWidth, 
-            backHeight = totalHeight, 
-            distanceBetweenSlots = distanceBetweenSlots,
-            backThickness=4.8,
-            enforceMaxWidth=true,
-            slotStopFromBack = Multiconnect_Stop_Distance_From_Back
-            );
-    }
-    if(Connection_Type == "Multiconnect"){
+    makebackPlate(
+        maxBackWidth = totalWidth, 
+        backHeight = totalHeight, 
+        distanceBetweenSlots = distanceBetweenSlots,
+        backThickness= Connection_Type == "Multipoint" ? 4.8 : 
+            Connection_Type == "Multiconnect" ? 6.5 :
+            6,
+        enforceMaxWidth=true,
+        slotStopFromBack = ClamShell_Mode ? new_mount_point_inward_adjustement : Multiconnect_Stop_Distance_From_Back,
+        anchor=BOT+BACK
+        );
+}
 
-        makebackPlate(
-            maxBackWidth = totalWidth, 
-            backHeight = totalHeight, 
-            distanceBetweenSlots = distanceBetweenSlots,
-            backThickness=6.5,
-            enforceMaxWidth=true,
-            slotStopFromBack = Multiconnect_Stop_Distance_From_Back
-            );
-    }
+if(ClamShell_Mode)
+up(total_item_width+item_slop+baseThickness*2) rot([0,180,0])
+union(){
+    if(!backPlateOnly)
+        //move to center
+        translate(v = [-internalWidth/2,0,0]) 
+            basket();
+    //slotted back
+    makebackPlate(
+        maxBackWidth = totalWidth, 
+        backHeight = totalHeight, 
+        distanceBetweenSlots = distanceBetweenSlots,
+        backThickness= Connection_Type == "Multipoint" ? 4.8 : 
+            Connection_Type == "Multiconnect" ? 6.5 :
+            6,
+        enforceMaxWidth=true,
+        slotStopFromBack = ClamShell_Mode ? new_mount_point_inward_adjustement : Multiconnect_Stop_Distance_From_Back,
+        anchor=BOT+BACK
+        );
 }
 
 //Create Basket
@@ -269,9 +308,8 @@ module basket() {
 
 //BEGIN MODULES
 //Slotted back Module
-module makebackPlate(maxBackWidth, backHeight, distanceBetweenSlots, backThickness, slotStopFromBack = 13, enforceMaxWidth)
+module makebackPlate(maxBackWidth, backHeight, distanceBetweenSlots, backThickness, slotStopFromBack = 13-baseThickness, enforceMaxWidth, anchor=CENTER, spin=0, orient=UP)
 {
-    
     //every slot is a multiple of distanceBetweenSlots. The default of 25 accounts for the rail, and the ~5mm to either side.
     //first calculate the starting slot location based on the number of slots.
     slotCount = floor(maxBackWidth/distanceBetweenSlots) - subtractedSlots;
@@ -279,64 +317,69 @@ module makebackPlate(maxBackWidth, backHeight, distanceBetweenSlots, backThickne
     trueWidth = (enforceMaxWidth) ? maxBackWidth : slotCount * distanceBetweenSlots;
     trueBackHeight = max(backHeight, 25);
     backPlateTranslation = [0,-backThickness, 0];
-    
-    //slot count calculates how many slots can fit on the back. Based on internal width for buffer. 
-    //slot width needs to be at least the distance between slot for at least 1 slot to generate
-    yrot(Slot_From_Top ? 180 : 0) up(Slot_From_Top ? -trueBackHeight : 0)
-    difference() {
-        translate(v = backPlateTranslation) 
-        cuboid(size = [trueWidth, backThickness, trueBackHeight], 
-               rounding=edgeRounding, 
-               except_edges=BACK, 
-               anchor=FRONT+BOT
-              );
-        //Loop through slots and center on the item
-        //Note: I kept doing math until it looked right. It's possible this can be simplified.
-        if(slotCount % 2 == 1){
-            //odd number of slots, place on on x=0
-            translate(v = [0,
-                           -2.35 + slotDepthMicroadjustment,
-                           trueBackHeight-slotStopFromBack
-                          ])
-                {
-                if(Connection_Type == "Multipoint"){
-                    multiPointSlotTool(totalHeight);
-                }
-                if(Connection_Type == "Multiconnect"){
-                    multiConnectSlotTool(totalHeight);
-                }
-            }
-        }
-        remainingSlots = (slotCount % 2 == 1) ? (slotCount - 1)/2 : slotCount/2; //now place this many slots offset from center
-        initialLoc = (slotCount % 2 == 1) ? 1 : 0.5;  // how far from center to start the incrementor?
-        for (slotLoc = [initialLoc:1:remainingSlots]) {
-            // place a slot left and right of center.
-            translate(v = [slotLoc * distanceBetweenSlots,
-                           -2.35 + slotDepthMicroadjustment,
-                           trueBackHeight-slotStopFromBack
-                          ])
-                {
-                if(Connection_Type == "Multipoint"){
-                    multiPointSlotTool(totalHeight);
-                }
-                if(Connection_Type == "Multiconnect"){
-                    multiConnectSlotTool(totalHeight);
+    attachable(anchor, spin, orient, size=[trueWidth,backThickness,trueBackHeight]){
+        //final position for anchor alignment
+        translate(v = [0,backThickness/2,-trueBackHeight/2]) 
+        //flip if slotting from top
+        yrot(Reverse_Slot_Direction ? 180 : 0) up(Reverse_Slot_Direction ? -trueBackHeight : 0)
+        //slot count calculates how many slots can fit on the back. Based on internal width for buffer. 
+        //slot width needs to be at least the distance between slot for at least 1 slot to generate
+        difference() {
+            translate(v = backPlateTranslation) 
+            cuboid(size = [trueWidth, backThickness, trueBackHeight], 
+                rounding=edgeRounding, 
+                except_edges=BACK, 
+                anchor=FRONT+BOT
+                );
+            //Loop through slots and center on the item
+            //Note: I kept doing math until it looked right. It's possible this can be simplified.
+            if(slotCount % 2 == 1){
+                //odd number of slots, place on on x=0
+                translate(v = [0,
+                            -2.35 + slotDepthMicroadjustment,
+                            trueBackHeight-slotStopFromBack-baseThickness
+                            ])
+                    {
+                    if(Connection_Type == "Multipoint"){
+                        multiPointSlotTool(totalHeight);
+                    }
+                    if(Connection_Type == "Multiconnect"){
+                        multiConnectSlotTool(totalHeight);
+                    }
                 }
             }
-            translate(v = [slotLoc * distanceBetweenSlots * -1,
-                           -2.35 + slotDepthMicroadjustment,
-                           trueBackHeight-slotStopFromBack
-                          ])
-                {
-                if(Connection_Type == "Multipoint"){
-                    multiPointSlotTool(totalHeight);
+            remainingSlots = (slotCount % 2 == 1) ? (slotCount - 1)/2 : slotCount/2; //now place this many slots offset from center
+            initialLoc = (slotCount % 2 == 1) ? 1 : 0.5;  // how far from center to start the incrementor?
+            for (slotLoc = [initialLoc:1:remainingSlots]) {
+                // place a slot left and right of center.
+                    translate(v = [slotLoc * distanceBetweenSlots,
+                            -2.35 + slotDepthMicroadjustment,
+                            trueBackHeight-slotStopFromBack-baseThickness
+                            ])
+                    {
+                    if(Connection_Type == "Multipoint"){
+                        multiPointSlotTool(totalHeight);
+                    }
+                    if(Connection_Type == "Multiconnect"){
+                        multiConnectSlotTool(totalHeight);
+                    }
                 }
-                if(Connection_Type == "Multiconnect"){
-                    multiConnectSlotTool(totalHeight);
+                translate(v = [slotLoc * distanceBetweenSlots * -1,
+                            -2.35 + slotDepthMicroadjustment,
+                            trueBackHeight-slotStopFromBack-baseThickness
+                            ])
+                    {
+                    if(Connection_Type == "Multipoint"){
+                        multiPointSlotTool(totalHeight);
+                    }
+                    if(Connection_Type == "Multiconnect"){
+                        multiConnectSlotTool(totalHeight);
+                    }
                 }
             }
-        }
-    }   
+        }   
+        children();
+    }
 }
 
 //Create Slot Tool
@@ -374,7 +417,7 @@ module multiConnectSlotTool(totalHeight) {
             scale(v = dimpleScale) 
             rotate(a = [90,0,0,]) 
                 rotate_extrude($fn=50) 
-                    polygon(points = [[0,0],[0,1.5],[1.5,0]]);
+                    polygon(points = [[0,0],[0,1],[1,0]]);
     }
 }
 

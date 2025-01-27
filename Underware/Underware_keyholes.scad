@@ -1,13 +1,11 @@
-/*Created by Hands on Katie and BlackjackDuck (Andy)
+/*Created by SnazzyGreenWarrior and BlackjackDuck (Andy)
 
 Documentation available at https://handsonkatie.com/underware-2-0-the-made-to-measure-collection/
 
 Credit to 
-    First and foremost - Katie and her community at Hands on Katie on Youtube, Patreon, and Discord
-    @dmgerman on MakerWorld and @David D on Printables for the bolt thread specs
+    Katie and her community at Hands on Katie on Youtube, Patreon, and Discord
+    SnazzyGreenWarrior for Keyhole design, logic, and testing
     Jonathan at Keep Making for Multiboard
-    @Lyric on Printables for the flush connector idea
-
     
 All parts except for Snap Connector are Licensed Creative Commons 4.0 Attribution Non-Commercial Share-Alike (CC-BY-NC-SA)
 Snap Connector adopts the Multiboard.io license at multiboard.io/license
