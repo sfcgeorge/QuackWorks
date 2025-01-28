@@ -61,7 +61,24 @@ if(Show_Part == "Snap Keyhole"){
     keyhole2Offset = (remainingOffset2 < offsetToEdge) ? remainingOffset2 : (remainingOffset2 * 0.5 );
     
     // make the parts
-    recolor(Global_Color)
+    recolor(Global_Color){
+    split_Part(split_width=20, connect=BOT, largest_size = 50)
+        make_keyhole_part(
+            offset = Snap_Connector_Height, 
+            anchor=BOT, 
+            keyholeOffset=keyhole1Offset
+            );
+    fwd(30) 
+    split_Part(split_width=20, connect=BOT, largest_size = 50)
+        make_keyhole_part(
+            offset = Snap_Connector_Height, 
+            anchor=BOT, 
+            keyholeOffset=keyhole2Offset
+            );
+    }
+    
+    /* deprecated for new split_part module
+    recolor(Global_Color){
     make_keyhole_part(  offset = Snap_Connector_Height, 
                         anchor=BOT, 
                         keyholeOffset=keyhole1Offset);
@@ -69,6 +86,8 @@ if(Show_Part == "Snap Keyhole"){
         make_keyhole_part(  offset = Snap_Connector_Height, 
                             anchor=BOT, 
                             keyholeOffset=keyhole2Offset);
+    }
+    */
     
 };
 if(Show_Part == "Keyhole Test"){
@@ -76,7 +95,31 @@ if(Show_Part == "Keyhole Test"){
     make_keyhole_part(offset = Snap_Connector_Height, anchor=BOT, keyholeOffset=0, isTest=true);
 };
 
-// Main assembly for the keyhole maker. Link a stem to a snap, Make a small bridge.
+// Main assembly for the keyhole maker. Link a stem to a snap
+module make_keyhole_part (offset = 3, anchor=BOT,spin=0,orient=UP, keyholeOffset, isTest=false){
+    attachable(anchor, spin, orient, size=[11.4465*2, 11.4465*2, 6.21+offset+keyholeTotalDepth]) {
+        fwd (keyholeOffset) xrot(180) down((6.21+offset)/2)
+        union()
+        make_keyhole_stem() 
+            attach(TOP, TOP, overlap=0.01) 
+                fwd(keyholeOffset){
+                    if(isTest){
+                        cyl(r=11.4465, h= 1.97);
+                    }
+                    else{
+                    zrot(45)snapConnectBacker(
+                            offset = offset, 
+                            holdingTolerance = Snap_Holding_Tolerance, 
+                            anchor = TOP, 
+                            orient = UP);
+                    }
+                }
+    children();
+    }
+}
+
+/* deprecated for new split_part module
+
 module make_keyhole_part (offset = 3, anchor=BOT,spin=0,orient=UP, keyholeOffset, isTest=false){
     left(0.2+keyholeTotalDepth/2) yrot(-90) right_half()
         make_keyhole_stem() 
@@ -110,6 +153,7 @@ module make_keyhole_part (offset = 3, anchor=BOT,spin=0,orient=UP, keyholeOffset
                 }
     cuboid([0.42,keyholeEntraceDiameter,0.2], anchor=BOT);
 }
+*/
 
 // keyhole stem as a BOSL2 attachable.
 module make_keyhole_stem(anchor=CENTER, spin=0, orient=UP) {
@@ -122,8 +166,20 @@ module make_keyhole_stem(anchor=CENTER, spin=0, orient=UP) {
     }
 }
 
+//SPLIT PART
+//Split part takes a part and splits in half on the bed with a connector. This is often used for stronger connections in things like threads due to layer line orientation. 
+module split_Part(split_distance=0.4, split_width=5, connect=TOP, largest_size = 50, connector_height = 0.2){
+    union()
+    cuboid([split_distance+0.02, split_width, connector_height], anchor=BOT){
+        xrot(-90) back(split_distance/4) attach(RIGHT, connect, overlap=0.01)
+            left_half(s = largest_size*2) children();
+        xrot(-90) back(split_distance/4)attach(LEFT, connect, overlap=0.01)
+            right_half(s = largest_size*2) children();
+    }
+}
+
 module snapConnectBacker(offset = 0, holdingTolerance=1, anchor=CENTER, spin=0, orient=UP){
-    attachable(anchor, spin, orient, size=[11.4465*2, 11.4465*2, 6.17+offset]){ 
+    attachable(anchor, spin, orient, size=[11.4465*2, 11.4465*2, 6.21+offset]){ 
     //bumpout profile
     bumpout = turtle([
         "ymove", -2.237,

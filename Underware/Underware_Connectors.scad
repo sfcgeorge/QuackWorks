@@ -10,6 +10,12 @@ Credit to
     SnazzyGreenWarrior for split printing logic
 
     
+Change Log:
+- 2024-12-06 
+    - Initial release
+- 2025-01-27
+    - Split snap connectors
+
 All parts except for Snap Connector are Licensed Creative Commons 4.0 Attribution Non-Commercial Share-Alike (CC-BY-NC-SA)
 Snap Connector adopts the Multiboard.io license at multiboard.io/license
 */
@@ -82,7 +88,7 @@ MOUNTING PARTS
 if(Show_Part == "Snap Connector")
     recolor(Global_Color)
     if (Split_Printing)
-        split_Part(split_width =Outer_Diameter_Sm-Thread_Depth_Sm*2, connect=TOP, largest_size = 45) zrot(45)
+        split_Part(split_width =20, connect=BOT, largest_size = 45) zrot(45)
             make_ThreadedSnap(offset = Snap_Connector_Height, anchor=BOT);
     else
         make_ThreadedSnap(offset = Snap_Connector_Height, anchor=BOT);
@@ -150,6 +156,7 @@ if(Show_Part == "Large Bolt")
         tag("remove")attach(BOT, BOT, inside=true, shiftout=0.01) cyl(h=16.01, d= Inner_Hole_Diameter_Lg, $fn=25 );
 }
 
+//SPLIT PART
 //Split part takes a part and splits in half on the bed with a connector. This is often used for stronger connections in things like threads due to layer line orientation. 
 module split_Part(split_distance=0.4, split_width=5, connect=TOP, largest_size = 50, connector_height = 0.2){
     cuboid([split_distance+0.02, split_width, connector_height], anchor=BOT){
@@ -158,7 +165,6 @@ module split_Part(split_distance=0.4, split_width=5, connect=TOP, largest_size =
         xrot(-90) back(split_distance/4)attach(LEFT, connect, overlap=0.01)
             right_half(s = largest_size*2) children();
     }
-    
 }
 
 //THREADED SNAP
