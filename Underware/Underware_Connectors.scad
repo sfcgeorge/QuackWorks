@@ -84,14 +84,16 @@ MOUNTING PARTS
 */
 
 //!make_ThreadedSnap(offset = Snap_Connector_Height, anchor=BOT) show_anchors();
-
-if(Show_Part == "Snap Connector")
-    recolor(Global_Color)
-    if (Split_Printing)
-        split_Part(split_width =20, connect=BOT, largest_size = 45) zrot(45)
-            make_ThreadedSnap(offset = Snap_Connector_Height, anchor=BOT);
-    else
-        make_ThreadedSnap(offset = Snap_Connector_Height, anchor=BOT);
+union(){
+    if(Show_Part == "Snap Connector")
+        
+            recolor(Global_Color)
+            if (Split_Printing)
+                split_Part(split_width =20, connect=BOT, largest_size = 45) zrot(45)
+                    make_ThreadedSnap(offset = Snap_Connector_Height, anchor=BOT);
+            else
+                make_ThreadedSnap(offset = Snap_Connector_Height, anchor=BOT);
+}
 
 //Small MB Screw based on step file
 if(Show_Part == "Bolts" && (Bolt_Selection == "All" || Bolt_Selection == "Small MB Screw")){
@@ -159,11 +161,13 @@ if(Show_Part == "Large Bolt")
 //SPLIT PART
 //Split part takes a part and splits in half on the bed with a connector. This is often used for stronger connections in things like threads due to layer line orientation. 
 module split_Part(split_distance=0.4, split_width=5, connect=TOP, largest_size = 50, connector_height = 0.2){
-    cuboid([split_distance+0.02, split_width, connector_height], anchor=BOT){
-        xrot(-90) back(split_distance/4) attach(RIGHT, connect, overlap=0.01)
-            left_half(s = largest_size*2) children();
-        xrot(-90) back(split_distance/4)attach(LEFT, connect, overlap=0.01)
-            right_half(s = largest_size*2) children();
+    union(){
+        cuboid([split_distance+0.02, split_width, connector_height], anchor=BOT){
+            xrot(-90) back(split_distance/4) attach(RIGHT, connect, overlap=0.01)
+                left_half(s = largest_size*2) children();
+            xrot(-90) back(split_distance/4)attach(LEFT, connect, overlap=0.01)
+                right_half(s = largest_size*2) children();
+        }
     }
 }
 
@@ -171,8 +175,10 @@ module split_Part(split_distance=0.4, split_width=5, connect=TOP, largest_size =
 module make_ThreadedSnap (offset = 3, anchor=BOT,spin=0,orient=UP){
     attachable(anchor, spin, orient, size=[11.4465*2, 11.4465*2, 6.21+offset+Snap_Thread_Height]){
     down(Snap_Thread_Height/2)
-    snapConnectBacker(offset = offset, holdingTolerance = Snap_Holding_Tolerance) {
-        attach(TOP, BOT, overlap=0.01) trapezoidal_threaded_rod(d=Outer_Diameter_Sm, l=Snap_Thread_Height, pitch=Pitch_Sm, flank_angle = Flank_Angle_Sm, thread_depth = Thread_Depth_Sm, $fn=50, bevel2 = true, blunt_start=false, anchor=anchor,spin=spin,orient=orient);
+    union(){
+        snapConnectBacker(offset = offset, holdingTolerance = Snap_Holding_Tolerance) {
+            attach(TOP, BOT, overlap=0.05) trapezoidal_threaded_rod(d=Outer_Diameter_Sm, l=Snap_Thread_Height, pitch=Pitch_Sm, flank_angle = Flank_Angle_Sm, thread_depth = Thread_Depth_Sm, $fn=50, bevel2 = true, blunt_start=false, anchor=anchor,spin=spin,orient=orient);
+        }
     }
     children();
     }
