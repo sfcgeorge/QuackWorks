@@ -59,16 +59,20 @@ if(Show_Part == "Snap Keyhole"){
     offsetToEdge = (innerMostDiameter - (keyholeEntraceDiameter)) / 2;
     keyhole1Offset = (remainingOffset2 < offsetToEdge) ? 0 : (remainingOffset2 * -0.5 );
     keyhole2Offset = (remainingOffset2 < offsetToEdge) ? remainingOffset2 : (remainingOffset2 * 0.5 );
-    
+
+
     // make the parts
-    recolor(Global_Color){
+    union() recolor(Global_Color)
     split_Part(split_width=20, connect=BOT, largest_size = 50)
         make_keyhole_part(
             offset = Snap_Connector_Height, 
             anchor=BOT, 
             keyholeOffset=keyhole1Offset
             );
-    fwd(30) 
+    
+    
+    recolor(Global_Color) fwd(30) 
+    union(){ 
     split_Part(split_width=20, connect=BOT, largest_size = 50)
         make_keyhole_part(
             offset = Snap_Connector_Height, 
@@ -97,11 +101,11 @@ if(Show_Part == "Keyhole Test"){
 
 // Main assembly for the keyhole maker. Link a stem to a snap
 module make_keyhole_part (offset = 3, anchor=BOT,spin=0,orient=UP, keyholeOffset, isTest=false){
-    attachable(anchor, spin, orient, size=[11.4465*2, 11.4465*2, 6.21+offset+keyholeTotalDepth]) {
-        fwd (keyholeOffset) xrot(180) down((6.21+offset)/2)
-        union()
+    attachable(anchor, spin, orient, size=[11.4465*2, 11.4465*2, 6.18+offset+keyholeTotalDepth-0.01]) {
+        fwd (keyholeOffset) xrot(180) down((6.18+offset)/2)
+        union(){
         make_keyhole_stem() 
-            attach(TOP, TOP, overlap=0.01) 
+            attach(TOP, TOP, overlap=0.02) 
                 fwd(keyholeOffset){
                     if(isTest){
                         cyl(r=11.4465, h= 1.97);
@@ -114,6 +118,7 @@ module make_keyhole_part (offset = 3, anchor=BOT,spin=0,orient=UP, keyholeOffset
                             orient = UP);
                     }
                 }
+        }
     children();
     }
 }
@@ -157,10 +162,10 @@ module make_keyhole_part (offset = 3, anchor=BOT,spin=0,orient=UP, keyholeOffset
 
 // keyhole stem as a BOSL2 attachable.
 module make_keyhole_stem(anchor=CENTER, spin=0, orient=UP) {
-    attachable(anchor, spin, orient, d=keyholeEntraceDiameter, h=keyholeTotalDepth) {
+    attachable(anchor, spin, orient, d=keyholeEntraceDiameter, h=keyholeTotalDepth-0.01) {
         down(keyholeEntranceDepth/2)
             cyl(d=keyholeEntraceDiameter, h=keyholeTotalDepth-keyholeEntranceDepth)
-            attach(TOP, BOT) 
+            attach(TOP, BOT, overlap=0.01) 
                 cyl(d=keyholeSlotDiameter, h=keyholeEntranceDepth);
         children();
     }
@@ -169,17 +174,18 @@ module make_keyhole_stem(anchor=CENTER, spin=0, orient=UP) {
 //SPLIT PART
 //Split part takes a part and splits in half on the bed with a connector. This is often used for stronger connections in things like threads due to layer line orientation. 
 module split_Part(split_distance=0.4, split_width=5, connect=TOP, largest_size = 50, connector_height = 0.2){
-    union()
-    cuboid([split_distance+0.02, split_width, connector_height], anchor=BOT){
-        xrot(-90) back(split_distance/4) attach(RIGHT, connect, overlap=0.01)
-            left_half(s = largest_size*2) children();
-        xrot(-90) back(split_distance/4)attach(LEFT, connect, overlap=0.01)
-            right_half(s = largest_size*2) children();
+    union(){
+        cuboid([split_distance+0.04, split_width, connector_height], anchor=BOT){
+            xrot(-90) back(split_distance/4) attach(RIGHT, connect, overlap=0.02)
+                left_half(s = largest_size*2) children();
+            xrot(-90) back(split_distance/4)attach(LEFT, connect, overlap=0.02)
+                right_half(s = largest_size*2) children();
+        }
     }
 }
 
 module snapConnectBacker(offset = 0, holdingTolerance=1, anchor=CENTER, spin=0, orient=UP){
-    attachable(anchor, spin, orient, size=[11.4465*2, 11.4465*2, 6.21+offset]){ 
+    attachable(anchor, spin, orient, size=[11.4465*2, 11.4465*2, 6.18+offset]){ 
     //bumpout profile
     bumpout = turtle([
         "ymove", -2.237,
@@ -189,15 +195,15 @@ module snapConnectBacker(offset = 0, holdingTolerance=1, anchor=CENTER, spin=0, 
         "ymove", 0.252
         ]   );
 
-    down(6.2/2+offset/2)
+    down((6.2+offset)/2)
     union(){
     diff("remove")
         //base
             oct_prism(h = 4.23, r = 11.4465*Oct_Scaling, anchor=BOT) {
                 //first bevel
-                attach(TOP, BOT, shiftout=-0.01) oct_prism(h = 1.97, r1 = 11.4465, r2 = 12.5125, $fn =8, anchor=BOT)
+                attach(TOP, BOT, overlap=0.01) oct_prism(h = 1.97, r1 = 11.4465, r2 = 12.5125, $fn =8, anchor=BOT)
                     //top - used as offset. Independen snap height is 2.2
-                    attach(TOP, BOT, shiftout=-0.01) oct_prism(h = offset, r = 12.9885, anchor=BOTTOM);
+                    attach(TOP, BOT, overlap=0.01) oct_prism(h = offset, r = 12.9885, anchor=BOTTOM);
                         //top bevel - not used when applied as backer
                         //position(TOP) oct_prism(h = 0.4, r1 = 12.9985, r2 = 12.555, anchor=BOTTOM);
             
