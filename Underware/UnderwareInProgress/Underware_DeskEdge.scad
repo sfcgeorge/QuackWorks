@@ -30,10 +30,10 @@ include <BOSL2/threading.scad>
 Channel_Width_in_Units = 1;
 //Height inside the channel (in mm). Z axis for top channel and X axis bottom channel.
 Channel_Internal_Height = 12; //[12:6:72]
-//Length (X axis) in mm of the top channel. This should be the distance of where the channel starts to the wall or corner.
-Length_of_Longest_Edge_1 = 75;
-//Length (Z axis) in mm of the bottom channel. This should be the distance of where the channel starts to the wall or corner.
-Length_of_Longest_Edge_2 = 75;
+//Length (X axis) in mm of offset from edge of desk to start of Multiboard tiles.
+Offset_to_Multiboard = 75;
+//Length (Z axis) in mm of the channel up the back of the desk.
+Thickness_of_Desk = 75;
 
 //Slot for cable access in mm
 Cable_slot = 6.5;
@@ -60,16 +60,22 @@ Channel_Length_Units = 6;
 
 */
 
-//outside mitre channel
+//top 'L' piece
+// Offset piece
 color_this(Global_Color)
 back(30)zrot(180) {
 half_of(DOWN+RIGHT, s=Channel_Length_Units*Grid_Size*2)
-    path_sweep(topProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Length_of_Longest_Edge_1*2]), anchor=TOP, orient=BOT);
-
+    path_sweep(topProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Offset_to_Multiboard*2]), anchor=TOP, orient=BOT);
+// Desk piece
 color_this(Global_Color)
 rot([180,-90,0])
     half_of(DOWN+RIGHT, s=Channel_Length_Units*Grid_Size*2)
-    path_sweep(completeProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Length_of_Longest_Edge_2*2]), anchor=TOP, orient=BOT);
+    path_sweep(completeProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Thickness_of_Desk*2]), anchor=TOP, orient=BOT);
+// Join piece
+color_this(Global_Color)
+up(Channel_Internal_Height+5.75)
+zrot(180)
+    path_sweep(joinProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Channel_Internal_Height+5.49]), orient=BOT);
 }
 
 //BEGIN PROFILES - Must match across all files
@@ -120,6 +126,16 @@ function topDeleteProfile(widthMM, heightMM = 12) =
         left((widthMM-25)/2,topDeleteProfileHalf(heightMM)), 
         right((widthMM-25)/2,mirror([1,0],topDeleteProfileHalf(heightMM))), //fill middle if widening from standard 25mm
         back(4.474 + (heightMM-12)/2,rect([widthMM-25+0.02,8.988 + heightMM - 12])) 
+    );
+
+//take the two halves the base 'join piece' and merge them
+function joinProfile(widthMM = 25, heightMM = 12) =
+    difference(
+        union(
+                left((widthMM-25)/2,baseJoinHalf(heightMM)), 
+                right((widthMM-25)/2,mirror([1,0],baseJoinHalf(heightMM))) //fill middle if widening from standard 25m
+        ),
+    back((topHeight+5.5 + 36 - (heightMM)),rect([Cable_slot+0.02,500])) 
     );
 
 baseProfileHalf = 
@@ -191,6 +207,7 @@ function completeProfileQuarter2(heightMM = 12, widthMM = 25) =
             [-12.517,0],
         ]
         );
+
 baseDeleteProfileHalf = 
     fwd(-7.947, //take Katie's exact measurements for half the profile of the inside
         //profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
@@ -215,6 +232,19 @@ function topDeleteProfileHalf(heightMM = 12)=
             [-11.166,-0.592],
             [-11.166,-1.414-0.02],
             [0,-1.414-0.02]
+        ]
+        );
+
+function baseJoinHalf(heightMM = 12) =
+        fwd(-7.947,
+        [
+            [-9.5,6 + (heightMM - 12)],
+            [-12.517,5.554 + (heightMM - 12)],
+            [-12.517,-4.448],
+            [-10.517,-6.448],
+            [-10.517,-7.947],
+            [-2.967,-7.947],
+            [-9.5,-1.414]
         ]
         );
 
