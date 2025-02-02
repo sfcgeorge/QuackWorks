@@ -31,9 +31,9 @@ Channel_Width_in_Units = 1;
 //Height inside the channel (in mm). Z axis for top channel and X axis bottom channel.
 Channel_Internal_Height = 12; //[12:6:72]
 //Length (X axis) in mm of offset from edge of desk to start of Multiboard tiles.
-Offset_to_Multiboard = 75;
+Offset_to_Multiboard = 5;
 //Length (Z axis) in mm of the channel up the back of the desk.
-Thickness_of_Desk = 75;
+Thickness_of_Desk = 40;
 
 //Slot for cable access in mm
 Cable_slot = 6.5;
@@ -48,6 +48,8 @@ Global_Color = "SlateBlue";
 channelWidth = Channel_Width_in_Units * Grid_Size;
 baseHeight = 9.63;
 topHeight = 10.968;
+totalHeight = 17.4897; // Combined height
+actualHeight = (totalHeight - 12) + Channel_Internal_Height; // Calculate height with selected Internal channel height
 interlockOverlap = 3.09; //distance that the top and base overlap each other
 interlockFromFloor = 6.533; //distance from the bottom of the base to the bottom of the top when interlocked
 partSeparation = 10;
@@ -66,12 +68,12 @@ difference(){
 color_this(Global_Color)
 back(30)zrot(180) {
 half_of(DOWN+RIGHT, s=Channel_Length_Units*Grid_Size*2)
-    path_sweep(topProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Offset_to_Multiboard*2]), anchor=TOP, orient=BOT);
+    path_sweep(topProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", (Offset_to_Multiboard+actualHeight)*2]), anchor=TOP, orient=BOT);
 // Desk piece
 color_this(Global_Color)
 rot([180,-90,0])
     half_of(DOWN+RIGHT, s=Channel_Length_Units*Grid_Size*2)
-    path_sweep(completeProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Thickness_of_Desk*2]), anchor=TOP, orient=BOT);
+    path_sweep(completeProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", (Thickness_of_Desk+actualHeight)*2]), anchor=TOP, orient=BOT);
 // Join piece
 color_this(Global_Color)
 up(Channel_Internal_Height+5.75)
