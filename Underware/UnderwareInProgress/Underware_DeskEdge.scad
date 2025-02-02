@@ -94,7 +94,17 @@ rot([180,-90,0])
     path_sweep(completeOutside(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Thickness_of_Desk*2]), anchor=TOP, orient=BOT);
 
 };
+// Join Inside
+color_this(Global_Color)
+zrot(180) {
+up(Channel_Internal_Height+5.75)
+right(Channel_Internal_Height*1.5)
+fwd(30)
+    path_sweep(joinInside(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Channel_Internal_Height ]), orient=BOT);
+};
 }
+
+
 
 
 //BEGIN PROFILES - Must match across all files
@@ -124,14 +134,6 @@ function completeProfile(widthMM, heightMM) =
         ),
     back((heightMM-12)/2,rect([Cable_slot+0.02,15]))  
     );
-
-//function completeProfileHalf(widthMM, heightMM) =
-//    union(
-//        back((topHeight+5.5 + 36 - (heightMM)),completeProfileQuarter1(widthMM, heightMM)), 
-//        back((topHeight+5.5+24),completeProfileQuarter2(widthMM, heightMM))
-//    );
-
-
 
 function baseDeleteProfile(widthMM = 25) = 
     union(
@@ -168,6 +170,12 @@ function completeOutside(widthMM, heightMM) =
     union(
         left((widthMM-25)/2,completeOutsideHalf(heightMM, widthMM)), 
         right((widthMM-25)/2,mirror([1,0],completeOutsideHalf(heightMM, widthMM)))
+    );
+
+function joinInside(widthMM, heightMM) =
+    union(
+        left((widthMM-25)/2,joinInsideHalf(heightMM, widthMM)), 
+        right((widthMM-25)/2,mirror([1,0],joinInsideHalf(heightMM, widthMM)))
     );
 
 baseProfileHalf = 
@@ -269,7 +277,7 @@ function baseJoinHalf(heightMM = 12) =
             [-9.5,-1.414]
         ]
 );
-
+// Delete inside 'Complete'
 function completeInsideHalf(heightMM = 12, widthMM = 25) =
         fwd(-7.947,
         [
@@ -279,10 +287,10 @@ function completeInsideHalf(heightMM = 12, widthMM = 25) =
             [-9.5,0],
             [-9.5,5.7427 + (heightMM - 12)],
             [-7.7,7.5427 + (heightMM - 12)],
-            [0 + (widthMM-25)/2,7.5427 + (heightMM - 12)],
+            [0 + (widthMM-25)/2,7.5427 + (heightMM - 12)]
         ]
 );
-
+// Delete outside 'Complete'
 function completeOutsideHalf(heightMM = 12, widthMM = 25) =
         fwd(-7.947,
         [
@@ -291,6 +299,21 @@ function completeOutsideHalf(heightMM = 12, widthMM = 25) =
             [-12.517,9.5427]
         ]
 );
+
+// Delete inside 'Join'
+function joinInsideHalf(heightMM = 12, widthMM = 25) =
+        fwd(-7.947,
+        [
+            [0 + (widthMM-25)/2,-8],
+            [-2.914,-8],
+            [-9.5,-1.414],
+            [-9.5,0],
+            [-9.5,5.7427 + (heightMM - 12)],
+            [-7.7,7.5427 + (heightMM - 12)],
+            [0 + (widthMM-25)/2,7.5427 + (heightMM - 12)]
+        ]
+);
+
 
 //calculate the max x and y points. Useful in calculating size of an object when the path are all positive variables originating from [0,0]
 function maxX(path) = max([for (p = path) p[0]]) + abs(min([for (p = path) p[0]]));
