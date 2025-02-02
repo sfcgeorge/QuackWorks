@@ -62,6 +62,7 @@ Channel_Length_Units = 6;
 
 //top 'L' piece
 // Offset piece
+difference(){
 color_this(Global_Color)
 back(30)zrot(180) {
 half_of(DOWN+RIGHT, s=Channel_Length_Units*Grid_Size*2)
@@ -76,7 +77,25 @@ color_this(Global_Color)
 up(Channel_Internal_Height+5.75)
 zrot(180)
     path_sweep(joinProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Channel_Internal_Height+5.49]), orient=BOT);
+};
+// Delete pieces
+color_this(Global_Color)
+back(30)zrot(180) {
+// Inside
+left(Channel_Internal_Height-14)
+up(20)
+rot([180,-90,0])
+    path_sweep(completeInside(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", 30]), anchor=TOP, orient=BOT);
+};
+color_this(Global_Color)
+back(30)zrot(180) {
+// Outside
+rot([180,-90,0])
+    path_sweep(completeOutside(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Thickness_of_Desk*2]), anchor=TOP, orient=BOT);
+
+};
 }
+
 
 //BEGIN PROFILES - Must match across all files
 
@@ -106,10 +125,10 @@ function completeProfile(widthMM, heightMM) =
     back((topHeight+5.5 + 36 - (heightMM)),rect([Cable_slot+0.02,20]))  
     );
 
-function completeProfileHalf(heightMM) =
+function completeProfileHalf(widthMM, heightMM) =
     union(
-        back((topHeight+5.5 + 36 - (heightMM)),completeProfileQuarter1(heightMM)), 
-        back((topHeight+5.5+24),completeProfileQuarter2(heightMM))
+        back((topHeight+5.5 + 36 - (heightMM)),completeProfileQuarter1(widthMM, heightMM)), 
+        back((topHeight+5.5+24),completeProfileQuarter2(widthMM, heightMM))
     );
 
 
@@ -136,6 +155,25 @@ function joinProfile(widthMM = 25, heightMM = 12) =
                 right((widthMM-25)/2,mirror([1,0],baseJoinHalf(heightMM))) //fill middle if widening from standard 25m
         ),
     back((topHeight+5.5 + 36 - (heightMM)),rect([Cable_slot+0.02,500])) 
+    );
+
+// Build the inside/outside delete part
+function completeInside(widthMM, heightMM) =
+    union(
+        left((widthMM-25)/2,completeInsideHalf(heightMM, widthMM)), 
+        right((widthMM-25)/2,mirror([1,0],completeInsideHalf(heightMM, widthMM))) //fill middle if widening from standard 25mm
+    );
+
+function completeOutside(widthMM, heightMM) =
+    union(
+        left((widthMM-25)/2,completeOutsideHalf(heightMM, widthMM)), 
+        right((widthMM-25)/2,mirror([1,0],completeOutsideHalf(heightMM, widthMM)))
+    );
+
+function completeInsideHalf(heightMM) =
+    union(
+        back((topHeight+5.5 + 36 - (heightMM)),completeInsideQuarter1(heightMM)), 
+        back((topHeight+5.5+24),completeInsideQuarter2(heightMM))
     );
 
 baseProfileHalf = 
@@ -177,12 +215,12 @@ function topProfileHalf(heightMM = 12) =
             [-10.517,4.725 + (heightMM - 12)],
             [-7.688,7.554 + (heightMM - 12)]
         ]
-        );
+);
 
 function completeProfileQuarter1(heightMM = 12, widthMM = 25) =
         fwd(-7.947, 
         [
-            [0 + (widthMM-25)/2,-4.447],
+            [0 + (widthMM - 25)/2,-4.447],
             [-8.5,-4.447],
             [-9.5,-3.447],
             [-9.5,0 + (heightMM - 12)],
@@ -190,9 +228,9 @@ function completeProfileQuarter1(heightMM = 12, widthMM = 25) =
             [-12.517,-4.448],
             [-10.517,-6.448],
             [-10.517,-7.947],
-            [0 + (widthMM-25)/2,-7.947],
+            [0 + (widthMM - 25)/2,-7.947],
         ]
-        );
+);
 
 function completeProfileQuarter2(heightMM = 12, widthMM = 25) =
         fwd(-7.947,
@@ -200,13 +238,13 @@ function completeProfileQuarter2(heightMM = 12, widthMM = 25) =
             [-9.5,0],
             [-9.5,5.7427],
             [-7.7,7.5427],
-            [0 + (widthMM-25)/2,7.5427],
-            [0 + (widthMM-25)/2,9.5427],
+            [0 + (widthMM - 25)/2,7.5427],
+            [0 + (widthMM - 25)/2,9.5427],
             [-8.5,9.5427],
             [-12.517,5.5427],
             [-12.517,0],
         ]
-        );
+);
 
 baseDeleteProfileHalf = 
     fwd(-7.947, //take Katie's exact measurements for half the profile of the inside
@@ -233,7 +271,7 @@ function topDeleteProfileHalf(heightMM = 12)=
             [-11.166,-1.414-0.02],
             [0,-1.414-0.02]
         ]
-        );
+);
 
 function baseJoinHalf(heightMM = 12) =
         fwd(-7.947,
@@ -246,8 +284,38 @@ function baseJoinHalf(heightMM = 12) =
             [-2.967,-7.947],
             [-9.5,-1.414]
         ]
-        );
+);
 
+function completeInsideQuarter1(heightMM = 12, widthMM = 25) =
+        fwd(-7.947,
+        [
+            [0 + (widthMM-25)/2,-4.447],
+            [-8.5,-4.447],
+            [-9.5,-3.447],
+            [-9.5,0 + (heightMM - 12)],
+            [0,0 + (heightMM - 12)],
+        ]
+);
+
+function completeInsideQuarter2(heightMM = 12, widthMM = 25) =
+        fwd(-7.947,
+        [
+            [-9.5,0],
+            [-9.5,5.7427],
+            [-7.7,7.5427],
+            [0 + (widthMM-25)/2,7.5427],
+            [0 + (widthMM-25)/2,0]
+        ]
+);
+
+function completeOutsideHalf(heightMM = 12, widthMM = 25) =
+        fwd(-7.947,
+        [
+            [-8.5,9.5427],
+            [-12.517,5.5427],
+            [-12.517,9.5427]
+        ]
+);
 
 //calculate the max x and y points. Useful in calculating size of an object when the path are all positive variables originating from [0,0]
 function maxX(path) = max([for (p = path) p[0]]) + abs(min([for (p = path) p[0]]));
