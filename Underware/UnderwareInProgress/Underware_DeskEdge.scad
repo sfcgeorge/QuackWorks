@@ -82,7 +82,7 @@ zrot(180)
 color_this(Global_Color)
 back(30)zrot(180) {
 // Inside
-left(Channel_Internal_Height-14)
+right(2)
 up(20)
 rot([180,-90,0])
     path_sweep(completeInside(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", 30]), anchor=TOP, orient=BOT);
@@ -122,14 +122,14 @@ function completeProfile(widthMM, heightMM) =
             left((widthMM-25)/2,completeProfileHalf(heightMM, widthMM)), 
             right((widthMM-25)/2,mirror([1,0],completeProfileHalf(heightMM, widthMM))) //fill middle if widening from standard 25mm
         ),
-    back((topHeight+5.5 + 36 - (heightMM)),rect([Cable_slot+0.02,20]))  
+    back((heightMM-12)/2,rect([Cable_slot+0.02,15]))  
     );
 
-function completeProfileHalf(widthMM, heightMM) =
-    union(
-        back((topHeight+5.5 + 36 - (heightMM)),completeProfileQuarter1(widthMM, heightMM)), 
-        back((topHeight+5.5+24),completeProfileQuarter2(widthMM, heightMM))
-    );
+//function completeProfileHalf(widthMM, heightMM) =
+//    union(
+//        back((topHeight+5.5 + 36 - (heightMM)),completeProfileQuarter1(widthMM, heightMM)), 
+//        back((topHeight+5.5+24),completeProfileQuarter2(widthMM, heightMM))
+//    );
 
 
 
@@ -168,12 +168,6 @@ function completeOutside(widthMM, heightMM) =
     union(
         left((widthMM-25)/2,completeOutsideHalf(heightMM, widthMM)), 
         right((widthMM-25)/2,mirror([1,0],completeOutsideHalf(heightMM, widthMM)))
-    );
-
-function completeInsideHalf(heightMM) =
-    union(
-        back((topHeight+5.5 + 36 - (heightMM)),completeInsideQuarter1(heightMM)), 
-        back((topHeight+5.5+24),completeInsideQuarter2(heightMM))
     );
 
 baseProfileHalf = 
@@ -217,32 +211,22 @@ function topProfileHalf(heightMM = 12) =
         ]
 );
 
-function completeProfileQuarter1(heightMM = 12, widthMM = 25) =
+function completeProfileHalf(heightMM = 12, widthMM = 25) =
         fwd(-7.947, 
         [
             [0 + (widthMM - 25)/2,-4.447],
             [-8.5,-4.447],
             [-9.5,-3.447],
-            [-9.5,0 + (heightMM - 12)],
-            [-12.517,0 + (heightMM - 12)],
+            [-9.5,5.7427 + (heightMM - 12)],
+            [-7.7,7.5427 + (heightMM - 12)],
+            [0 + (widthMM - 25)/2,7.5427 + (heightMM - 12)],
+            [0 + (widthMM - 25)/2,9.5427 + (heightMM - 12)],
+            [-8.5,9.5427 + (heightMM - 12)],
+            [-12.517,5.5427 + (heightMM - 12)],
             [-12.517,-4.448],
             [-10.517,-6.448],
             [-10.517,-7.947],
             [0 + (widthMM - 25)/2,-7.947],
-        ]
-);
-
-function completeProfileQuarter2(heightMM = 12, widthMM = 25) =
-        fwd(-7.947,
-        [
-            [-9.5,0],
-            [-9.5,5.7427],
-            [-7.7,7.5427],
-            [0 + (widthMM - 25)/2,7.5427],
-            [0 + (widthMM - 25)/2,9.5427],
-            [-8.5,9.5427],
-            [-12.517,5.5427],
-            [-12.517,0],
         ]
 );
 
@@ -286,25 +270,16 @@ function baseJoinHalf(heightMM = 12) =
         ]
 );
 
-function completeInsideQuarter1(heightMM = 12, widthMM = 25) =
+function completeInsideHalf(heightMM = 12, widthMM = 25) =
         fwd(-7.947,
         [
             [0 + (widthMM-25)/2,-4.447],
             [-8.5,-4.447],
             [-9.5,-3.447],
-            [-9.5,0 + (heightMM - 12)],
-            [0,0 + (heightMM - 12)],
-        ]
-);
-
-function completeInsideQuarter2(heightMM = 12, widthMM = 25) =
-        fwd(-7.947,
-        [
             [-9.5,0],
-            [-9.5,5.7427],
-            [-7.7,7.5427],
-            [0 + (widthMM-25)/2,7.5427],
-            [0 + (widthMM-25)/2,0]
+            [-9.5,5.7427 + (heightMM - 12)],
+            [-7.7,7.5427 + (heightMM - 12)],
+            [0 + (widthMM-25)/2,7.5427 + (heightMM - 12)],
         ]
 );
 
