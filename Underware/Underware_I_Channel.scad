@@ -27,7 +27,6 @@ include <BOSL2/threading.scad>
 
 /*[Choose Part]*/
 Base_Top_or_Both = "Both"; // [Base, Top, Both]
-Profile_Type = "v2.5"; // [Original, v2.5]
 
 /*[Mounting Options]*/
 //How do you intend to mount the channels to a surface such as Honeycomb Storage Wall or Multiboard? See options at https://handsonkatie.com/underware-2-0-the-made-to-measure-collection/
@@ -90,9 +89,14 @@ Override_Width_Using_Internal_MM = 0;
 //Slop in thread. Increase to make threading easier. Decrease to make threading harder.
 Slop = 0.075;
 
-/*[Beta Features]*/
-//BETA FEATURE: Change snap profile for strong holding strength. Not backwards compatible.
+/*[Beta Features - Please Send Feedback]*/
+//BETA FEATURE: Change the profile type to an inverse connection where the top clips from the inside allowing stronger connections. Not backwards compatible. This profile is still likely to change.
+Profile_Type = "Original"; // [Original, v2.5]
+//BETA FEATURE: For channels wider than 1 unit or taller than 18mm, reduce the top channel width to increase holding strength.
+Flex_Compensation_Scaling = 0.99; // 
+//BETA FEATURE - Original Profile Only: Change snap profile for strong holding strength. Not backwards compatible.
 Additional_Holding_Strength = 0.0;//[0:0.1:1.5]
+
 
 /*[Hidden]*/
 channelWidth = Override_Width_Using_Internal_MM == 0 ? Channel_Width_in_Units * Grid_Size : Override_Width_Using_Internal_MM + 6;
@@ -104,8 +108,11 @@ partSeparation = 10;
 
 selectTopProfile = Profile_Type == "Original" ? topProfileHalf(Channel_Internal_Height) : topProfileInverseHalf(Channel_Internal_Height);
 selectBaseProfile = Profile_Type == "Original" ? baseProfileHalf() : baseProfileInverseHalf();
+//scale the top inward in some circumstances for a stronger connection
+topScaling = Profile_Type == "Original" && (Channel_Width_in_Units > 1 || Channel_Internal_Height > 18) ?  Flex_Compensation_Scaling : 1;
+echo(str("Top Channel Scaling: ", topScaling));
 
-/*[Visual Options]*/
+///*[Visual Options]*/
 Debug_Show_Grid = false;
 //View the parts as they attach. Note that you must disable this before exporting for printing. 
 Show_Attached = false;
@@ -131,7 +138,7 @@ Base_Screw_Hole_Cone = false;
 MultipointBase_Screw_Hole_Outer_Diameter = 16;
 
 if(Base_Top_or_Both != "Top")
-color_this("Purple")
+color_this(Global_Color)
         left(Show_Attached ? 0 : channelWidth/2+5)
             straightChannelBase(lengthMM = Channel_Length_Units * Grid_Size, widthMM = channelWidth, anchor=BOT);
 if(Base_Top_or_Both != "Base")
@@ -139,7 +146,7 @@ color_this(Global_Color)
         right(Show_Attached ? 0 : channelWidth/2+5)
         up(Show_Attached ? interlockFromFloor : Add_Label ? 0.01 : 0)
             diff("text")
-            straightChannelTop(lengthMM = Channel_Length_Units * Grid_Size, widthMM = channelWidth, heightMM = Channel_Internal_Height, anchor=Show_Attached ? BOT : TOP, orient=Show_Attached ? TOP : BOT)
+            straightChannelTop(lengthMM = Channel_Length_Units * Grid_Size, widthMM = channelWidth * topScaling, heightMM = Channel_Internal_Height, anchor=Show_Attached ? BOT : TOP, orient=Show_Attached ? TOP : BOT)
                 if(Add_Label) tag("text") recolor(Text_Color) zrot(-90) attach(TOP) //linear_extrude(height = 0.02)
                 right(Text_x_coordinate)text3d(Text, size = Text_size, h=0.05, font = surname_font, atype="ycenter", anchor=CENTER);
 
@@ -173,7 +180,12 @@ module straightChannelTop(lengthMM, widthMM, heightMM = 12, anchor, spin, orient
     attachable(anchor, spin, orient, size=[widthMM, lengthMM, topHeight + (heightMM-12)]){
         fwd(lengthMM/2) down(10.968/2 + (heightMM - 12)/2)
         diff("Cable_Cutouts")
-        zrot(90) path_sweep(topProfile(widthMM = widthMM, heightMM = heightMM), turtle(["xmove", lengthMM]))
+        zrot(90) 
+        path_sweep(
+            topProfile(
+                widthMM = widthMM, 
+                heightMM = heightMM
+                ), turtle(["xmove", lengthMM]))
             tag("Cable_Cutouts") down(5+0.01) up(10.968/2 + (heightMM - 12)/2) right(lengthMM/2)
                 xcopies(n=Number_of_Cord_Cutouts, spacing= Distance_Between_Cutouts) 
                     up(2.49)
