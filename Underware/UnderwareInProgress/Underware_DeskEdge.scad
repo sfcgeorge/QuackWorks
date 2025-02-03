@@ -76,9 +76,9 @@ rot([180,-90,0])
     path_sweep(completeProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", (Thickness_of_Desk+actualHeight)*2]), anchor=TOP, orient=BOT);
 // Join piece
 color_this(Global_Color)
-up(Channel_Internal_Height+5.75)
+up(Channel_Internal_Height+5.5)
 zrot(180)
-    path_sweep(joinProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Channel_Internal_Height+5.49]), orient=BOT);
+    path_sweep(joinProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Channel_Internal_Height+5.5]), orient=BOT);
 };
 // Delete pieces
 color_this(Global_Color)
@@ -230,9 +230,9 @@ function completeProfileHalf(heightMM = 12, widthMM = 25) =
             [-9.5,5.7427 + (heightMM - 12)],
             [-7.7,7.5427 + (heightMM - 12)],
             [0 + (widthMM - 25)/2,7.5427 + (heightMM - 12)],
-            [0 + (widthMM - 25)/2,9.5427 + (heightMM - 12)],
-            [-8.5,9.5427 + (heightMM - 12)],
-            [-12.517,5.5427 + (heightMM - 12)],
+            [0 + (widthMM - 25)/2,9.554 + (heightMM - 12)],
+            [-8.517,9.554 + (heightMM - 12)],
+            [-12.517,5.554 + (heightMM - 12)],
             [-12.517,-4.448],
             [-10.517,-6.448],
             [-10.517,-7.947],
@@ -296,9 +296,9 @@ function completeInsideHalf(heightMM = 12, widthMM = 25) =
 function completeOutsideHalf(heightMM = 12, widthMM = 25) =
         fwd(-7.947,
         [
-            [-8.5,9.5427],
-            [-12.517,5.5427],
-            [-12.517,9.5427]
+            [-8.517,9.554],
+            [-13.517,4.554],
+            [-12.517,9.554],
         ]
 );
 
@@ -306,7 +306,7 @@ function completeOutsideHalf(heightMM = 12, widthMM = 25) =
 function joinInsideHalf(heightMM = 12, widthMM = 25) =
         fwd(-7.947,
         [
-            [0 + (widthMM-25)/2,-8],
+            [0 + (widthMM-25)/2,-8],    // check all co-ordinates
             [-2.914,-8],
             [-9.5,-1.414],
             [-9.5,0],
