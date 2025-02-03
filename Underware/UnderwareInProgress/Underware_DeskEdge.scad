@@ -55,6 +55,8 @@ interlockFromFloor = 6.533; //distance from the bottom of the base to the bottom
 partSeparation = 10;
 //length of channel in units (default unit is 25mm)
 Channel_Length_Units = 6; 
+cable_slot_limit = min(Cable_slot,(channelWidth - 10));
+
 
 /*
 
@@ -85,13 +87,14 @@ color_this(Global_Color)
 back(30)zrot(180) {
 // Inside
 right(2)
-up(20)
+up((Thickness_of_Desk/2)+5.5)
 rot([180,-90,0])
-    path_sweep(completeInside(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", 30]), anchor=TOP, orient=BOT);
+    path_sweep(completeInside(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Thickness_of_Desk]), anchor=TOP, orient=BOT);
 };
+// Outside
 color_this(Global_Color)
 back(30)zrot(180) {
-// Outside
+up((Thickness_of_Desk/2)+5.5)
 rot([180,-90,0])
     path_sweep(completeOutside(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Thickness_of_Desk*2]), anchor=TOP, orient=BOT);
 
@@ -134,7 +137,7 @@ function completeProfile(widthMM, heightMM) =
             left((widthMM-25)/2,completeProfileHalf(heightMM, widthMM)), 
             right((widthMM-25)/2,mirror([1,0],completeProfileHalf(heightMM, widthMM))) //fill middle if widening from standard 25mm
         ),
-    back((heightMM-12)/2,rect([Cable_slot+0.02,15]))  
+    back((heightMM-12)/2,rect([cable_slot_limit+0.02,heightMM]))  
     );
 
 function baseDeleteProfile(widthMM = 25) = 
@@ -158,7 +161,7 @@ function joinProfile(widthMM = 25, heightMM = 12) =
                 left((widthMM-25)/2,baseJoinHalf(heightMM)), 
                 right((widthMM-25)/2,mirror([1,0],baseJoinHalf(heightMM))) //fill middle if widening from standard 25m
         ),
-    back((topHeight+5.5 + 36 - (heightMM)),rect([Cable_slot+0.02,500])) 
+    back((heightMM-12)/2,rect([cable_slot_limit+0.02,heightMM])) 
     );
 
 // Build the inside/outside delete part
