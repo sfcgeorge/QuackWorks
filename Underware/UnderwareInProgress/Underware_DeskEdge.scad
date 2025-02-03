@@ -25,6 +25,26 @@ include <BOSL2/std.scad>
 include <BOSL2/rounding.scad>
 include <BOSL2/threading.scad>
 
+/*[Choose Part]*/
+Base_Top_or_Both = "Both"; // [Base, Top, Both]
+Profile_Type = "v2.5"; // [Original, v2.5]
+
+/*[Mounting Options]*/
+//How do you intend to mount the channels to a surface such as Honeycomb Storage Wall or Multiboard? See options at https://handsonkatie.com/underware-2-0-the-made-to-measure-collection/
+Mounting_Method = "Threaded Snap Connector"; //[Threaded Snap Connector, Direct Multiboard Screw, Direct Multipoint Screw, Magnet, Wood Screw, Flat]
+//Diameter of the magnet (in mm)
+Magnet_Diameter = 4.0; 
+//Thickness of the magnet (in mm)
+Magnet_Thickness = 1.5;
+//Add a tolerance to the magnet hole to make it easier to insert the magnet.
+Magnet_Tolerance = 0.1;
+//Wood screw diameter (in mm)
+Wood_Screw_Thread_Diameter = 3.5;
+//Wood Screw Head Diameter (in mm)
+Wood_Screw_Head_Diameter = 7;
+//Wood Screw Head Height (in mm)
+Wood_Screw_Head_Height = 1.75;
+
 /*[Channel Size]*/
 //Width (Y axis) of channel in units. Default unit is 25mm
 Channel_Width_in_Units = 1;
@@ -32,11 +52,15 @@ Channel_Width_in_Units = 1;
 Channel_Internal_Height = 12; //[12:6:72]
 //Length (X axis) in mm of offset from edge of desk to start of Multiboard tiles.
 Offset_to_Multiboard = 5;
-//Length (Z axis) in mm of the channel up the back of the desk.
+//Length (X axis) of channel in units. Default unit is 25mm
+Connector_channel_length = 2; 
+//Length (Z axis) in mm of the channel up the edge of the desk.
 Thickness_of_Desk = 40;
 
-//Slot for cable access in mm
-Cable_slot = 6.5;
+
+//Slot for cable access (in mm)
+Cable_slot = 7;
+
 
 /*[Advanced Options]*/
 //Units of measurement (in mm) for hole and length spacing. Multiboard is 25mm. Untested
@@ -57,6 +81,31 @@ partSeparation = 10;
 Channel_Length_Units = 6; 
 cable_slot_limit = min(Cable_slot,(channelWidth - 10));
 
+/*[Visual Options]*/
+Debug_Show_Grid = false;
+//View the parts as they attach. Note that you must disable this before exporting for printing. 
+Show_Attached = false;
+
+///*[Small Screw Profile]*/
+//Distance (in mm) between threads
+Pitch_Sm = 3;
+//Diameter (in mm) at the outer threads
+Outer_Diameter_Sm = 6.747;
+//Angle of the one side of the thread
+Flank_Angle_Sm = 60;
+//Depth (in mm) of the thread
+Thread_Depth_Sm = 0.5;
+//Diameter of the hole down the middle of the screw (for strength)
+Inner_Hole_Diameter_Sm = 3.3;
+
+///*[Direct Screw Mount]*/
+Base_Screw_Hole_Inner_Diameter = 7;
+Base_Screw_Hole_Outer_Diameter = 15;
+//Thickness of of the base bottom and the bottom of the recessed hole (i.e., thicknes of base at the recess)
+Base_Screw_Hole_Inner_Depth = 1;
+Base_Screw_Hole_Cone = false;
+MultipointBase_Screw_Hole_Outer_Diameter = 16;
+
 
 /*
 
@@ -65,6 +114,7 @@ cable_slot_limit = min(Cable_slot,(channelWidth - 10));
 */
 
 //top 'L' piece
+if(Base_Top_or_Both != "Top")
 // Offset piece
 difference(){
 color_this(Global_Color)
@@ -81,11 +131,15 @@ color_this(Global_Color)
 up(Channel_Internal_Height+5.5)
 zrot(180)
     path_sweep(joinProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Channel_Internal_Height+5.5]), orient=BOT);
+// Base units
+color_this("Purple")
+    straightChannelBase(lengthMM = Connector_channel_length * Grid_Size, widthMM = channelWidth, heightMM = Channel_Internal_Height, anchor=BOT);
+
 };
 // Delete pieces
+// Inside
 color_this(Global_Color)
 back(30)zrot(180) {
-// Inside
 right(2)
 up((Thickness_of_Desk/2)+5.5)
 rot([180,-90,0])
@@ -109,8 +163,62 @@ fwd(30)
 };
 }
 
+// Top piece
+/* if(Base_Top_or_Both != "Base")
+color_this(Global_Color)
+        right(Show_Attached ? 0 : channelWidth/2+5)
+        up(Show_Attached ? interlockFromFloor : Add_Label ? 0.01 : 0)
+            diff("text")
+            straightChannelTop(lengthMM = Channel_Length_Units * Grid_Size, widthMM = channelWidth, heightMM = Channel_Internal_Height, anchor=Show_Attached ? BOT : TOP, orient=Show_Attached ? TOP : BOT)
+                if(Add_Label) tag("text") recolor(Text_Color) zrot(-90) attach(TOP) //linear_extrude(height = 0.02)
+                right(Text_x_coordinate)text3d(Text, size = Text_size, h=0.05, font = surname_font, atype="ycenter", anchor=CENTER);
+*/
 
+/*
 
+***BEGIN MODULES***
+
+*/
+
+//STRAIGHT CHANNELS
+module straightChannelBase(lengthMM, widthMM, anchor, spin, orient,heightMM){
+    attachable(anchor, spin, orient, size=[widthMM, lengthMM, baseHeight]){
+        back(lengthMM/2 + widthMM) down(maxY(selectBaseProfile)/2)
+        right (lengthMM + heightMM)
+        diff("holes")
+        zrot(180) path_sweep(baseProfile(widthMM = widthMM), turtle(["xmove", lengthMM + Offset_to_Multiboard]))
+        tag("holes")  right(lengthMM/2) grid_copies(spacing=Grid_Size, inside=rect([lengthMM-1,Grid_Size*Channel_Width_in_Units-1])) 
+            if(Mounting_Method == "Direct Multiboard Screw") up(Base_Screw_Hole_Inner_Depth) cyl(h=8, d=Base_Screw_Hole_Inner_Diameter, $fn=25, anchor=TOP) attach(TOP, BOT, overlap=0.01) cyl(h=3.5-Base_Screw_Hole_Inner_Depth+0.02, d1=Base_Screw_Hole_Cone ? Base_Screw_Hole_Inner_Diameter : Base_Screw_Hole_Outer_Diameter, d2=Base_Screw_Hole_Outer_Diameter, $fn=25);
+            else if(Mounting_Method == "Direct Multipoint Screw") up(Base_Screw_Hole_Inner_Depth) cyl(h=8, d=Base_Screw_Hole_Inner_Diameter, $fn=25, anchor=TOP) attach(TOP, BOT, overlap=0.01) cyl(h=3.5-Base_Screw_Hole_Inner_Depth+0.02, d1=Base_Screw_Hole_Cone ? Base_Screw_Hole_Inner_Diameter : MultipointBase_Screw_Hole_Outer_Diameter, d2=MultipointBase_Screw_Hole_Outer_Diameter, $fn=25);
+            else if(Mounting_Method == "Magnet") up(Magnet_Thickness+Magnet_Tolerance-0.01) cyl(h=Magnet_Thickness+Magnet_Tolerance, d=Magnet_Diameter+Magnet_Tolerance, $fn=50, anchor=TOP);
+            else if(Mounting_Method == "Wood Screw") up(3.5 - Wood_Screw_Head_Height) cyl(h=3.5 - Wood_Screw_Head_Height+0.05, d=Wood_Screw_Thread_Diameter, $fn=25, anchor=TOP)
+                //wood screw head
+                attach(TOP, BOT, overlap=0.01) cyl(h=Wood_Screw_Head_Height+0.05, d1=Wood_Screw_Thread_Diameter, d2=Wood_Screw_Head_Diameter, $fn=25);
+            else if(Mounting_Method == "Flat") ; //do nothing
+            //Default is Threaded Snap Connector
+            else up(5.99) trapezoidal_threaded_rod(d=Outer_Diameter_Sm, l=6, pitch=Pitch_Sm, flank_angle = Flank_Angle_Sm, thread_depth = Thread_Depth_Sm, $fn=50, internal=true, bevel2 = true, blunt_start=false, anchor=TOP, $slop=Slop);
+    children();
+    }
+}
+
+/*
+
+module straightChannelTop(lengthMM, widthMM, heightMM = 12, anchor, spin, orient){
+    attachable(anchor, spin, orient, size=[widthMM, lengthMM, topHeight + (heightMM-12)]){
+        fwd(lengthMM/2) down(10.968/2 + (heightMM - 12)/2)
+        diff("Cable_Cutouts")
+        zrot(90) path_sweep(topProfile(widthMM = widthMM, heightMM = heightMM), turtle(["xmove", lengthMM]))
+            tag("Cable_Cutouts") down(5+0.01) up(10.968/2 + (heightMM - 12)/2) right(lengthMM/2)
+                xcopies(n=Number_of_Cord_Cutouts, spacing= Distance_Between_Cutouts) 
+                    up(2.49)
+                    fwd(Cord_Side_Cutouts == "Left Side" ? widthMM/2 :
+                        Cord_Side_Cutouts == "Right Side" ? -widthMM/2 : 
+                        0)
+                    left(-Shift_Cutouts_Forward_or_Back)
+                        cuboid([Cord_Cutout_Width, Cord_Side_Cutouts == "Both Sides" ? widthMM + 5 : widthMM/2, Channel_Internal_Height-2], chamfer = 2, edges=[TOP+LEFT, TOP+RIGHT]);
+    children();
+    }
+} */
 
 //BEGIN PROFILES - Must match across all files
 
