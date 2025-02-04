@@ -400,7 +400,7 @@ function completeOutsideHalf(heightMM = 12, widthMM = 25) =
 function joinInsideHalf(heightMM = 12, widthMM = 25) =
         fwd(-7.947,
         [
-            [0 + (widthMM-25)/2,-8],    // check all co-ordinates
+            [0 + (widthMM-25)/2,-8],
             [-2.914,-8],
             [-9.5,-1.414],
             [-9.5,0],
