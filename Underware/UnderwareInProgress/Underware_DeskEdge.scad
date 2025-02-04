@@ -11,13 +11,11 @@ Credit to
     @siyrahfall+1155967 on Printables for the idea of top exit holes
     @Lyric on Printables for the flush connector idea
     @fawix on GitHub for her contributions on parameter descriptors
+    @Mole. on  MakerWorld for Desk Edge channel
 
 Release Notes
-    - 2024-12-06 
+    - 2025-02-04 
         - Initial Release
-    2024-12-28
-        - Added internal mitre corner
-        - Fixed bug with top length calculation
 
 */
 
@@ -27,7 +25,20 @@ include <BOSL2/threading.scad>
 
 /*[Choose Part]*/
 Base_Top_or_Both = "Both"; // [Base, Top, Both]
-Profile_Type = "v2.5"; // [Original, v2.5]
+
+/*[Channel Size]*/
+//Width (Y axis) of channel in units. Default unit is 25mm
+Channel_Width_in_Units = 1;
+//Height inside the channel (in mm). Z axis for top channel and X axis bottom channel.
+Channel_Internal_Height = 12; //[12:6:72]
+//Length (X axis) in mm of offset from edge of desk to start of Multiboard tiles.
+Offset_to_Multiboard = 5;
+//Length (X axis) of channel in units. Default unit is 25mm
+Connector_channel_length = 2; 
+//Length (Z axis) in mm of the channel up the edge of the desk.
+Thickness_of_Desk = 40;
+//Slot for cable access (in mm)
+Cable_slot = 7;
 
 /*[Mounting Options]*/
 //How do you intend to mount the channels to a surface such as Honeycomb Storage Wall or Multiboard? See options at https://handsonkatie.com/underware-2-0-the-made-to-measure-collection/
@@ -44,23 +55,6 @@ Wood_Screw_Thread_Diameter = 3.5;
 Wood_Screw_Head_Diameter = 7;
 //Wood Screw Head Height (in mm)
 Wood_Screw_Head_Height = 1.75;
-
-/*[Channel Size]*/
-//Width (Y axis) of channel in units. Default unit is 25mm
-Channel_Width_in_Units = 1;
-//Height inside the channel (in mm). Z axis for top channel and X axis bottom channel.
-Channel_Internal_Height = 12; //[12:6:72]
-//Length (X axis) in mm of offset from edge of desk to start of Multiboard tiles.
-Offset_to_Multiboard = 5;
-//Length (X axis) of channel in units. Default unit is 25mm
-Connector_channel_length = 2; 
-//Length (Z axis) in mm of the channel up the edge of the desk.
-Thickness_of_Desk = 40;
-
-
-//Slot for cable access (in mm)
-Cable_slot = 7;
-
 
 /*[Advanced Options]*/
 //Units of measurement (in mm) for hole and length spacing. Multiboard is 25mm. Untested
@@ -83,8 +77,6 @@ cable_slot_limit = min(Cable_slot,(channelWidth - 10));
 
 /*[Visual Options]*/
 Debug_Show_Grid = false;
-//View the parts as they attach. Note that you must disable this before exporting for printing. 
-Show_Attached = false;
 
 ///*[Small Screw Profile]*/
 //Distance (in mm) between threads
@@ -114,65 +106,65 @@ MultipointBase_Screw_Hole_Outer_Diameter = 16;
 */
 
 //top 'L' piece
-if(Base_Top_or_Both != "Top")
-// Offset piece
-difference(){
-color_this(Global_Color)
-back(30)zrot(180) {
-half_of(DOWN+RIGHT, s=Channel_Length_Units*Grid_Size*2)
-    path_sweep(topProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", (Offset_to_Multiboard+actualHeight)*2]), anchor=TOP, orient=BOT);
-// Desk piece
-color_this(Global_Color)
-rot([180,-90,0])
-    half_of(DOWN+RIGHT, s=Channel_Length_Units*Grid_Size*2)
-    path_sweep(completeProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", (Thickness_of_Desk+actualHeight)*2]), anchor=TOP, orient=BOT);
-// Join piece
-color_this(Global_Color)
-up(Channel_Internal_Height+5.5)
-zrot(180)
-    path_sweep(joinProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Channel_Internal_Height+5.5]), orient=BOT);
+// Top channel
+if(Base_Top_or_Both != "Base")
+    difference(){
+        // Offset piece
+        color_this(Global_Color)
+            back(30)zrot(180) {
+            half_of(DOWN+RIGHT, s=Channel_Length_Units*Grid_Size*2)
+                path_sweep(topProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", (Offset_to_Multiboard+actualHeight)*2+(Connector_channel_length * Grid_Size)*2]), anchor=TOP, orient=BOT);
+
+        // Desk piece
+        color_this(Global_Color)
+            rot([180,-90,0])
+            half_of(DOWN+RIGHT, s=Channel_Length_Units*Grid_Size*2)
+                path_sweep(completeProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", (Thickness_of_Desk+actualHeight)*2]), anchor=TOP, orient=BOT);
+
+        // Join piece
+        color_this(Global_Color)
+            up(Channel_Internal_Height+5.5)
+            zrot(180)
+                path_sweep(joinProfile(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Channel_Internal_Height+5.5]), orient=BOT);
+            };
+
+    // Delete pieces
+    // Inside
+    color_this(Global_Color)
+        back(30)zrot(180) {
+        right(2)
+        up((Thickness_of_Desk/2)+5.5)
+        rot([180,-90,0])
+            path_sweep(completeInside(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Thickness_of_Desk]), anchor=TOP, orient=BOT);
+        };
+
+    // Outside
+    color_this(Global_Color)
+        back(30)zrot(180) {
+        up((Thickness_of_Desk/2)+5.5)
+        rot([180,-90,0])
+            path_sweep(completeOutside(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Thickness_of_Desk*2]), anchor=TOP, orient=BOT);
+
+        };
+    // Join Inside
+    color_this(Global_Color)
+        zrot(180) {
+        up(Channel_Internal_Height+5.75)
+        right(Channel_Internal_Height*1.5)
+        fwd(30)
+            path_sweep(joinInside(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Channel_Internal_Height ]), orient=BOT);
+        };
+    }
+
+
 // Base units
-color_this("Purple")
-    straightChannelBase(lengthMM = Connector_channel_length * Grid_Size, widthMM = channelWidth, heightMM = Channel_Internal_Height, anchor=BOT);
+if(Base_Top_or_Both != "Top")
+    color_this(Global_Color)
+    back(30)zrot(180) {
+        straightChannelBase(lengthMM = Connector_channel_length * Grid_Size, widthMM = channelWidth, heightMM = Channel_Internal_Height, anchor=BOT);
+    };
 
-};
-// Delete pieces
-// Inside
-color_this(Global_Color)
-back(30)zrot(180) {
-right(2)
-up((Thickness_of_Desk/2)+5.5)
-rot([180,-90,0])
-    path_sweep(completeInside(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Thickness_of_Desk]), anchor=TOP, orient=BOT);
-};
-// Outside
-color_this(Global_Color)
-back(30)zrot(180) {
-up((Thickness_of_Desk/2)+5.5)
-rot([180,-90,0])
-    path_sweep(completeOutside(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Thickness_of_Desk*2]), anchor=TOP, orient=BOT);
 
-};
-// Join Inside
-color_this(Global_Color)
-zrot(180) {
-up(Channel_Internal_Height+5.75)
-right(Channel_Internal_Height*1.5)
-fwd(30)
-    path_sweep(joinInside(widthMM = channelWidth, heightMM = Channel_Internal_Height), turtle(["xmove", Channel_Internal_Height ]), orient=BOT);
-};
-}
-
-// Top piece
-/* if(Base_Top_or_Both != "Base")
-color_this(Global_Color)
-        right(Show_Attached ? 0 : channelWidth/2+5)
-        up(Show_Attached ? interlockFromFloor : Add_Label ? 0.01 : 0)
-            diff("text")
-            straightChannelTop(lengthMM = Channel_Length_Units * Grid_Size, widthMM = channelWidth, heightMM = Channel_Internal_Height, anchor=Show_Attached ? BOT : TOP, orient=Show_Attached ? TOP : BOT)
-                if(Add_Label) tag("text") recolor(Text_Color) zrot(-90) attach(TOP) //linear_extrude(height = 0.02)
-                right(Text_x_coordinate)text3d(Text, size = Text_size, h=0.05, font = surname_font, atype="ycenter", anchor=CENTER);
-*/
 
 /*
 
@@ -183,10 +175,11 @@ color_this(Global_Color)
 //STRAIGHT CHANNELS
 module straightChannelBase(lengthMM, widthMM, anchor, spin, orient,heightMM){
     attachable(anchor, spin, orient, size=[widthMM, lengthMM, baseHeight]){
-        back(lengthMM/2 + widthMM) down(maxY(selectBaseProfile)/2)
-        right (lengthMM + heightMM)
+        back(40)
+        down(4.75)
+        right((Offset_to_Multiboard+actualHeight)+(Connector_channel_length * Grid_Size))
         diff("holes")
-        zrot(180) path_sweep(baseProfile(widthMM = widthMM), turtle(["xmove", lengthMM + Offset_to_Multiboard]))
+        zrot(180, cp) path_sweep(baseProfile(widthMM = widthMM), turtle(["xmove", lengthMM + Offset_to_Multiboard]))
         tag("holes")  right(lengthMM/2) grid_copies(spacing=Grid_Size, inside=rect([lengthMM-1,Grid_Size*Channel_Width_in_Units-1])) 
             if(Mounting_Method == "Direct Multiboard Screw") up(Base_Screw_Hole_Inner_Depth) cyl(h=8, d=Base_Screw_Hole_Inner_Diameter, $fn=25, anchor=TOP) attach(TOP, BOT, overlap=0.01) cyl(h=3.5-Base_Screw_Hole_Inner_Depth+0.02, d1=Base_Screw_Hole_Cone ? Base_Screw_Hole_Inner_Diameter : Base_Screw_Hole_Outer_Diameter, d2=Base_Screw_Hole_Outer_Diameter, $fn=25);
             else if(Mounting_Method == "Direct Multipoint Screw") up(Base_Screw_Hole_Inner_Depth) cyl(h=8, d=Base_Screw_Hole_Inner_Diameter, $fn=25, anchor=TOP) attach(TOP, BOT, overlap=0.01) cyl(h=3.5-Base_Screw_Hole_Inner_Depth+0.02, d1=Base_Screw_Hole_Cone ? Base_Screw_Hole_Inner_Diameter : MultipointBase_Screw_Hole_Outer_Diameter, d2=MultipointBase_Screw_Hole_Outer_Diameter, $fn=25);
@@ -200,25 +193,6 @@ module straightChannelBase(lengthMM, widthMM, anchor, spin, orient,heightMM){
     children();
     }
 }
-
-/*
-
-module straightChannelTop(lengthMM, widthMM, heightMM = 12, anchor, spin, orient){
-    attachable(anchor, spin, orient, size=[widthMM, lengthMM, topHeight + (heightMM-12)]){
-        fwd(lengthMM/2) down(10.968/2 + (heightMM - 12)/2)
-        diff("Cable_Cutouts")
-        zrot(90) path_sweep(topProfile(widthMM = widthMM, heightMM = heightMM), turtle(["xmove", lengthMM]))
-            tag("Cable_Cutouts") down(5+0.01) up(10.968/2 + (heightMM - 12)/2) right(lengthMM/2)
-                xcopies(n=Number_of_Cord_Cutouts, spacing= Distance_Between_Cutouts) 
-                    up(2.49)
-                    fwd(Cord_Side_Cutouts == "Left Side" ? widthMM/2 :
-                        Cord_Side_Cutouts == "Right Side" ? -widthMM/2 : 
-                        0)
-                    left(-Shift_Cutouts_Forward_or_Back)
-                        cuboid([Cord_Cutout_Width, Cord_Side_Cutouts == "Both Sides" ? widthMM + 5 : widthMM/2, Channel_Internal_Height-2], chamfer = 2, edges=[TOP+LEFT, TOP+RIGHT]);
-    children();
-    }
-} */
 
 //BEGIN PROFILES - Must match across all files
 
@@ -238,16 +212,6 @@ function topProfile(widthMM = 25, heightMM = 12) =
         back(topHeight-1 + heightMM-12 , rect([widthMM-25+0.02,2])) 
     );
 
-//take the two halves of complete and merge them
-function completeProfile(widthMM, heightMM) =
-    difference(
-        union(
-            left((widthMM-25)/2,completeProfileHalf(heightMM, widthMM)), 
-            right((widthMM-25)/2,mirror([1,0],completeProfileHalf(heightMM, widthMM))) //fill middle if widening from standard 25mm
-        ),
-    back((heightMM-12)/2,rect([cable_slot_limit+0.02,heightMM]))  
-    );
-
 function baseDeleteProfile(widthMM = 25) = 
     union(
         left((widthMM-25)/2,baseDeleteProfileHalf), 
@@ -261,6 +225,19 @@ function topDeleteProfile(widthMM, heightMM = 12) =
         right((widthMM-25)/2,mirror([1,0],topDeleteProfileHalf(heightMM))), //fill middle if widening from standard 25mm
         back(4.474 + (heightMM-12)/2,rect([widthMM-25+0.02,8.988 + heightMM - 12])) 
     );
+
+// BEGIN CUSTOM PROFILES
+
+//take the two halves of complete and merge them
+function completeProfile(widthMM, heightMM) =
+    difference(
+        union(
+            left((widthMM-25)/2,completeProfileHalf(heightMM, widthMM)), 
+            right((widthMM-25)/2,mirror([1,0],completeProfileHalf(heightMM, widthMM))) //fill middle if widening from standard 25mm
+        ),
+    back((heightMM-12)/2,rect([cable_slot_limit+0.02,heightMM]))  
+    );
+
 
 //take the two halves the base 'join piece' and merge them
 function joinProfile(widthMM = 25, heightMM = 12) =
@@ -290,6 +267,8 @@ function joinInside(widthMM, heightMM) =
         left((widthMM-25)/2,joinInsideHalf(heightMM, widthMM)), 
         right((widthMM-25)/2,mirror([1,0],joinInsideHalf(heightMM, widthMM)))
     );
+
+// BEGIN COORDS  - Must match across all files
 
 baseProfileHalf = 
     fwd(-7.947, //take Katie's exact measurements for half the profile and use fwd to place flush on the Y axis
@@ -332,25 +311,6 @@ function topProfileHalf(heightMM = 12) =
         ]
 );
 
-function completeProfileHalf(heightMM = 12, widthMM = 25) =
-        fwd(-7.947, 
-        [
-            [0 + (widthMM - 25)/2,-4.447],
-            [-8.5,-4.447],
-            [-9.5,-3.447],
-            [-9.5,5.7427 + (heightMM - 12)],
-            [-7.7,7.5427 + (heightMM - 12)],
-            [0 + (widthMM - 25)/2,7.5427 + (heightMM - 12)],
-            [0 + (widthMM - 25)/2,9.554 + (heightMM - 12)],
-            [-8.517,9.554 + (heightMM - 12)],
-            [-12.517,5.554 + (heightMM - 12)],
-            [-12.517,-4.448],
-            [-10.517,-6.448],
-            [-10.517,-7.947],
-            [0 + (widthMM - 25)/2,-7.947],
-        ]
-);
-
 baseDeleteProfileHalf = 
     fwd(-7.947, //take Katie's exact measurements for half the profile of the inside
         //profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
@@ -378,6 +338,29 @@ function topDeleteProfileHalf(heightMM = 12)=
         ]
 );
 
+// BEGIN CUSTOM COORDS
+
+// Desk edge 'Complete' profile
+function completeProfileHalf(heightMM = 12, widthMM = 25) =
+        fwd(-7.947, 
+        [
+            [0 + (widthMM - 25)/2,-4.447],
+            [-8.5,-4.447],
+            [-9.5,-3.447],
+            [-9.5,5.7427 + (heightMM - 12)],
+            [-7.7,7.5427 + (heightMM - 12)],
+            [0 + (widthMM - 25)/2,7.5427 + (heightMM - 12)],
+            [0 + (widthMM - 25)/2,9.554 + (heightMM - 12)],
+            [-8.517,9.554 + (heightMM - 12)],
+            [-12.517,5.554 + (heightMM - 12)],
+            [-12.517,-4.448],
+            [-10.517,-6.448],
+            [-10.517,-7.947],
+            [0 + (widthMM - 25)/2,-7.947],
+        ]
+);
+
+// Extra bits to allign base and top neatly at the join
 function baseJoinHalf(heightMM = 12) =
         fwd(-7.947,
         [
