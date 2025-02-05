@@ -160,7 +160,7 @@ if(Base_Top_or_Both != "Base")
 // Base units
 if(Base_Top_or_Both != "Top")
     color_this(Global_Color)
-    back(30)zrot(180) {
+    fwd(channelWidth - 25)zrot(180) {
         straightChannelBase(lengthMM = Connector_channel_length * Grid_Size, widthMM = channelWidth, heightMM = Channel_Internal_Height, anchor=BOT);
     };
 
