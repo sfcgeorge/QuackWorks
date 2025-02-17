@@ -32,6 +32,8 @@ Base_Top_or_Both = "Both"; // [Base, Top, Both]
 Channel_Width_in_Units = 1;
 //Height (Z axis) inside the channel (in mm)
 Channel_Internal_Height = 12; //[12:6:72]
+//Provide extra space for cables to turn through the T
+Corner_Style = "Sharp"; // [Sharp, Mitered]
 
 /*[Mounting Options]*/
 //How do you intend to mount the channels to a surface such as Honeycomb Storage Wall or Multiboard? See options at https://handsonkatie.com/underware-2-0-the-made-to-measure-collection/
@@ -125,11 +127,15 @@ module tIntersectionBase(widthMM, anchor, spin, orient){
             tag("channelClear") zrot(90) fwd(channelWidth/2) straightChannelBaseDeleteTool(widthMM = channelWidth+0.02, lengthMM = channelWidth/2 + Grid_Size, anchor=BOT);
         //long channel
         zrot(90) left(channelWidth/2+Grid_Size)path_sweep(baseProfile(widthMM = widthMM), turtle(["move", channelWidth+Grid_Size*2]));
-        zrot(90) left(channelWidth/2+Grid_Size/2)zrot(-45)path_sweep(baseProfile(widthMM = widthMM), turtle(["move", channelWidth*1.3]));
-        zrot(90) right(channelWidth/2+Grid_Size/2)zrot(-135)path_sweep(baseProfile(widthMM = widthMM), turtle(["move", channelWidth*1.3]));
+        if(Corner_Style == "Mitered") {
+            zrot(90) left(channelWidth/2+Grid_Size/2)zrot(-45)path_sweep(baseProfile(widthMM = widthMM), turtle(["move", channelWidth*1.3]));
+            zrot(90) right(channelWidth/2+Grid_Size/2)zrot(-135)path_sweep(baseProfile(widthMM = widthMM), turtle(["move", channelWidth*1.3]));
+        }
         tag("channelClear") straightChannelBaseDeleteTool(widthMM = channelWidth+0.02, lengthMM = channelWidth+Grid_Size*2, anchor=BOT);
-        tag("channelClear")zrot(90) left(channelWidth/2+Grid_Size/2)zrot(45)fwd(channelWidth*0.65) straightChannelBaseDeleteTool(widthMM = channelWidth+0.02, lengthMM = channelWidth/2+Grid_Size, anchor=BOT);
-        tag("channelClear")zrot(90) right(channelWidth/2+Grid_Size/2)zrot(135)back(channelWidth*0.65)straightChannelBaseDeleteTool(widthMM = channelWidth+0.02, lengthMM = channelWidth/2+Grid_Size, anchor=BOT);
+        if(Corner_Style == "Mitered") {
+            tag("channelClear")zrot(90) left(channelWidth/2+Grid_Size/2)zrot(45)fwd(channelWidth*0.65) straightChannelBaseDeleteTool(widthMM = channelWidth+0.02, lengthMM = channelWidth/2+Grid_Size, anchor=BOT);
+            tag("channelClear")zrot(90) right(channelWidth/2+Grid_Size/2)zrot(135)back(channelWidth*0.65)straightChannelBaseDeleteTool(widthMM = channelWidth+0.02, lengthMM = channelWidth/2+Grid_Size, anchor=BOT);
+        }
         tag("holes") grid_copies(n=2+Channel_Width_in_Units, spacing=Grid_Size) 
             if(Mounting_Method == "Direct Multiboard Screw") up(Base_Screw_Hole_Inner_Depth) cyl(h=8, d=Base_Screw_Hole_Inner_Diameter, $fn=25, anchor=TOP) attach(TOP, BOT, overlap=0.01) cyl(h=3, d=Base_Screw_Hole_Outer_Diameter, $fn=25);
             else if(Mounting_Method == "Magnet") up(Magnet_Thickness+Magnet_Tolerance-0.01) cyl(h=Magnet_Thickness+Magnet_Tolerance, d=Magnet_Diameter+Magnet_Tolerance, $fn=50, anchor=TOP);
@@ -140,8 +146,6 @@ module tIntersectionBase(widthMM, anchor, spin, orient){
             //Default is Threaded Snap Connector
             else up(5.99) trapezoidal_threaded_rod(d=Outer_Diameter_Sm, l=6, pitch=Pitch_Sm, flank_angle = Flank_Angle_Sm, thread_depth = Thread_Depth_Sm, $fn=50, internal=true, bevel2 = true, blunt_start=false, anchor=TOP, $slop=Slop);
         }
-        //path_sweep(baseProfile(widthMM = widthMM), turtle(["move", channelWidth,"turn", 135, "move", channelWidth * 1.5]));
-        //path_sweep(baseProfile(widthMM = widthMM), turtle(["move", channelWidth,"turn", -135, "move", channelWidth * 1.5]));
         }
         children();
     }
@@ -154,13 +158,17 @@ module tIntersectionTop(widthMM, heightMM, anchor, spin, orient){
         //side channel
         path_sweep(topProfile(widthMM = widthMM, heightMM = heightMM), turtle(["move", channelWidth/2 + Grid_Size])){
             tag("channelClear") zrot(90) fwd(channelWidth/2) straightChannelTopDeleteTool(widthMM = channelWidth+0.02, lengthMM = channelWidth/2 + Grid_Size, heightMM = heightMM, anchor=BOT);
-        zrot(90) left(channelWidth/2+Grid_Size/2)zrot(-45)path_sweep(topProfile(widthMM = widthMM, heightMM = heightMM), turtle(["move", channelWidth*1.26]));
-        zrot(90) right(channelWidth/2+Grid_Size/2)zrot(-135)path_sweep(topProfile(widthMM = widthMM, heightMM = heightMM), turtle(["move", channelWidth*1.26]));
+        if(Corner_Style == "Mitered") {
+            zrot(90) left(channelWidth/2+Grid_Size/2)zrot(-45)path_sweep(topProfile(widthMM = widthMM, heightMM = heightMM), turtle(["move", channelWidth*1.26]));
+            zrot(90) right(channelWidth/2+Grid_Size/2)zrot(-135)path_sweep(topProfile(widthMM = widthMM, heightMM = heightMM), turtle(["move", channelWidth*1.26]));
+        }
         //long channel
         zrot(90) left(channelWidth/2+Grid_Size)path_sweep(topProfile(widthMM = widthMM, heightMM = heightMM), turtle(["move", channelWidth+Grid_Size*2]));
             tag("channelClear") straightChannelTopDeleteTool(widthMM = channelWidth+0.02, lengthMM = channelWidth+Grid_Size*2, heightMM = heightMM, anchor=BOT);
-        tag("channelClear")zrot(90) left(channelWidth/2+Grid_Size/2)zrot(45)fwd(channelWidth*0.65) straightChannelTopDeleteTool(widthMM = channelWidth+0.02, lengthMM = channelWidth/2+Grid_Size, heightMM = heightMM, anchor=BOT);
-        tag("channelClear")zrot(90) right(channelWidth/2+Grid_Size/2)zrot(135)back(channelWidth*0.65)straightChannelTopDeleteTool(widthMM = channelWidth+0.02, lengthMM = channelWidth/2+Grid_Size, heightMM = heightMM, anchor=BOT);
+        if(Corner_Style == "Mitered") {
+            tag("channelClear")zrot(90) left(channelWidth/2+Grid_Size/2)zrot(45)fwd(channelWidth*0.65) straightChannelTopDeleteTool(widthMM = channelWidth+0.02, lengthMM = channelWidth/2+Grid_Size, heightMM = heightMM, anchor=BOT);
+            tag("channelClear")zrot(90) right(channelWidth/2+Grid_Size/2)zrot(135)back(channelWidth*0.65)straightChannelTopDeleteTool(widthMM = channelWidth+0.02, lengthMM = channelWidth/2+Grid_Size, heightMM = heightMM, anchor=BOT);
+        }
         }
         children();
     }
