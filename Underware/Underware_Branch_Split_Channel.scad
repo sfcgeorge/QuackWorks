@@ -234,13 +234,13 @@ module yChannelTop(unitsOver = 1, unitsUp=3, heightMM = 12, outputDirection = "F
         down((topHeight + (heightMM-12))/2)
             diff("holes channel_clear"){
                 //straight section
-                path_sweep(topProfile(widthMM = widthMM), turtle(["ymove", Straight_Section_Length_in_Units*Grid_Size]));
+                path_sweep(topProfile(widthMM = widthMM, heightMM = heightMM), turtle(["ymove", Straight_Section_Length_in_Units*Grid_Size]));
                 //straight section clear
-                tag("channel_clear") fwd(0.01)path_sweep(topDeleteProfile(widthMM = widthMM), turtle(["ymove", Straight_Section_Length_in_Units*Grid_Size+0.02]));
+                tag("channel_clear") fwd(0.01)path_sweep(topDeleteProfile(widthMM = widthMM, heightMM = heightMM), turtle(["ymove", Straight_Section_Length_in_Units*Grid_Size+0.02]));
                 {
                     //branch channel
                     right_half(s=max(unitsUp*Grid_Size*4,unitsOver*Grid_Size*4)) {//s should be a number larger than twice the size of the object's largest axis. Thew some random numbers in here for now. If mirror issues surface, this is likely the culprit. 
-                        path_sweep2d(topProfile(widthMM = Branch_Channel_Width_in_Units*Grid_Size), 
+                        path_sweep2d(topProfile(widthMM = Branch_Channel_Width_in_Units*Grid_Size, heightMM = heightMM), 
                             path= outputDirection == "Forward" ? [
                                 [0,0], //start
                                 [0,straightDistance+0.1], //distance forward or back. 0.05 is a subtle cheat that allows for a perfect side shift without a bad polygon
@@ -258,7 +258,7 @@ module yChannelTop(unitsOver = 1, unitsUp=3, heightMM = 12, outputDirection = "F
                     //branch channel delete
                     tag("channel_clear") 
                     right_half(s=max(unitsUp*Grid_Size*4,unitsOver*Grid_Size*4)) {//s should be a number larger than twice the size of the object's largest axis. Thew some random numbers in here for now. If mirror issues surface, this is likely the culprit. 
-                        path_sweep2d(topDeleteProfile(widthMM = Branch_Channel_Width_in_Units*Grid_Size), 
+                        path_sweep2d(topDeleteProfile(widthMM = Branch_Channel_Width_in_Units*Grid_Size, heightMM = heightMM), 
                             path= outputDirection == "Forward" ? [
                                 [0,0], //start
                                 [0,straightDistance+0.1], //distance forward or back. 0.05 is a subtle cheat that allows for a perfect side shift without a bad polygon
