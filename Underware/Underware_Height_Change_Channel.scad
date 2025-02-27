@@ -133,10 +133,10 @@ module straightHeightChangeChannelTop(lengthMM, widthMM, heightMM1 = 12, heightM
     attachable(anchor, spin, orient, size=[widthMM, lengthMM, topHeight + (heightMM2-12)]){
         skin(
             [
-                topProfileFull(heightMM = Channel_Internal_Height_1),
-                topProfileFull(heightMM = Channel_Internal_Height_1),
-                topProfileFull(heightMM = Channel_Internal_Height_2),
-                topProfileFull(heightMM = Channel_Internal_Height_2)
+                topProfileFull(heightMM = Channel_Internal_Height_1, totalWidth = widthMM),
+                topProfileFull(heightMM = Channel_Internal_Height_1, totalWidth = widthMM),
+                topProfileFull(heightMM = Channel_Internal_Height_2, totalWidth = widthMM),
+                topProfileFull(heightMM = Channel_Internal_Height_2, totalWidth = widthMM)
             ],
             z=[0,lengthMM/2-Rise_Distance/2,lengthMM/2+Rise_Distance/2,lengthMM],
             slices = 0
