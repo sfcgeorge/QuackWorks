@@ -229,8 +229,7 @@ function topProfileFull(heightMM = 12, totalWidth=25, topThickness = 2) =
         )
         //profile extracted from exact coordinates in Master Profile F360 sketch. Rounding was applied 2025-2-26
         [
-            //[0,9 + (heightMM - 12)],//Point 1 starting from the inside of the top center
-            //[0,9 + topThickness + (heightMM - 12)],//Point 2
+
             [adjustedWidth-8.5,9 + topThickness + (heightMM - 12)],//Point 3 
             [adjustedWidth -12.5,5+topThickness + (heightMM - 12)],//Point 4
             [adjustedWidth -12.5,0-Additional_Holding_Strength],//Point 5
@@ -252,7 +251,6 @@ function topProfileFull(heightMM = 12, totalWidth=25, topThickness = 2) =
             [-adjustedWidth +12.5,0-Additional_Holding_Strength],//Point 5
             [-adjustedWidth +12.5,5+topThickness + (heightMM - 12)],//Point 4
             [-adjustedWidth+8.5,9 + topThickness + (heightMM - 12)],//Point 3 
-            //[0,9 + topThickness + (heightMM - 12)],//Point 2
         ]
         ;
 

@@ -8,6 +8,8 @@ Change Log:
     - Initial release
 - 2024-12-09
     - Fix to threading of snap connector by adding flare and new slop parameter
+- 2025-02-27
+    - New mitered corners option. Thanks @porteregr on GitHub!
 
 Credit to 
     First and foremost - Katie and her community at Hands on Katie on Youtube, Patreon, and Discord
