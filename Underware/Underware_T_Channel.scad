@@ -32,6 +32,8 @@ Base_Top_or_Both = "Both"; // [Base, Top, Both]
 Channel_Width_in_Units = 1;
 //Height (Z axis) inside the channel (in mm)
 Channel_Internal_Height = 12; //[12:6:72]
+//Provide extra space for cables to turn through the T
+Corner_Style = "Sharp"; // [Sharp, Mitered]
 
 /*[Mounting Options]*/
 //How do you intend to mount the channels to a surface such as Honeycomb Storage Wall or Multiboard? See options at https://handsonkatie.com/underware-2-0-the-made-to-measure-collection/
@@ -118,23 +120,28 @@ module tIntersectionBase(widthMM, anchor, spin, orient){
         down(baseHeight/2) 
         left(Grid_Size/2)
         union(){
-        diff("channelClear holes")
-        //side channel
-        path_sweep(baseProfile(widthMM = widthMM), turtle(["move", channelWidth/2 + Grid_Size])){
-            tag("channelClear") zrot(90) fwd(channelWidth/2) straightChannelBaseDeleteTool(widthMM = channelWidth+0.02, lengthMM = channelWidth/2 + Grid_Size, anchor=BOT);
-        //long channel
-        zrot(90) left(channelWidth/2+Grid_Size)path_sweep(baseProfile(widthMM = widthMM), turtle(["move", channelWidth+Grid_Size*2]));
-        tag("channelClear") straightChannelBaseDeleteTool(widthMM = channelWidth+0.02, lengthMM = channelWidth+Grid_Size*2, anchor=BOT);
-        tag("holes") grid_copies(n=2+Channel_Width_in_Units, spacing=Grid_Size) 
-            if(Mounting_Method == "Direct Multiboard Screw") up(Base_Screw_Hole_Inner_Depth) cyl(h=8, d=Base_Screw_Hole_Inner_Diameter, $fn=25, anchor=TOP) attach(TOP, BOT, overlap=0.01) cyl(h=3, d=Base_Screw_Hole_Outer_Diameter, $fn=25);
-            else if(Mounting_Method == "Magnet") up(Magnet_Thickness+Magnet_Tolerance-0.01) cyl(h=Magnet_Thickness+Magnet_Tolerance, d=Magnet_Diameter+Magnet_Tolerance, $fn=50, anchor=TOP);
-            else if(Mounting_Method == "Wood Screw") up(3.5 - Wood_Screw_Head_Height) cyl(h=3.5 - Wood_Screw_Head_Height+0.05, d=Wood_Screw_Thread_Diameter, $fn=25, anchor=TOP)
-                //wood screw head
-                attach(TOP, BOT, overlap=0.01) cyl(h=Wood_Screw_Head_Height+0.05, d1=Wood_Screw_Thread_Diameter, d2=Wood_Screw_Head_Diameter, $fn=25);
-            else if(Mounting_Method == "Flat") ; //do nothing
-            //Default is Threaded Snap Connector
-            else up(5.99) trapezoidal_threaded_rod(d=Outer_Diameter_Sm, l=6, pitch=Pitch_Sm, flank_angle = Flank_Angle_Sm, thread_depth = Thread_Depth_Sm, $fn=50, internal=true, bevel2 = true, blunt_start=false, anchor=TOP, $slop=Slop);
-        }
+            diff("channelClear holes") {
+                if(Corner_Style == "Mitered") {
+                    miterTIntersectionBase();
+                }
+                //side channel
+                path_sweep(baseProfile(widthMM = widthMM), turtle(["move", channelWidth/2 + Grid_Size])){
+                    tag("channelClear") zrot(90) fwd(channelWidth/2) straightChannelBaseDeleteTool(widthMM = channelWidth+0.02, lengthMM = channelWidth/2 + Grid_Size, anchor=BOT);
+                //long channel
+                zrot(90) left(channelWidth/2+Grid_Size)path_sweep(baseProfile(widthMM = widthMM), turtle(["move", channelWidth+Grid_Size*2]));
+
+                tag("channelClear") straightChannelBaseDeleteTool(widthMM = channelWidth+0.02, lengthMM = channelWidth+Grid_Size*2, anchor=BOT);
+                tag("holes") grid_copies(n=2+Channel_Width_in_Units, spacing=Grid_Size) 
+                    if(Mounting_Method == "Direct Multiboard Screw") up(Base_Screw_Hole_Inner_Depth) cyl(h=8, d=Base_Screw_Hole_Inner_Diameter, $fn=25, anchor=TOP) attach(TOP, BOT, overlap=0.01) cyl(h=3, d=Base_Screw_Hole_Outer_Diameter, $fn=25);
+                    else if(Mounting_Method == "Magnet") up(Magnet_Thickness+Magnet_Tolerance-0.01) cyl(h=Magnet_Thickness+Magnet_Tolerance, d=Magnet_Diameter+Magnet_Tolerance, $fn=50, anchor=TOP);
+                    else if(Mounting_Method == "Wood Screw") up(3.5 - Wood_Screw_Head_Height) cyl(h=3.5 - Wood_Screw_Head_Height+0.05, d=Wood_Screw_Thread_Diameter, $fn=25, anchor=TOP)
+                        //wood screw head
+                        attach(TOP, BOT, overlap=0.01) cyl(h=Wood_Screw_Head_Height+0.05, d1=Wood_Screw_Thread_Diameter, d2=Wood_Screw_Head_Diameter, $fn=25);
+                    else if(Mounting_Method == "Flat") ; //do nothing
+                    //Default is Threaded Snap Connector
+                    else up(5.99) trapezoidal_threaded_rod(d=Outer_Diameter_Sm, l=6, pitch=Pitch_Sm, flank_angle = Flank_Angle_Sm, thread_depth = Thread_Depth_Sm, $fn=50, internal=true, bevel2 = true, blunt_start=false, anchor=TOP, $slop=Slop);
+                }
+            }
         }
         children();
     }
@@ -143,16 +150,47 @@ module tIntersectionBase(widthMM, anchor, spin, orient){
 module tIntersectionTop(widthMM, heightMM, anchor, spin, orient){
     attachable(anchor, spin, orient, size=[channelWidth+Grid_Size, channelWidth+Grid_Size*2, topHeight + (heightMM-12)]){
         down((topHeight + (heightMM-12))/2) left(Grid_Size/2)
-        diff("channelClear")
-        //side channel
-        path_sweep(topProfile(widthMM = widthMM, heightMM = heightMM), turtle(["move", channelWidth/2 + Grid_Size])){
-            tag("channelClear") zrot(90) fwd(channelWidth/2) straightChannelTopDeleteTool(widthMM = channelWidth+0.02, lengthMM = channelWidth/2 + Grid_Size, heightMM = heightMM, anchor=BOT);
-        //long channel
-        zrot(90) left(channelWidth/2+Grid_Size)path_sweep(topProfile(widthMM = widthMM, heightMM = heightMM), turtle(["move", channelWidth+Grid_Size*2]));
-            tag("channelClear") straightChannelTopDeleteTool(widthMM = channelWidth+0.02, lengthMM = channelWidth+Grid_Size*2, heightMM = heightMM, anchor=BOT);
-
+        diff("channelClear"){
+            if(Corner_Style == "Mitered") {
+                miterTIntersectionTop(heightMM);
+            }
+            //side channel
+            path_sweep(topProfile(widthMM = widthMM, heightMM = heightMM), turtle(["move", channelWidth/2 + Grid_Size])){
+                tag("channelClear") zrot(90) fwd(channelWidth/2) straightChannelTopDeleteTool(widthMM = channelWidth+0.02, lengthMM = channelWidth/2 + Grid_Size, heightMM = heightMM, anchor=BOT);
+                //long channel
+                zrot(90) left(channelWidth/2+Grid_Size)path_sweep(topProfile(widthMM = widthMM, heightMM = heightMM), turtle(["move", channelWidth+Grid_Size*2]));
+                tag("channelClear") straightChannelTopDeleteTool(widthMM = channelWidth+0.02, lengthMM = channelWidth+Grid_Size*2, heightMM = heightMM, anchor=BOT);
+            }
         }
         children();
+    }
+}
+
+module miterTIntersectionBase() {
+    // Move to the right edge of the base.
+    right((channelWidth+Grid_Size)/2){
+        // For each side move left so that the miter starts at about Grid_Size/2 from the end of the side channel.
+        // The move lengths are trig constants for right isoceles triangles adjusted for the width of our tools.
+        left(Grid_Size)fwd(channelWidth/2 + Grid_Size/2) zrot(45) path_sweep(baseProfile(widthMM = Grid_Size), turtle(["move", Grid_Size*1.3]));
+        tag("channelClear")left(Grid_Size/2)fwd(channelWidth/2) zrot(-45) straightChannelBaseDeleteTool(widthMM = Grid_Size+0.02, lengthMM = Grid_Size*1.4, anchor=BOT);
+        left(Grid_Size)back(channelWidth/2 + Grid_Size/2) zrot(-45) path_sweep(baseProfile(widthMM = Grid_Size), turtle(["move", Grid_Size*1.3]));
+        tag("channelClear")left(Grid_Size/2)back(channelWidth/2) zrot(45) straightChannelBaseDeleteTool(widthMM = Grid_Size+0.02, lengthMM = Grid_Size*1.4, anchor=BOT);
+    }
+}
+
+module miterTIntersectionTop(heightMM) {
+    // Move to the right edge of the top.
+    right((channelWidth+Grid_Size)/2){
+        // For each side move left so that the miter starts at about Grid_Size/2 from the end of the side channel.
+        // The move lengths are trig constants for right isoceles triangles adjusted for the width of our tools.
+        left(Grid_Size){
+            fwd(channelWidth/2 + Grid_Size/2) zrot(45) path_sweep(topProfile(widthMM = Grid_Size, heightMM = heightMM), turtle(["move", Grid_Size*1.25]));
+            back(channelWidth/2 + Grid_Size/2) zrot(-45) path_sweep(topProfile(widthMM = Grid_Size, heightMM = heightMM), turtle(["move", Grid_Size*1.25]));
+        }
+        tag("channelClear")left(Grid_Size/2){
+            fwd(channelWidth/2) zrot(-45) straightChannelTopDeleteTool(widthMM = Grid_Size+0.02, lengthMM = Grid_Size*1.4, heightMM = heightMM, anchor=BOT);
+            back(channelWidth/2) zrot(45) straightChannelTopDeleteTool(widthMM = Grid_Size+0.02, lengthMM = Grid_Size*1.4, heightMM = heightMM, anchor=BOT);
+        }
     }
 }
 
