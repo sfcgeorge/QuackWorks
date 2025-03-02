@@ -64,6 +64,8 @@ Global_Color = "SlateBlue";
 Override_Width_Using_Internal_MM = 0; 
 //Slop in thread. Increase to make threading easier. Decrease to make threading harder.
 Slop = 0.075;
+//Thickness of the top channel (in mm)
+Top_Thickness = 2; //[0.4:0.2:3]
 
 /*[Hidden]*/
 ///*[Beta Features - Please Send Feedback]*/
@@ -121,7 +123,7 @@ color_this(Global_Color)
 
 color_this(Global_Color)
         right(Show_Attached ? 0 : channelWidth/2+5)
-straightHeightChangeChannelTop(lengthMM = Channel_Length_Units * Grid_Size, widthMM = channelWidth * topScaling, heightMM1 = Channel_Internal_Height_1, heightMM2 = Channel_Internal_Height_2);
+straightHeightChangeChannelTop(lengthMM = Channel_Length_Units * Grid_Size, widthMM = channelWidth * topScaling, heightMM1 = Channel_Internal_Height_1, heightMM2 = Channel_Internal_Height_2, topThickness = Top_Thickness);
 
 /*
 
@@ -129,14 +131,14 @@ straightHeightChangeChannelTop(lengthMM = Channel_Length_Units * Grid_Size, widt
 
 */
 
-module straightHeightChangeChannelTop(lengthMM, widthMM, heightMM1 = 12, heightMM2 = 18,anchor, spin, orient){
+module straightHeightChangeChannelTop(lengthMM, widthMM, heightMM1 = 12, heightMM2 = 18, topThickness = 2, anchor, spin, orient){
     attachable(anchor, spin, orient, size=[widthMM, lengthMM, topHeight + (heightMM2-12)]){
         skin(
             [
-                topProfileFull(heightMM = Channel_Internal_Height_1, totalWidth = widthMM),
-                topProfileFull(heightMM = Channel_Internal_Height_1, totalWidth = widthMM),
-                topProfileFull(heightMM = Channel_Internal_Height_2, totalWidth = widthMM),
-                topProfileFull(heightMM = Channel_Internal_Height_2, totalWidth = widthMM)
+                newTopProfileFull(heightMM = Channel_Internal_Height_1, totalWidth = widthMM, topThickness = topThickness),
+                newTopProfileFull(heightMM = Channel_Internal_Height_1, totalWidth = widthMM, topThickness = topThickness),
+                newTopProfileFull(heightMM = Channel_Internal_Height_2, totalWidth = widthMM, topThickness = topThickness),
+                newTopProfileFull(heightMM = Channel_Internal_Height_2, totalWidth = widthMM, topThickness = topThickness)
             ],
             z=[0,lengthMM/2-Rise_Distance/2,lengthMM/2+Rise_Distance/2,lengthMM],
             slices = 0
@@ -222,37 +224,48 @@ function baseProfileHalf() =
         ]
 );
 
-function topProfileFull(heightMM = 12, totalWidth=25, topThickness = 2) =
+
+//BEGIN New Profile
+
+function newTopProfileHalf(heightMM = 12, totalWidth=25, topThickness = 2) =
         let(
             topChamfer = Additional_Holding_Strength < .4 ? 0 : 1,
-            adjustedWidth = 12.5 - totalWidth/2 //the profile is normalized off a 12.5 width
+            adjustedWidth =  totalWidth/2 - 12.5, //the profile is normalized off a 12.5 width
+            //Thinkness adjustment to apply the 2.0mm thickness assumption in the coordinates below
+            thicknessAdjustment = topThickness - 2,
+            //additional adjustment for the chamfer portion
+            deltaChamfer = (thicknessAdjustment) * sqrt(2) - thicknessAdjustment
         )
         //profile extracted from exact coordinates in Master Profile F360 sketch. Rounding was applied 2025-2-26
         [
+            [8.5 + adjustedWidth + deltaChamfer , 11  + (heightMM - 12) + thicknessAdjustment],//Point 1 
+            [12.5 + adjustedWidth, 7  + thicknessAdjustment+ (heightMM - 12) + deltaChamfer],//Point 2
+            [12.5 + adjustedWidth, 0 - Additional_Holding_Strength],//Point 3
+            [11.1 + adjustedWidth + Additional_Holding_Strength * 1.5 - topChamfer, 0 - Additional_Holding_Strength],//Point 4
+            [11.1 + adjustedWidth + Additional_Holding_Strength * 1.5, 0.8 - Additional_Holding_Strength/2],//Point 5
+            [11.5 + adjustedWidth + Additional_Holding_Strength/2, 1.1],//Point 6
+            [11.5 + adjustedWidth + Additional_Holding_Strength/2, 2.8],//Point 7
+            [10.5 + adjustedWidth + Additional_Holding_Strength/2, 3.1],//Point 8
+            [10.5 + adjustedWidth + Additional_Holding_Strength/2, 6.1 + (heightMM - 12)],//Point 9
+            [7.7 + adjustedWidth, 9 + (heightMM - 12)],//Point 10
+        ];
 
-            [adjustedWidth-8.5,9 + topThickness + (heightMM - 12)],//Point 3 
-            [adjustedWidth -12.5,5+topThickness + (heightMM - 12)],//Point 4
-            [adjustedWidth -12.5,0-Additional_Holding_Strength],//Point 5
-            [adjustedWidth -11.1+Additional_Holding_Strength*1.5-topChamfer,0-Additional_Holding_Strength],//Point 6
-            [adjustedWidth -11.1+Additional_Holding_Strength*1.5,0.8-Additional_Holding_Strength/2],//Point 7
-            [adjustedWidth -11.5+Additional_Holding_Strength/2,1.1],//Point 8
-            [adjustedWidth -11.5+Additional_Holding_Strength/2,2.8],//Point 9
-            [adjustedWidth -10.5+Additional_Holding_Strength/2,3.1],//Point 10
-            [adjustedWidth -10.5+Additional_Holding_Strength/2, 6.1 + (heightMM - 12)],//Point 11
-            [adjustedWidth -7.7, 9 + (heightMM - 12)],//Point 12
-            //begin 2nd half
-            [-adjustedWidth +7.7, 9 + (heightMM - 12)], //12
-            [-adjustedWidth +10.5-Additional_Holding_Strength/2, 6.1 + (heightMM - 12)], //12
-            [-adjustedWidth +10.5-Additional_Holding_Strength/2,3.1],//Point 10
-            [-adjustedWidth +11.5-Additional_Holding_Strength/2,2.8],//Point 9
-            [-adjustedWidth +11.5-Additional_Holding_Strength/2,1.1],//Point 8
-            [-adjustedWidth +11.1-Additional_Holding_Strength*1.5,0.8-Additional_Holding_Strength/2],//Point 7
-            [-adjustedWidth +11.1-Additional_Holding_Strength*1.5+topChamfer,0-Additional_Holding_Strength],//Point 6
-            [-adjustedWidth +12.5,0-Additional_Holding_Strength],//Point 5
-            [-adjustedWidth +12.5,5+topThickness + (heightMM - 12)],//Point 4
-            [-adjustedWidth+8.5,9 + topThickness + (heightMM - 12)],//Point 3 
-        ]
-        ;
+// Mirror a single point about X=0 (i.e. negate its X coordinate).
+function mirrorX(pt) = [ -pt[0], pt[1] ];
+
+function newTopProfileFull(heightMM = 12, totalWidth = 25, topThickness = 2) =
+    let(
+        half = newTopProfileHalf(heightMM = heightMM, totalWidth = totalWidth, topThickness = topThickness)
+    )
+    concat(
+        half,
+        // Mirror in *reverse index* so the final perimeter is a continuous loop
+        [ for(i = [len(half)-1 : -1 : 0]) mirrorX(half[i]) ]
+    );
+
+
+//END New Profile
+
 
 topChamfer = Additional_Holding_Strength < .4 ? 0 : 1;
 
