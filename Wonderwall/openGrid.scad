@@ -23,15 +23,15 @@ Board_Width = 2;
 Board_Height= 2;
 
 /*[Style and Mounting]*/
-Bevel_Everywhere = false;
-Bevel_Edges = true;
+Screw_Mounting = "Everywhere"; //[Everywhere, Corners, None]
+Bevels = "Corners"; //[Everywhere, Corners, None]
 Connector_Holes = true;
 
 /*[Tile Parameters]*/
 Tile_Size = 28;
 
 /*[Screw Mounting]*/
-Screw_Mounting = true;
+Screw_Mounting_Edges = true;
 Screw_Diameter = 4.1;
 Screw_Head_Diameter = 7.2;
 Screw_Head_Inset = 1;
@@ -132,22 +132,33 @@ module wonderboardGrid(Board_Width, Board_Height){
                     else wonderboardTileAp2();
             }
         }
-        if(Bevel_Everywhere)
+        //TODO: Modularize positioning (Outside Corners, inside corners, inside all) and holes (chamfer and screw holes)
+        //Bevel Everywhere
+        if(Bevels == "Everywhere" && Screw_Mounting != "Everywhere" && Screw_Mounting != "Corners")
         tag("remove")
             grid_copies(spacing=Tile_Size, size=[Board_Width*Tile_Size,Board_Height*Tile_Size])
                 down(0.01)
                 zrot(45)
                     cuboid([tileChamfer,tileChamfer,Tile_Thickness+0.02], anchor=BOT);
-        if(Bevel_Edges)
+        //Bevel Corners
+        if(Bevels == "Corners" || (Bevels == "Everywhere" && (Screw_Mounting == "Everywhere" || Screw_Mounting == "Corners")))
             tag("remove")
             move_copies([[Tile_Size*Board_Width/2,Tile_Size*Board_Height/2,0],[-Tile_Size*Board_Width/2,Tile_Size*Board_Height/2,0],[Tile_Size*Board_Width/2,-Tile_Size*Board_Height/2,0],[-Tile_Size*Board_Width/2,-Tile_Size*Board_Height/2,0]])
                 down(0.01)
                 zrot(45)
                     cuboid([tileChamfer,tileChamfer,Tile_Thickness+0.02], anchor=BOT);
-        if(Screw_Mounting)
+        //Screw Mount Corners
+        if(Screw_Mounting == "Corners")
             tag("remove")
             move_copies([[Tile_Size*Board_Width/2-Tile_Size,Tile_Size*Board_Height/2-Tile_Size,0],[-Tile_Size*Board_Width/2+Tile_Size,Tile_Size*Board_Height/2-Tile_Size,0],[Tile_Size*Board_Width/2-Tile_Size,-Tile_Size*Board_Height/2+Tile_Size,0],[-Tile_Size*Board_Width/2+Tile_Size,-Tile_Size*Board_Height/2+Tile_Size,0]])
             up(Tile_Thickness+0.01)
+                cyl(d=Screw_Head_Diameter, h=Screw_Head_Inset, anchor=TOP)
+                    attach(BOT, TOP) cyl(d2=Screw_Head_Diameter, d1=Screw_Diameter, h=sqrt((Screw_Head_Diameter/2-Screw_Diameter/2)^2))
+                        attach(BOT, TOP) cyl(d=Screw_Diameter, h=Tile_Thickness+0.02);
+        //Screw Mount Everywhere
+        if(Screw_Mounting == "Everywhere")
+            tag("remove")
+            grid_copies(spacing=Tile_Size, size=[(Board_Width-2)*Tile_Size,(Board_Height-2)*Tile_Size])            up(Tile_Thickness+0.01)
                 cyl(d=Screw_Head_Diameter, h=Screw_Head_Inset, anchor=TOP)
                     attach(BOT, TOP) cyl(d2=Screw_Head_Diameter, d1=Screw_Diameter, h=sqrt((Screw_Head_Diameter/2-Screw_Diameter/2)^2))
                         attach(BOT, TOP) cyl(d=Screw_Diameter, h=Tile_Thickness+0.02);
