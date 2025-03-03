@@ -22,21 +22,23 @@ Full_or_Lite = "Lite";//[Full, Lite]
 Board_Width = 2;
 Board_Height= 2;
 
-/*[Style and Mounting]*/
+/*[Style and Mounting Options]*/
+//Screw holes for mounting -  
 Screw_Mounting = "Everywhere"; //[Everywhere, Corners, None]
+//Cosmetic bevels - If screw holes turned on, bevels will only be on the outside corners. 
 Bevels = "Corners"; //[Everywhere, Corners, None]
 Connector_Holes = true;
 
-/*[Tile Parameters]*/
-Tile_Size = 28;
-
-/*[Screw Mounting]*/
-Screw_Mounting_Edges = true;
+/*[Screw Mounting Sizes]*/
 Screw_Diameter = 4.1;
 Screw_Head_Diameter = 7.2;
 Screw_Head_Inset = 1;
 
-/*[Debug]*/
+/*[Advanced - Tile Parameters]*/
+//Customize tile sizes - openGrid standard is 28mm
+Tile_Size = 28;
+
+/*[Hidden]*/
 //2D is fast. 3D is slow. No benefits of 3D. 
 Render_Method = "2D";//[3D, 2D]
 
