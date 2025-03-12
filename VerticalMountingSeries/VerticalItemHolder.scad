@@ -37,7 +37,7 @@ include <BOSL2/walls.scad>
 
 /* [Beta Feature - Slot Type] */
 //Multipoint in Beta - Please share feedback! How do you intend to mount the item holder to a surface such as Multipoint connections or DavidD's Multiconnect?
-Connection_Type = "GOEWS"; // [Multipoint, Multiconnect, GOEWS]
+Connection_Type = "Multiconnect"; // [Multipoint, Multiconnect, GOEWS]
 
 /* [Internal Dimensions] */
 //Height (in mm) from the top of the back to the base of the internal floor
