@@ -1,6 +1,11 @@
 /*Created by Andy Levesque
 Credit to @David D on Printables and Jonathan at Keep Making for Multiconnect and Multiboard, respectively
 Licensed Creative Commons 4.0 Attribution Non-Commercial Sharable with Attribution
+
+Change Log: 
+- 2024-12-07: Initial Release
+- 2025-03-11: Hole Cutout and Slot Cutout added (thanks @user_3620134323)
+
 */
 
 /*[Parameters]*/
@@ -20,6 +25,13 @@ additionalBackerHeight = 0;
 offSet = 0;
 //Use cutout for holding items that are wider at the top
 useCutout = false;
+
+/*[Hole Cutout Customizations]*/
+holeCutout = false;
+//diameter/width of cord cutout
+holeCutoutDiameter = 10;
+//cut out a slot on the bottom and through the front
+slotCutout = false;
 
 /*[Slot Customization]*/
 //Distance between Multiconnect slots on the back (25mm is standard for MultiBoard)
@@ -52,26 +64,44 @@ union() {
         //itemwalls
         union() {
             hull(){
-                translate(v = [totalWidth/2,itemDiameter/2+offSet,0]) 
-                    //outer circle
-                    linear_extrude(height = shelfSupportHeight+baseThickness) 
-                            circle(r = itemDiameter/2+rimThickness, $fn=50);
-                    //wide back for hull operation
-                    linear_extrude(height = shelfSupportHeight+baseThickness) 
-                            square(size = [totalWidth,1]);
-                }
+                translate(v = [totalWidth/2,itemDiameter/2+offSet,0])
+                //outer circle
+                linear_extrude(height = shelfSupportHeight+baseThickness)
+                    circle(r = itemDiameter/2+rimThickness, $fn=50);
+                //wide back for hull operation
+                linear_extrude(height = shelfSupportHeight+baseThickness)
+                    square(size = [totalWidth,1]);
+            }
             //thin holding wall
-            translate(v = [totalWidth/2,itemDiameter/2+offSet,shelfSupportHeight+baseThickness]) 
-                linear_extrude(height = rimHeight) 
+            translate(v = [totalWidth/2,itemDiameter/2+offSet,shelfSupportHeight+baseThickness])
+                linear_extrude(height = rimHeight)
                     circle(r = itemDiameter/2+rimThickness, $fn=50);
         }
+        union(){
         //itemDiameter (i.e., delete tool)
-        translate(v = [totalWidth/2,(itemDiameter/2)+offSet,baseThickness+.5 - (useCutout?+(baseThickness*2)+1:0)]) linear_extrude(height = shelfSupportHeight+rimHeight+1+(useCutout?+(baseThickness*2):0)) circle(r = itemDiameter/2, $fn=50);
+            translate(v = [totalWidth/2,(itemDiameter/2)+offSet,baseThickness+.5 - (useCutout?+(baseThickness*2)+1:0)]) 
+                linear_extrude(height = shelfSupportHeight+rimHeight+1+(useCutout?+(baseThickness*2):0)) 
+                    circle(r = itemDiameter/2, $fn=50);
+
+            //tool hole
+            if (holeCutout == true) {
+                translate(v = [totalWidth/2,(itemDiameter/2)+offSet]) union() {
+                    linear_extrude(height = baseThickness*10) circle(r = holeCutoutDiameter/2, $fn=50);
+
+                    if (slotCutout == true) {
+                        translate(v = [-holeCutoutDiameter/2,0,0]) 
+                            cube([holeCutoutDiameter, totalWidth/2, totalHeight]);
+                    }
+                }
+            }
+        }
     }
     //brackets
     bracketSize = min(totalHeight-baseThickness-shelfSupportHeight, itemDiameter/2);
-    translate(v = [rimThickness,0,bracketSize+baseThickness+shelfSupportHeight]) shelfBracket(bracketHeight = bracketSize, bracketDepth = bracketSize, rimThickness = rimThickness);
-    translate(v = [rimThickness*2+itemDiameter,0,bracketSize+baseThickness+shelfSupportHeight]) shelfBracket(bracketHeight = bracketSize, bracketDepth = bracketSize, rimThickness = rimThickness);
+    translate(v = [rimThickness,0,bracketSize+baseThickness+shelfSupportHeight]) 
+        shelfBracket(bracketHeight = bracketSize, bracketDepth = bracketSize, rimThickness = rimThickness);
+    translate(v = [rimThickness*2+itemDiameter,0,bracketSize+baseThickness+shelfSupportHeight]) 
+        shelfBracket(bracketHeight = bracketSize, bracketDepth = bracketSize, rimThickness = rimThickness);
 }
 
 //BEGIN MODULES
