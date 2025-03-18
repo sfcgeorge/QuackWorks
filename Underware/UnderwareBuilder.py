@@ -7,7 +7,7 @@ import yaml
 import time
 
 # Specify the path to openscad.exe
-openscad_path = 'C:/Program Files/OpenSCAD (Nightly)/openscad.exe'
+openscad_path = os.environ.get('OPENSCAD', 'C:/Program Files/OpenSCAD (Nightly)/openscad.exe')
 
 # Check if openscad.exe exists
 if not os.path.isfile(openscad_path):
