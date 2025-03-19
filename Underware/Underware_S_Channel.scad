@@ -6,6 +6,8 @@ Documentation available at https://handsonkatie.com/underware-2-0-the-made-to-me
 Change Log:
 - 2025-2-2
     - Initial release
+- 2025-03-17
+    - Fixed mirrored direction
 
 Credit to 
     First and foremost - Katie and her community at Hands on Katie on Youtube, Patreon, and Discord
@@ -26,7 +28,7 @@ Channel_Width_in_Units = 1;
 //Height (Z axis) inside the channel (in mm)
 Channel_Internal_Height = 12; //[12:6:72]
 //Grid units to move over (X axis)
-Units_Over = 2; //[1:1:10]
+Units_Over = 2; //[-10:1:10]
 //Grid units to move up (Y axis)
 Units_Up = 2; //[1:1:10]
 

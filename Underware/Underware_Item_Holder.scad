@@ -40,6 +40,8 @@ Change Log:
     - Adjusted slot stop variable to be based on item floor rather than holder edge
 - 2025-01-24
     - Wide backplates (> 75mm) produced incorrect slot counts.
+- 2025-03-16
+    - Underware Snap Connector
 
 Notes:
 - Slot test fit - For a slot test fit, set the following parameters
@@ -51,13 +53,14 @@ Notes:
 
 include <BOSL2/std.scad>
 include <BOSL2/walls.scad>
+include <BOSL2/threading.scad>
 
 /* [Slot Type] */
-//Multipoint in Beta - Please share feedback! How do you intend to mount the item holder to a surface such as Multipoint connections or DavidD's Multiconnect?
-Connection_Type = "Multiconnect"; // [Multipoint, Multiconnect]
+//How do you intend to mount the item holder to a surface such as Multipoint, Multiconnect, or Underware Threaded Snaps?
+Connection_Type = "Multiconnect"; // [Multipoint, Multiconnect, Threaded Snap]
 
 /*[BETA - Clamshell mode]*/
-//Clamshell mode is when you want to enclose the item with two separate holders. This calculates the distance between the two holders while also aligning with the mounting points.
+//NOT COMPATIBLE WITH THREADED SNAPS YET. Clamshell mode is when you want to enclose the item with two separate holders. This calculates the distance between the two holders while also aligning with the mounting points.
 ClamShell_Mode = true;
 //total width of the item to be mounted
 total_item_width = 150;
@@ -167,6 +170,20 @@ Wall_Type = "Solid"; //["Hex","Solid"]
 debugCutoutTool = false;
 debugItemRepresentation = false;
 
+///*[Small Screw Profile]*/
+//Distance (in mm) between threads
+Pitch_Sm = 3;
+//Diameter (in mm) at the outer threads
+Outer_Diameter_Sm = 6.747;
+//Angle of the one side of the thread
+Flank_Angle_Sm = 60;
+//Depth (in mm) of the thread
+Thread_Depth_Sm = 0.5;
+//Diameter of the hole down the middle of the screw (for strength)
+Inner_Hole_Diameter_Sm = 3.3;
+//Slop in thread. Increase to make threading easier. Decrease to make threading harder.
+Slop = 0.075;
+
 if(debugCutoutTool){
     if(Connection_Type == "Multiconnect") multiConnectSlotTool(totalHeight);
     else multiPointSlotTool(totalHeight);
@@ -212,7 +229,8 @@ union(){
         translate(v = [-internalWidth/2,0,0]) 
             basket();
     //slotted back
-    makebackPlate(
+    if(Connection_Type == "Multipoint" || Connection_Type == "Multiconnect")
+    makeSlottedBackplate(
         maxBackWidth = totalWidth, 
         backHeight = totalHeight, 
         distanceBetweenSlots = distanceBetweenSlots,
@@ -220,6 +238,15 @@ union(){
             Connection_Type == "Multiconnect" ? 6.5 :
             6,
         enforceMaxWidth=true,
+        slotStopFromBack = ClamShell_Mode ? new_mount_point_inward_adjustement : Multiconnect_Stop_Distance_From_Back,
+        anchor=BOT+BACK
+        );
+    if(Connection_Type == "Threaded Snap")
+    makeThreadedBackplate(
+        maxBackWidth = totalWidth, 
+        backHeight = totalHeight, 
+        distanceBetweenSlots = distanceBetweenSlots,
+        backThickness= 3,
         slotStopFromBack = ClamShell_Mode ? new_mount_point_inward_adjustement : Multiconnect_Stop_Distance_From_Back,
         anchor=BOT+BACK
         );
@@ -233,7 +260,7 @@ union(){
         translate(v = [-internalWidth/2,0,0]) 
             basket();
     //slotted back
-    makebackPlate(
+    makeSlottedBackplate(
         maxBackWidth = totalWidth, 
         backHeight = totalHeight, 
         distanceBetweenSlots = distanceBetweenSlots,
@@ -305,10 +332,33 @@ module basket() {
     
 }
 
-
 //BEGIN MODULES
+
+module makeThreadedBackplate(maxBackWidth, backHeight, distanceBetweenSlots, backThickness, slotStopFromBack = 13-baseThickness, enforceMaxWidth, anchor=CENTER, spin=0, orient=UP){
+    slotCount = floor(maxBackWidth/distanceBetweenSlots) - subtractedSlots;
+    //trueWidth = (enforceMaxWidth) ? maxBackWidth : slotCount * distanceBetweenSlots;
+    trueBackHeight = max(backHeight, 25);
+    backPlateTranslation = [0,-backThickness/2+0.01, 0];
+    attachable(anchor, spin, orient, size=[maxBackWidth,backThickness,trueBackHeight]){
+        translate(v = backPlateTranslation) 
+            diff(){
+                translate(v = [0,0,-trueBackHeight/2])
+                cuboid(size = [maxBackWidth, backThickness, trueBackHeight], 
+                    rounding=edgeRounding, 
+                    except_edges=BACK, 
+                    anchor=FRONT+BOT
+                    );
+                xrot(90) 
+                tag("remove")grid_copies(size=[maxBackWidth-Outer_Diameter_Sm, trueBackHeight-Outer_Diameter_Sm], spacing = distanceBetweenSlots)
+                    up(0.01)trapezoidal_threaded_rod(d=Outer_Diameter_Sm, l=backThickness+0.02, pitch=Pitch_Sm, flank_angle = Flank_Angle_Sm, thread_depth = Thread_Depth_Sm, $fn=50, internal=true, bevel2 = true, blunt_start=false, anchor=TOP, $slop=Slop);
+
+            }
+        children();
+    }
+}
+
 //Slotted back Module
-module makebackPlate(maxBackWidth, backHeight, distanceBetweenSlots, backThickness, slotStopFromBack = 13-baseThickness, enforceMaxWidth, anchor=CENTER, spin=0, orient=UP)
+module makeSlottedBackplate(maxBackWidth, backHeight, distanceBetweenSlots, backThickness, slotStopFromBack = 13-baseThickness, enforceMaxWidth, anchor=CENTER, spin=0, orient=UP)
 {
     //every slot is a multiple of distanceBetweenSlots. The default of 25 accounts for the rail, and the ~5mm to either side.
     //first calculate the starting slot location based on the number of slots.
