@@ -2,7 +2,8 @@
 openGrid
 Design by DavidD
 OpenSCAD by BlackjackDuck (Andy)
-This code and all derived parts are Licensed Creative Commons 4.0 Attribution Non-Commercial Share-Alike (CC-BY-NC-SA)
+This code is Licensed Creative Commons 4.0 Attribution Non-Commercial Share-Alike (CC-BY-NC-SA)
+Derived parts are licensed Creative Commons 4.0 Attribution (CC-BY)
 
 Change Log:
 - 2025- 

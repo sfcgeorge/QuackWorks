@@ -4,18 +4,13 @@ This code and all parts derived from it are Licensed Creative Commons 4.0 Attrib
 Documentation available at https://handsonkatie.com/underware-2-0-the-made-to-measure-collection/
 
 Change Log:
-- 2025-02-26 
+- 2025-03-20
     - Initial release
 
 Credit to 
     First and foremost - Katie and her community at Hands on Katie on Youtube, Patreon, and Discord
     @David D on Printables for Multiconnect
     Jonathan at Keep Making for Multiboard
-    @cosmicdust on MakerWorld and @freakadings_1408562 on Printables for the idea of diagonals (forward and turn)
-    @siyrahfall+1155967 on Printables for the idea of top exit holes
-    @Lyric on Printables for the flush connector idea
-    @fawix on GitHub for her contributions on parameter descriptors
-
 */
 
 include <BOSL2/std.scad>
@@ -24,6 +19,20 @@ include <BOSL2/threading.scad>
 
 /*[Choose Part]*/
 Base_Top_or_Both = "Both"; // [Base, Top, Both]
+
+/*[Channel Size]*/
+//Width (X axis) of channel in units. Default unit is 25mm
+Channel_Width_in_Units_1 = 1;  // Ensure this is an integer
+//Width (X axis) of channel in units. Default unit is 25mm
+Channel_Width_in_Units_2 = 1;  // Ensure this is an integer
+//Height (Z axis) inside the channel (in mm)
+Channel_Internal_Height_1 = 18; //[12:6:72]
+//Height (Z axis) inside the channel (in mm)
+Channel_Internal_Height_2 = 12; //[12:6:72]
+//Length (Y axis) of channel in units. Default unit is 25mm
+Channel_Length_Units = 3; 
+//The lateral distance of the rising portion of the channel
+Rise_Distance = 25; //[12.5:12.5:100]
 
 /*[Mounting Options]*/
 //How do you intend to mount the channels to a surface such as Honeycomb Storage Wall or Multiboard? See options at https://handsonkatie.com/underware-2-0-the-made-to-measure-collection/
@@ -40,21 +49,6 @@ Wood_Screw_Thread_Diameter = 3.5;
 Wood_Screw_Head_Diameter = 7;
 //Wood Screw Head Height (in mm)
 Wood_Screw_Head_Height = 1.75;
-
-/*[Channel Size]*/
-//Width (X axis) of channel in units. Default unit is 25mm
-Channel_Width_in_Units_1 = 1;  // Ensure this is an integer
-//Width (X axis) of channel in units. Default unit is 25mm
-Channel_Width_in_Units_2 = 1;  // Ensure this is an integer
-//Height (Z axis) inside the channel (in mm)
-Channel_Internal_Height_1 = 18; //[12:6:72]
-//Height (Z axis) inside the channel (in mm)
-Channel_Internal_Height_2 = 12; //[12:6:72]
-//Length (Y axis) of channel in units. Default unit is 25mm
-Channel_Length_Units = 3; 
-//The lateral distance of the rising portion of the channel
-Rise_Distance = 25; //[12.5:12.5:100]
-
 
 /*[Advanced Options]*/
 //Units of measurement (in mm) for hole and length spacing. Multiboard is 25mm. Untested
@@ -124,6 +118,7 @@ color_this(Global_Color)
         left(Show_Attached ? 0 : max(channelWidth1,channelWidth2)/2+5)
             straightChangeChannelBase(lengthMM = Channel_Length_Units * Grid_Size, widthMM1 = channelWidth1, widthMM2 = channelWidth2, anchor=BOT);
 
+if(Base_Top_or_Both != "Base")
 color_this(Global_Color)
         right(Show_Attached ? 0 : max(channelWidth1,channelWidth2)/2+5)
 straightHeightChangeChannelTop(lengthMM = Channel_Length_Units * Grid_Size, widthMM1 = channelWidth1 * topScaling, widthMM2 = channelWidth2 * topScaling, heightMM1 = Channel_Internal_Height_1, heightMM2 = Channel_Internal_Height_2, topThickness = Top_Thickness);
@@ -155,9 +150,11 @@ module straightHeightChangeChannelTop(lengthMM, widthMM1, widthMM2, heightMM1 = 
 //STRAIGHT CHANNELS
 module straightChangeChannelBase(lengthMM, widthMM1, widthMM2,anchor, spin, orient){
     attachable(anchor, spin, orient, size=[max(widthMM1, widthMM2), lengthMM, baseHeight]){
-        fwd(lengthMM/2) down(maxY(selectBaseProfile)/2)
-        diff("holes")
+        down(maxY(selectBaseProfile)/2)
+        diff("holes"){
         //path_sweep(baseProfile(widthMM = widthMM), turtle(["xmove", lengthMM]))
+        back(lengthMM/2)
+        xrot(90)
         skin(
             [
                 left(Channel_Width_in_Units_1 % 2 == 1 ? 12.5 :  0, newBaseProfileFull(totalWidth = widthMM1)),
@@ -167,22 +164,30 @@ module straightChangeChannelBase(lengthMM, widthMM1, widthMM2,anchor, spin, orie
             ],
             z=[0,lengthMM/2-Rise_Distance/2,lengthMM/2+Rise_Distance/2,lengthMM],
             slices = 0
-            )
-        tag("holes")  right(lengthMM/2) grid_copies(spacing=Grid_Size, inside=rect([lengthMM-1,Grid_Size*Channel_Width_in_Units_1-1])) 
-            if(Mounting_Method == "Direct Multiboard Screw") up(Base_Screw_Hole_Inner_Depth) cyl(h=8, d=Base_Screw_Hole_Inner_Diameter, $fn=25, anchor=TOP) attach(TOP, BOT, overlap=0.01) cyl(h=3.5-Base_Screw_Hole_Inner_Depth+0.02, d1=Base_Screw_Hole_Cone ? Base_Screw_Hole_Inner_Diameter : Base_Screw_Hole_Outer_Diameter, d2=Base_Screw_Hole_Outer_Diameter, $fn=25);
-            else if(Mounting_Method == "Direct Multipoint Screw") up(Base_Screw_Hole_Inner_Depth) cyl(h=8, d=Base_Screw_Hole_Inner_Diameter, $fn=25, anchor=TOP) attach(TOP, BOT, overlap=0.01) cyl(h=3.5-Base_Screw_Hole_Inner_Depth+0.02, d1=Base_Screw_Hole_Cone ? Base_Screw_Hole_Inner_Diameter : MultipointBase_Screw_Hole_Outer_Diameter, d2=MultipointBase_Screw_Hole_Outer_Diameter, $fn=25);
-            else if(Mounting_Method == "Magnet") up(Magnet_Thickness+Magnet_Tolerance-0.01) cyl(h=Magnet_Thickness+Magnet_Tolerance, d=Magnet_Diameter+Magnet_Tolerance, $fn=50, anchor=TOP);
-            else if(Mounting_Method == "Wood Screw") up(3.5 - Wood_Screw_Head_Height) cyl(h=3.5 - Wood_Screw_Head_Height+0.05, d=Wood_Screw_Thread_Diameter, $fn=25, anchor=TOP)
-                //wood screw head
-                attach(TOP, BOT, overlap=0.01) cyl(h=Wood_Screw_Head_Height+0.05, d1=Wood_Screw_Thread_Diameter, d2=Wood_Screw_Head_Diameter, $fn=25);
-            else if(Mounting_Method == "Flat") ; //do nothing
-            //Default is Threaded Snap Connector
-            else up(5.99) trapezoidal_threaded_rod(d=Outer_Diameter_Sm, l=6, pitch=Pitch_Sm, flank_angle = Flank_Angle_Sm, thread_depth = Thread_Depth_Sm, $fn=50, internal=true, bevel2 = true, blunt_start=false, anchor=TOP, $slop=Slop);
+            );
+        tag("holes")  back(lengthMM/2-Grid_Size/2)  left(Channel_Width_in_Units_1 % 2 == 1 ? 12.5 :  0)
+            xcopies(spacing=Grid_Size, n = Channel_Width_in_Units_1) 
+                mount_point(Mounting_Method);
+        tag("holes")  fwd(lengthMM/2-Grid_Size/2)  left(Channel_Width_in_Units_2 % 2 == 1 ? 12.5 :  0)
+            xcopies(spacing=Grid_Size, n = Channel_Width_in_Units_2) 
+                mount_point(Mounting_Method);
+        }
     children();
     }
 }
 
+module mount_point(Mounting_Method = "Threaded Snap Connector"){
+    if(Mounting_Method == "Direct Multiboard Screw") up(Base_Screw_Hole_Inner_Depth) cyl(h=8, d=Base_Screw_Hole_Inner_Diameter, $fn=25, anchor=TOP) attach(TOP, BOT, overlap=0.01) cyl(h=3.5-Base_Screw_Hole_Inner_Depth+0.02, d1=Base_Screw_Hole_Cone ? Base_Screw_Hole_Inner_Diameter : Base_Screw_Hole_Outer_Diameter, d2=Base_Screw_Hole_Outer_Diameter, $fn=25);
+    else if(Mounting_Method == "Direct Multipoint Screw") up(Base_Screw_Hole_Inner_Depth) cyl(h=8, d=Base_Screw_Hole_Inner_Diameter, $fn=25, anchor=TOP) attach(TOP, BOT, overlap=0.01) cyl(h=3.5-Base_Screw_Hole_Inner_Depth+0.02, d1=Base_Screw_Hole_Cone ? Base_Screw_Hole_Inner_Diameter : MultipointBase_Screw_Hole_Outer_Diameter, d2=MultipointBase_Screw_Hole_Outer_Diameter, $fn=25);
+    else if(Mounting_Method == "Magnet") up(Magnet_Thickness+Magnet_Tolerance-0.01) cyl(h=Magnet_Thickness+Magnet_Tolerance, d=Magnet_Diameter+Magnet_Tolerance, $fn=50, anchor=TOP);
+    else if(Mounting_Method == "Wood Screw") up(3.5 - Wood_Screw_Head_Height) cyl(h=3.5 - Wood_Screw_Head_Height+0.05, d=Wood_Screw_Thread_Diameter, $fn=25, anchor=TOP)
+        //wood screw head
+        attach(TOP, BOT, overlap=0.01) cyl(h=Wood_Screw_Head_Height+0.05, d1=Wood_Screw_Thread_Diameter, d2=Wood_Screw_Head_Diameter, $fn=25);
+    else if(Mounting_Method == "Flat") ; //do nothing
+    //Default is "Threaded Snap Connector"
+    else up(5.99) trapezoidal_threaded_rod(d=Outer_Diameter_Sm, l=6, pitch=Pitch_Sm, flank_angle = Flank_Angle_Sm, thread_depth = Thread_Depth_Sm, $fn=50, internal=true, bevel2 = true, blunt_start=false, anchor=TOP, $slop=Slop);
 
+}
 
 //BEGIN PROFILES - Must match across all files
 
@@ -223,12 +228,26 @@ Profile redesign retains the coordinates in adjusted widths and heights allowing
 
 */
 function newBaseProfileHalf(totalWidth = 25) = 
-    fwd(-7.947, //take Katie's exact measurements for half the profile and use fwd to place flush on the Y axis
+    //take Katie's exact measurements for half the profile and use fwd to place flush on the Y axis
         //profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
         let(
             adjustedWidth =  totalWidth/2 - 12.5 //the profile is normalized off a 12.5 width
         )
         [
+            [8.5+ adjustedWidth+Additional_Holding_Strength*1.5,3.5], //Point 2
+            [9.5+ adjustedWidth+Additional_Holding_Strength*1.5,4.5],  //Point 3
+            [9.5+ adjustedWidth+Additional_Holding_Strength*1.5,9.63], //Point 4
+            [10.517+ adjustedWidth+Additional_Holding_Strength/2,9.63], //Point 5
+            [11.459+ adjustedWidth+Additional_Holding_Strength/2,9.369], //Point 6
+            [11.459+ adjustedWidth+Additional_Holding_Strength/2,7.65], //Point 7
+            [11.166+ adjustedWidth+Additional_Holding_Strength+Additional_Holding_Strength/2,7.355-Additional_Holding_Strength/2], //Point 8 move
+            [11.166+ adjustedWidth+Additional_Holding_Strength+Additional_Holding_Strength/2,6.533-Additional_Holding_Strength], //Point 9 move
+            [11.666+ adjustedWidth+Additional_Holding_Strength,6.033-Additional_Holding_Strength], //Point 10 move
+            [12.517+ adjustedWidth,6.033-Additional_Holding_Strength], //Point 11 move
+            [12.517+ adjustedWidth,3.499], //Point 12
+            [10.517+ adjustedWidth,1.499], //Point 13
+            [10.517+ adjustedWidth,0], //Point 14
+            /*
             [8.5+ adjustedWidth+Additional_Holding_Strength*1.5,-4.447], //Point 2
             [9.5+ adjustedWidth+Additional_Holding_Strength*1.5,-3.447],  //Point 3
             [9.5+ adjustedWidth+Additional_Holding_Strength*1.5,1.683], //Point 4
@@ -242,8 +261,9 @@ function newBaseProfileHalf(totalWidth = 25) =
             [12.517+ adjustedWidth,-4.448], //Point 12
             [10.517+ adjustedWidth,-6.448], //Point 13
             [10.517+ adjustedWidth,-7.947], //Point 14
+            */
         ]
-);
+;
 
 function newTopProfileHalf(heightMM = 12, totalWidth=25, topThickness = 2) =
         let(
