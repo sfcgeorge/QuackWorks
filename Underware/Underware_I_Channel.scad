@@ -8,6 +8,8 @@ Change Log:
     - Initial release
 - 2024-12-09
     - Fix to threading of snap connector by adding flare and new slop parameter
+2025-03-20
+    - Stronger profile options
 
 Credit to 
     First and foremost - Katie and her community at Hands on Katie on Youtube, Patreon, and Discord
@@ -28,6 +30,14 @@ include <BOSL2/threading.scad>
 /*[Choose Part]*/
 Base_Top_or_Both = "Both"; // [Base, Top, Both]
 
+/*[Channel Size]*/
+//Width (X axis) of channel in units. Default unit is 25mm
+Channel_Width_in_Units = 1;  // Ensure this is an integer
+//Height (Z axis) inside the channel (in mm)
+Channel_Internal_Height = 12; //[12:6:72]
+//Length (Y axis) of channel in units. Default unit is 25mm
+Channel_Length_Units = 5; 
+
 /*[Mounting Options]*/
 //How do you intend to mount the channels to a surface such as Honeycomb Storage Wall or Multiboard? See options at https://handsonkatie.com/underware-2-0-the-made-to-measure-collection/
 Mounting_Method = "Threaded Snap Connector"; //[Threaded Snap Connector, Direct Multiboard Screw, Direct Multipoint Screw, Magnet, Wood Screw, Flat]
@@ -43,14 +53,6 @@ Wood_Screw_Thread_Diameter = 3.5;
 Wood_Screw_Head_Diameter = 7;
 //Wood Screw Head Height (in mm)
 Wood_Screw_Head_Height = 1.75;
-
-/*[Channel Size]*/
-//Width (X axis) of channel in units. Default unit is 25mm
-Channel_Width_in_Units = 1;  // Ensure this is an integer
-//Height (Z axis) inside the channel (in mm)
-Channel_Internal_Height = 12; //[12:6:72]
-//Length (Y axis) of channel in units. Default unit is 25mm
-Channel_Length_Units = 5; 
 
 /*[Cord Cutouts]*/
 Number_of_Cord_Cutouts = 0;
@@ -96,7 +98,7 @@ Slop = 0.075;
 Profile_Type = "Original"; // [Original, v2.5]
 //BETA FEATURE: For channels wider than 1 unit or taller than 18mm, reduce the top channel width to increase holding strength.
 Flex_Compensation_Scaling = 0.99; // 
-//BETA FEATURE - Original Profile Only: Change snap profile for strong holding strength. Not backwards compatible.
+//BETA FEATURE - Works with Original Profile Only: Change snap profile for strong holding strength. Not backwards compatible.
 Additional_Holding_Strength = 0.0;//[0:0.1:1.5]
 
 

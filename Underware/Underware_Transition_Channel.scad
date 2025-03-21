@@ -22,7 +22,7 @@ Base_Top_or_Both = "Both"; // [Base, Top, Both]
 
 /*[Channel Size]*/
 //Width (X axis) of channel in units. Default unit is 25mm
-Channel_Width_in_Units_1 = 1;  // Ensure this is an integer
+Channel_Width_in_Units_1 = 2;  // Ensure this is an integer
 //Width (X axis) of channel in units. Default unit is 25mm
 Channel_Width_in_Units_2 = 1;  // Ensure this is an integer
 //Height (Z axis) inside the channel (in mm)
