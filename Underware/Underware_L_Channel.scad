@@ -60,6 +60,16 @@ Global_Color = "SlateBlue";
 //Slop in thread. Increase to make threading easier. Decrease to make threading harder.
 Slop = 0.075;
 
+/*[Beta Features - Please Send Feedback]*/
+//BETA FEATURE: For channels wider than 1 unit or taller than 18mm, reduce the top channel width to increase holding strength.
+Flex_Compensation_Scaling = 0.99; // 
+//BETA FEATURE - Works with Original Profile Only: Change snap profile for strong holding strength. Not backwards compatible.
+Additional_Holding_Strength = 0.0;//[0:0.1:1.5]
+
+/*[Hidden]*/
+//BETA FEATURE: Change the profile type to an inverse connection where the top clips from the inside allowing stronger connections. Not backwards compatible. This profile is still likely to change.
+Profile_Type = "Original"; // [Original, v2.5]
+
 /*[Hidden]*/
 baseHeight = 9.63;
 topHeight = 10.968;
@@ -145,19 +155,22 @@ module lChannelTop(lengthMM = 50, widthMM = 50, depthMM = 25, heightMM = 12, anc
 
 //BEGIN PROFILES - Must match across all files
 
+selectTopProfile = Profile_Type == "Original" ? topProfileHalf(Channel_Internal_Height) : topProfileInverseHalf(Channel_Internal_Height);
+selectBaseProfile = Profile_Type == "Original" ? baseProfileHalf() : baseProfileInverseHalf();
+
 //take the two halves of base and merge them
 function baseProfile(widthMM = 25) = 
     union(
-        left((widthMM-25)/2,baseProfileHalf), 
-        right((widthMM-25)/2,mirror([1,0],baseProfileHalf)), //fill middle if widening from standard 25mm
+        left((widthMM-25)/2,selectBaseProfile), 
+        right((widthMM-25)/2,mirror([1,0],selectBaseProfile)), //fill middle if widening from standard 25mm
         back(3.5/2,rect([widthMM-25+0.02,3.5]))
     );
 
 //take the two halves of base and merge them
 function topProfile(widthMM = 25, heightMM = 12) = 
     union(
-        left((widthMM-25)/2,topProfileHalf(heightMM)), 
-        right((widthMM-25)/2,mirror([1,0],topProfileHalf(heightMM))), //fill middle if widening from standard 25mm
+        left((widthMM-25)/2,selectTopProfile), 
+        right((widthMM-25)/2,mirror([1,0],selectTopProfile)), //fill middle if widening from standard 25mm
         back(topHeight-1 + heightMM-12 , rect([widthMM-25+0.02,2])) 
     );
 
@@ -175,45 +188,27 @@ function topDeleteProfile(widthMM, heightMM = 12) =
         back(4.474 + (heightMM-12)/2,rect([widthMM-25+0.02,8.988 + heightMM - 12])) 
     );
 
-baseProfileHalf = 
+function baseProfileHalf() = 
     fwd(-7.947, //take Katie's exact measurements for half the profile and use fwd to place flush on the Y axis
         //profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
         [
-            [0,-4.447],
-            [-8.5,-4.447],
-            [-9.5,-3.447],
-            [-9.5,1.683],
-            [-10.517,1.683],
-            [-11.459,1.422],
-            [-11.459,-0.297],
-            [-11.166,-0.592],
-            [-11.166,-1.414],
-            [-11.666,-1.914],
-            [-12.517,-1.914],
-            [-12.517,-4.448],
-            [-10.517,-6.448],
-            [-10.517,-7.947],
-            [0,-7.947]
+            [0,-4.447], //Point 1
+            [-8.5+Additional_Holding_Strength*1.5,-4.447], //Point 2
+            [-9.5+Additional_Holding_Strength*1.5,-3.447],  //Point 3
+            [-9.5+Additional_Holding_Strength*1.5,1.683], //Point 4
+            [-10.517+Additional_Holding_Strength/2,1.683], //Point 5
+            [-11.459+Additional_Holding_Strength/2,1.422], //Point 6
+            [-11.459+Additional_Holding_Strength/2,-0.297], //Point 7
+            [-11.166+Additional_Holding_Strength+Additional_Holding_Strength/2,-0.592-Additional_Holding_Strength/2], //Point 8 move
+            [-11.166+Additional_Holding_Strength+Additional_Holding_Strength/2,-1.414-Additional_Holding_Strength], //Point 9 move
+            [-11.666+Additional_Holding_Strength,-1.914-Additional_Holding_Strength], //Point 10 move
+            [-12.517,-1.914-Additional_Holding_Strength], //Point 11 move
+            [-12.517,-4.448], //Point 12
+            [-10.517,-6.448], //Point 13
+            [-10.517,-7.947], //Point 14
+            [0,-7.947] //Point 15
         ]
 );
-
-function topProfileHalf(heightMM = 12) =
-        back(1.414,//profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
-        [
-            [0,7.554 + (heightMM - 12)],//-0.017 per Katie's diagram. Moved to zero
-            [0,9.554 + (heightMM - 12)],
-            [-8.517,9.554 + (heightMM - 12)],
-            [-12.517,5.554 + (heightMM - 12)],
-            [-12.517,-1.414],
-            [-11.166,-1.414],
-            [-11.166,-0.592],
-            [-11.459,-0.297],
-            [-11.459,1.422],
-            [-10.517,1.683],
-            [-10.517,4.725 + (heightMM - 12)],
-            [-7.688,7.554 + (heightMM - 12)]
-        ]
-        );
 
 baseDeleteProfileHalf = 
     fwd(-7.947, //take Katie's exact measurements for half the profile of the inside
@@ -221,30 +216,91 @@ baseDeleteProfileHalf =
         [
             [0,-4.447], //inner x axis point with width adjustment
             [0,1.683+0.02],
-            [-9.5,1.683+0.02],
-            [-9.5,-3.447],
-            [-8.5,-4.447],
+            [-9.5+Additional_Holding_Strength*1.5,1.683+0.02], //Point 4
+            [-9.5+Additional_Holding_Strength*1.5,-3.447],  //Point 3
+            [-8.5+Additional_Holding_Strength*1.5,-4.447], //Point 2
         ]
 );
 
-function topDeleteProfileHalf(heightMM = 12)=
+topChamfer = Additional_Holding_Strength < .4 ? 0 : 1;
+
+function topProfileHalf(heightMM = 12) =
+        let(topChamfer = Additional_Holding_Strength < .4 ? 0 : 1)
         back(1.414,//profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
         [
-            [0,7.554 + (heightMM - 12)],
-            [-7.688,7.554 + (heightMM - 12)],
-            [-10.517,4.725 + (heightMM - 12)],
-            [-10.517,1.683],
-            [-11.459,1.422],
-            [-11.459,-0.297],
-            [-11.166,-0.592],
-            [-11.166,-1.414-0.02],
-            [0,-1.414-0.02]
+            [0,7.554 + (heightMM - 12)],//Point 1 (-0.017 per Katie's diagram. Moved to zero)
+            [0,9.554 + (heightMM - 12)],//Point 2
+            [-8.517,9.554 + (heightMM - 12)],//Point 3 
+            [-12.517,5.554 + (heightMM - 12)],//Point 4
+            [-12.517,-1.414-Additional_Holding_Strength],//Point 5
+            [-11.166+Additional_Holding_Strength+Additional_Holding_Strength/2-topChamfer,-1.414-Additional_Holding_Strength],//Point 6
+            [-11.166+Additional_Holding_Strength+Additional_Holding_Strength/2,-0.592-Additional_Holding_Strength/2],//Point 7
+            [-11.459+Additional_Holding_Strength/2,-0.297],//Point 8
+            [-11.459+Additional_Holding_Strength/2,1.422],//Point 9
+            [-10.517+Additional_Holding_Strength/2,1.683],//Point 10
+            [-10.517+Additional_Holding_Strength/2, 4.725 + (heightMM - 12)],//Point 11
+            [-7.688,7.554 + (heightMM - 12)]//Point 12
         ]
         );
 
+function topDeleteProfileHalf(heightMM = 12)=
+    back(1.414,//profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
+        [
+            [0.1,7.554 + (heightMM - 12)], //point 1
+            [-7.688,7.554 + (heightMM - 12)], //point 12
+            [-10.517+Additional_Holding_Strength/2, 4.725 + (heightMM - 12)],//Point 11
+            [-10.517+Additional_Holding_Strength/2,1.683],//Point 10
+            [-11.459+Additional_Holding_Strength/2,1.422],//Point 9
+            [-11.459+Additional_Holding_Strength/2,-0.297],//Point 8
+            [-11.166+Additional_Holding_Strength+Additional_Holding_Strength/2,-0.592-Additional_Holding_Strength/2],//Point 7
+            [-11.166+Additional_Holding_Strength+Additional_Holding_Strength/2-topChamfer,-1.414-Additional_Holding_Strength-0.02],//Point 6
+            [0.1,-1.414-Additional_Holding_Strength-0.02],//Point 5
+        ]
+    );
+
+//An inside clamping profile alternative
+function topProfileInverseHalf(heightMM = 12) =
+        let(snapWallThickness = 1, snapCaptureStrength = 0.5)
+        back(1.414,//profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
+        [
+            [0,7.554 + (heightMM - 12)],//Point 1 (-0.017 per Katie's diagram. Moved to zero)
+            [0,9.554 + (heightMM - 12)],//Point 2
+            [-8.517,9.554 + (heightMM - 12)],//Point 3 
+            [-12.5,5.554 + (heightMM - 12)],//Point 4
+            [-12.5,2], //snap ceiling outer
+            [-11.5+snapWallThickness,1.8], //snap ceiling inner
+            [-11.5+snapWallThickness,-0.3], //snap lock outer
+            [-11.8+snapWallThickness-snapCaptureStrength,-0.6], //snap lock inner
+            [-11.8+snapWallThickness-snapCaptureStrength,-1.4], //snap floor outer
+            [-10.5+snapWallThickness-snapCaptureStrength,-2], //snap chamfer outer
+            [-10.5+snapWallThickness*1.5,-2], //snap floor inner
+            [-10.5+snapWallThickness*1.5, 4.725 + (heightMM - 12)],//Point 11
+            [-7.688+snapWallThickness*1.5,7.554 + (heightMM - 12)]//Point 12
+        ]
+        );
+
+function baseProfileInverseHalf() = 
+    let(snapWallThickness = 1, snapCaptureStrength = 0.5, baseChamfer = 0.5)
+    fwd(-7.947, //take Katie's exact measurements for half the profile and use fwd to place flush on the Y axis
+        //profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
+        [
+            [0,-4.447], //Point 1
+            [-8.5,-4.447], //Point 2
+            [-10+snapWallThickness,-3.447],  //Point 3
+            [-10+snapWallThickness,-2.4], //snap floor inner
+            [-11.8+snapWallThickness-snapCaptureStrength,-2.4], //snap floor outer
+            [-11.8+snapWallThickness-snapCaptureStrength,-0.6],//snap lock inner
+            [-11.5+snapWallThickness,-0.3],//snap lock outer
+            [-11.5+snapWallThickness,1.4-baseChamfer],//snap ceiling inner
+            [-11.7,1.683],//snap ceiling chamfer point
+            [-12.5,1.683], //snap ceiling outer
+            [-12.5,-4.448], //Point 12
+            [-10.5,-6.448], //Point 13
+            [-10.5,-7.947], //Point 14
+            [0,-7.947] //Point 15
+        ]
+);
 
 //calculate the max x and y points. Useful in calculating size of an object when the path are all positive variables originating from [0,0]
 function maxX(path) = max([for (p = path) p[0]]) + abs(min([for (p = path) p[0]]));
 function maxY(path) = max([for (p = path) p[1]]) + abs(min([for (p = path) p[1]]));
-
-

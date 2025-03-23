@@ -103,10 +103,6 @@ Base_Screw_Hole_Outer_Diameter = 15;
 Base_Screw_Hole_Inner_Depth = 1;
 Base_Screw_Hole_Cone = false;
 
-selectTopProfile = Profile_Type == "Original" ? topProfileHalf(Channel_Internal_Height) : topProfileInverseHalf(Channel_Internal_Height);
-selectBaseProfile = Profile_Type == "Original" ? baseProfileHalf() : baseProfileInverseHalf();
-
-
 /*
 
 ***BEGIN DISPLAYS***
@@ -228,6 +224,9 @@ module straightChannelTopDeleteTool(lengthMM, widthMM, heightMM = 12, anchor, sp
 
 
 //BEGIN PROFILES - Must match across all files
+
+selectTopProfile = Profile_Type == "Original" ? topProfileHalf(Channel_Internal_Height) : topProfileInverseHalf(Channel_Internal_Height);
+selectBaseProfile = Profile_Type == "Original" ? baseProfileHalf() : baseProfileInverseHalf();
 
 //take the two halves of base and merge them
 function baseProfile(widthMM = 25) = 

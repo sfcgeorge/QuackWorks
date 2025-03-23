@@ -256,7 +256,17 @@ function baseProfileHalf() =
         ]
 );
 
-
+baseDeleteProfileHalf = 
+    fwd(-7.947, //take Katie's exact measurements for half the profile of the inside
+        //profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
+        [
+            [0,-4.447], //inner x axis point with width adjustment
+            [0,1.683+0.02],
+            [-9.5+Additional_Holding_Strength*1.5,1.683+0.02], //Point 4
+            [-9.5+Additional_Holding_Strength*1.5,-3.447],  //Point 3
+            [-8.5+Additional_Holding_Strength*1.5,-4.447], //Point 2
+        ]
+);
 
 topChamfer = Additional_Holding_Strength < .4 ? 0 : 1;
 
@@ -278,6 +288,21 @@ function topProfileHalf(heightMM = 12) =
             [-7.688,7.554 + (heightMM - 12)]//Point 12
         ]
         );
+
+function topDeleteProfileHalf(heightMM = 12)=
+    back(1.414,//profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
+        [
+            [0.1,7.554 + (heightMM - 12)], //point 1
+            [-7.688,7.554 + (heightMM - 12)], //point 12
+            [-10.517+Additional_Holding_Strength/2, 4.725 + (heightMM - 12)],//Point 11
+            [-10.517+Additional_Holding_Strength/2,1.683],//Point 10
+            [-11.459+Additional_Holding_Strength/2,1.422],//Point 9
+            [-11.459+Additional_Holding_Strength/2,-0.297],//Point 8
+            [-11.166+Additional_Holding_Strength+Additional_Holding_Strength/2,-0.592-Additional_Holding_Strength/2],//Point 7
+            [-11.166+Additional_Holding_Strength+Additional_Holding_Strength/2-topChamfer,-1.414-Additional_Holding_Strength-0.02],//Point 6
+            [0.1,-1.414-Additional_Holding_Strength-0.02],//Point 5
+        ]
+    );
 
 //An inside clamping profile alternative
 function topProfileInverseHalf(heightMM = 12) =
@@ -322,36 +347,6 @@ function baseProfileInverseHalf() =
         ]
 );
 
-baseDeleteProfileHalf = 
-    fwd(-7.947, //take Katie's exact measurements for half the profile of the inside
-        //profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
-        [
-            [0,-4.447], //inner x axis point with width adjustment
-            [0,1.683+0.02],
-            [-9.5,1.683+0.02],
-            [-9.5,-3.447],
-            [-8.5,-4.447],
-        ]
-);
-
-function topDeleteProfileHalf(heightMM = 12)=
-        back(1.414,//profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
-        [
-            [0,7.554 + (heightMM - 12)],
-            [-7.688,7.554 + (heightMM - 12)],
-            [-10.517,4.725 + (heightMM - 12)],
-            [-10.517,1.683],
-            [-11.459,1.422],
-            [-11.459,-0.297],
-            [-11.166,-0.592],
-            [-11.166,-1.414-0.02],
-            [0,-1.414-0.02]
-        ]
-        );
-
-
 //calculate the max x and y points. Useful in calculating size of an object when the path are all positive variables originating from [0,0]
 function maxX(path) = max([for (p = path) p[0]]) + abs(min([for (p = path) p[0]]));
 function maxY(path) = max([for (p = path) p[1]]) + abs(min([for (p = path) p[1]]));
-
-
