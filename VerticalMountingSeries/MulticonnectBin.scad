@@ -3,6 +3,8 @@ Credit to @David D on Printables and Jonathan at Keep Making for Multiconnect an
 Licensed Creative Commons 4.0 Attribution Non-Commercial Sharable with Attribution
 */
 
+include <BOSL2/std.scad>
+
 /* [Internal Dimensions] */
 //Height (in mm) from the top of the back to the base of the internal floor
 internalHeight = 50.0; //.1
@@ -12,10 +14,12 @@ internalWidth = 50.0; //.1
 internalDepth = 40.0; //.1
 
 /* [Additional Customization] */
+Angle_Cut = 15;
 //Thickness of bin walls (in mm)
 wallThickness = 2; //.1
 //Thickness of bin  (in mm)
 baseThickness = 3; //.1
+Front_Chamfer = 5;
 
 /*[Slot Customization]*/
 //Distance between Multiconnect slots on the back (25mm is standard for MultiBoard)
@@ -40,11 +44,25 @@ onRampEveryXSlots = 1;
 totalWidth = internalWidth + wallThickness*2;
 totalHeight = internalHeight + baseThickness;
 
-//move to center
-translate(v = [-internalWidth/2,0,0])
-    basket();
-translate(v = [-max(totalWidth,distanceBetweenSlots)/2,0,-baseThickness]) 
-    multiconnectBack(backWidth = totalWidth, backHeight = totalHeight, distanceBetweenSlots = distanceBetweenSlots);
+union(){
+    back(0.01)
+        newBasket();
+    translate(v = [-max(totalWidth,distanceBetweenSlots)/2,0,-baseThickness]) 
+        multiconnectBack(backWidth = totalWidth, backHeight = totalHeight, distanceBetweenSlots = distanceBetweenSlots);
+}
+
+
+module newBasket(){
+    translate(v = [0,internalDepth/2,0])
+    diff()
+    down(baseThickness)rect_tube(size=[internalWidth+wallThickness*2,internalDepth+wallThickness*2], h = internalHeight+baseThickness, wall=wallThickness, chamfer=[Front_Chamfer,Front_Chamfer,0,0], ichamfer=[Front_Chamfer,Front_Chamfer,0,0] )
+        //angle cut
+        attach(TOP, TOP, inside=true, shiftout=0.01)
+            back(wallThickness)
+                prismoid(size1=[internalWidth+wallThickness*2+0.02, 0], size2=[internalWidth+wallThickness*2+0.02, internalDepth+wallThickness*2+0.02], h=Angle_Cut, shift=[0,-internalDepth/2]);
+    //bottom
+        cuboid([internalWidth+0.01, internalDepth+0.01,baseThickness], chamfer=Front_Chamfer, edges = [BACK+RIGHT, BACK+LEFT], anchor=TOP+FRONT);
+}
 
 //Create Basket
 module basket() {
