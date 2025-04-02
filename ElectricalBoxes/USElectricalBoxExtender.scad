@@ -2,13 +2,8 @@
 
 This code and all parts derived from it are Licensed Creative Commons 4.0 Attribution Non-Commercial Share-Alike (CC-BY-NC-SA)
 
-Documentation available at https://handsonkatie.com/underware-2-0-the-made-to-measure-collection/
-
 Change Log:
 - 2025-03-26: Initial Release
-
-Credit to 
-
 
 */
 
