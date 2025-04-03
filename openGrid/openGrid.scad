@@ -39,99 +39,47 @@ Screw_Head_Inset = 1;
 //Customize tile sizes - openGrid standard is 28mm
 Tile_Size = 28;
 
-/*[Hidden]*/
-//2D is fast. 3D is slow. No benefits of 3D. 
-Render_Method = "2D";//[3D, 2D]
-
-/*[Hidden]*/
-///*[Advanced: Tile Definition]*/
-Tile_Inner_Size_Difference = 3;
-Tile_Thickness = 6.8;
-
-Intersection_Distance = 4.2;
-Corner_Square_Thickness = 2.6;
-
-//Begin Tile Profile
-Outside_Extrusion = 0.8;
-Inside_Grid_Top_Chamfer = 0.4;
-Inside_Grid_Middle_Chamfer = 1;
-Top_Capture_Initial_Inset = 2.4;
-
-
-//Begin connector cutout profile
-connector_cutout_radius = 2.6;
-connector_cutout_dimple_radius = 2.7;
-connector_cutout_separation = 2.5;
-connector_cutout_height = 2.4;
-dimple_radius = 0.75/2;
-lite_cutout_distance_from_top = 1;
-
-calculatedCornerSquare = sqrt(Tile_Size^2+Tile_Size^2)-2*sqrt(Intersection_Distance^2/2);
-Tile_Inner_Size = Tile_Size - Tile_Inner_Size_Difference; //25mm default
-insideExtrusion = (Tile_Size-Tile_Inner_Size)/2-Outside_Extrusion; //0.7 default
-middleDistance = Tile_Thickness-Top_Capture_Initial_Inset*2;
-cornerChamfer = Top_Capture_Initial_Inset-Inside_Grid_Middle_Chamfer; //1.4 default
-tileChamfer = sqrt(Intersection_Distance^2*2);
-
 //GENERATE TILES
-if(Full_or_Lite == "Full") wonderboardGrid(Board_Width = Board_Width, Board_Height = Board_Height);
-else wonderboardGridLite(Board_Width = Board_Width, Board_Height = Board_Height);
+if(Full_or_Lite == "Full") wonderboardGrid(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Screw_Mounting = Screw_Mounting, Bevels = Bevels);
+else wonderboardGridLite(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Screw_Mounting = Screw_Mounting, Bevels = Bevels);
 
-//!connector_cutout_delete_tool() show_anchors(2);
 
-module connector_cutout_delete_tool(anchor=CENTER, spin=0, orient=UP){
-    attachable(anchor, spin, orient, size=[connector_cutout_radius*2-0.1 ,connector_cutout_radius*2,connector_cutout_height]){
-        //connector cutout tool
-        tag_scope()
-        translate([-connector_cutout_radius+0.05,0,-connector_cutout_height/2])
-        render()
-        half_of(RIGHT, s=connector_cutout_dimple_radius*4)
-            linear_extrude(height = connector_cutout_height) 
-            union(){
-                left(0.1)
-                diff(){
-                    $fn=50;
-                    //primary round pieces
-                    hull()
-                        xcopies(spacing=connector_cutout_radius*2)
-                            circle(r=connector_cutout_radius);
-                    //inset clip
-                    tag("remove")
-                    right(connector_cutout_radius-connector_cutout_separation)
-                        ycopies(spacing = (connector_cutout_radius+connector_cutout_separation)*2)
-                            circle(r=connector_cutout_dimple_radius);
-                    //dimple (ass) to force seam. Only needed for positive connector piece (not delete tool)
-                    //tag("remove")
-                    //right(connector_cutout_radius*2 + 0.45 )//move dimple in or out
-                    //    yflip_copy(offset=(dimple_radius+connector_cutout_radius)/2)//both sides of the dimpme
-                    //        rect([1,dimple_radius+connector_cutout_radius], rounding=[0,-connector_cutout_radius,-dimple_radius,0], $fn=32); //rect with rounding of inner flare and outer smoothing
 
-                }
-                //outward flare fillet for easier insertion
-                rect([1,connector_cutout_separation*2-(connector_cutout_dimple_radius-connector_cutout_separation)], rounding=[0,-.25,-.25,0], $fn=32, corner_flip=true, anchor=LEFT);
-            }
-        children();
-    }
-}
-        
-module wonderboardGridLite(Board_Width, Board_Height){
+module wonderboardGridLite(Board_Width, Board_Height, tileSize = 28, Screw_Mounting = "None", Bevels = "None"){
+    //Screw_Mounting options: [Everywhere, Corners, None]
+    //Bevel options: [Everywhere, Corners, None]
+    Tile_Thickness = 6.8;
+    
     render(convexity=2)
     down(Tile_Thickness-4)
-    top_half(z=Tile_Thickness-4, s=max(Tile_Size*Board_Width,Tile_Size*Board_Height)*2)
-    wonderboardGrid(Board_Width = Board_Width, Board_Height = Board_Height);
+    top_half(z=Tile_Thickness-4, s=max(tileSize*Board_Width,tileSize*Board_Height)*2)
+    wonderboardGrid(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = tileSize, Screw_Mounting = Screw_Mounting, Bevels = Bevels);
 }
 
 
-module wonderboardGrid(Board_Width, Board_Height){
+module wonderboardGrid(Board_Width, Board_Height, tileSize = 28, Screw_Mounting = "None", Bevels = "None"){
+    //Screw_Mounting options: [Everywhere, Corners, None]
+    //Bevel options: [Everywhere, Corners, None]
+
     $fn=30;
+    //2D is fast. 3D is slow. No benefits of 3D. 
+    Render_Method = "2D";//[3D, 2D]
+    Intersection_Distance = 4.2;
+    Tile_Thickness = 6.8;
+    
+    tileChamfer = sqrt(Intersection_Distance^2*2);
+    lite_cutout_distance_from_top = 1;
+    connector_cutout_height = 2.4;
+
+
     render(convexity=2)
     diff(){
-        move([-Board_Width*Tile_Size/2, -Board_Height*Tile_Size/2, 0])
+        move([-Board_Width*tileSize/2, -Board_Height*tileSize/2, 0])
         union()
         for(i=[0: Board_Width-1]) {
             for(j=[0: Board_Height-1]) {
-                translate([Tile_Size/2+i*Tile_Size, Tile_Size/2+j*Tile_Size])
-                if(Render_Method == "2D") wonderboardTileAp1();
+                translate([tileSize/2+i*tileSize, tileSize/2+j*tileSize])
+                if(Render_Method == "2D") wonderboardTileAp1(tileSize = tileSize);
                     else wonderboardTileAp2();
             }
         }
@@ -139,21 +87,21 @@ module wonderboardGrid(Board_Width, Board_Height){
         //Bevel Everywhere
         if(Bevels == "Everywhere" && Screw_Mounting != "Everywhere" && Screw_Mounting != "Corners")
         tag("remove")
-            grid_copies(spacing=Tile_Size, size=[Board_Width*Tile_Size,Board_Height*Tile_Size])
+            grid_copies(spacing=tileSize, size=[Board_Width*tileSize,Board_Height*tileSize])
                 down(0.01)
                 zrot(45)
                     cuboid([tileChamfer,tileChamfer,Tile_Thickness+0.02], anchor=BOT);
         //Bevel Corners
         if(Bevels == "Corners" || (Bevels == "Everywhere" && (Screw_Mounting == "Everywhere" || Screw_Mounting == "Corners")))
             tag("remove")
-            move_copies([[Tile_Size*Board_Width/2,Tile_Size*Board_Height/2,0],[-Tile_Size*Board_Width/2,Tile_Size*Board_Height/2,0],[Tile_Size*Board_Width/2,-Tile_Size*Board_Height/2,0],[-Tile_Size*Board_Width/2,-Tile_Size*Board_Height/2,0]])
+            move_copies([[tileSize*Board_Width/2,tileSize*Board_Height/2,0],[-tileSize*Board_Width/2,tileSize*Board_Height/2,0],[tileSize*Board_Width/2,-tileSize*Board_Height/2,0],[-tileSize*Board_Width/2,-tileSize*Board_Height/2,0]])
                 down(0.01)
                 zrot(45)
                     cuboid([tileChamfer,tileChamfer,Tile_Thickness+0.02], anchor=BOT);
         //Screw Mount Corners
         if(Screw_Mounting == "Corners")
             tag("remove")
-            move_copies([[Tile_Size*Board_Width/2-Tile_Size,Tile_Size*Board_Height/2-Tile_Size,0],[-Tile_Size*Board_Width/2+Tile_Size,Tile_Size*Board_Height/2-Tile_Size,0],[Tile_Size*Board_Width/2-Tile_Size,-Tile_Size*Board_Height/2+Tile_Size,0],[-Tile_Size*Board_Width/2+Tile_Size,-Tile_Size*Board_Height/2+Tile_Size,0]])
+            move_copies([[tileSize*Board_Width/2-tileSize,tileSize*Board_Height/2-tileSize,0],[-tileSize*Board_Width/2+tileSize,tileSize*Board_Height/2-tileSize,0],[tileSize*Board_Width/2-tileSize,-tileSize*Board_Height/2+tileSize,0],[-tileSize*Board_Width/2+tileSize,-tileSize*Board_Height/2+tileSize,0]])
             up(Tile_Thickness+0.01)
                 cyl(d=Screw_Head_Diameter, h=Screw_Head_Inset, anchor=TOP)
                     attach(BOT, TOP) cyl(d2=Screw_Head_Diameter, d1=Screw_Diameter, h=sqrt((Screw_Head_Diameter/2-Screw_Diameter/2)^2))
@@ -161,7 +109,7 @@ module wonderboardGrid(Board_Width, Board_Height){
         //Screw Mount Everywhere
         if(Screw_Mounting == "Everywhere")
             tag("remove")
-            grid_copies(spacing=Tile_Size, size=[(Board_Width-2)*Tile_Size,(Board_Height-2)*Tile_Size])            up(Tile_Thickness+0.01)
+            grid_copies(spacing=tileSize, size=[(Board_Width-2)*tileSize,(Board_Height-2)*tileSize])            up(Tile_Thickness+0.01)
                 cyl(d=Screw_Head_Diameter, h=Screw_Head_Inset, anchor=TOP)
                     attach(BOT, TOP) cyl(d2=Screw_Head_Diameter, d1=Screw_Diameter, h=sqrt((Screw_Head_Diameter/2-Screw_Diameter/2)^2))
                         attach(BOT, TOP) cyl(d=Screw_Diameter, h=Tile_Thickness+0.02);
@@ -169,81 +117,164 @@ module wonderboardGrid(Board_Width, Board_Height){
             if(Board_Height > 1)
             tag("remove")
             up(Full_or_Lite == "Full" ? Tile_Thickness/2 : Tile_Thickness-connector_cutout_height/2-lite_cutout_distance_from_top)
-            xflip_copy(offset = -Tile_Size*Board_Width/2-0.005)
-                ycopies(spacing=Tile_Size, l=Board_Height > 2 ? Board_Height*Tile_Size-Tile_Size*2 : Board_Height*Tile_Size - Tile_Size - 1)
+            xflip_copy(offset = -tileSize*Board_Width/2-0.005)
+                ycopies(spacing=tileSize, l=Board_Height > 2 ? Board_Height*tileSize-tileSize*2 : Board_Height*tileSize - tileSize - 1)
                     connector_cutout_delete_tool(anchor=LEFT);
             if(Board_Width > 1)
             tag("remove")
             up(Full_or_Lite == "Full" ? Tile_Thickness/2 : Tile_Thickness-connector_cutout_height/2-lite_cutout_distance_from_top)
-            yflip_copy(offset = -Tile_Size*Board_Height/2-0.005)
-                xcopies(spacing=Tile_Size, l=Board_Width > 2 ? Board_Width*Tile_Size-Tile_Size*2 : Board_Width*Tile_Size-Tile_Size-1)
+            yflip_copy(offset = -tileSize*Board_Height/2-0.005)
+                xcopies(spacing=tileSize, l=Board_Width > 2 ? Board_Width*tileSize-tileSize*2 : Board_Width*tileSize-tileSize-1)
                     zrot(90)
                         connector_cutout_delete_tool(anchor=LEFT);
         }
 
     }//end diff
-}
 
+    //BEGIN CUTOUT TOOL
+    module connector_cutout_delete_tool(anchor=CENTER, spin=0, orient=UP){
+        //Begin connector cutout profile
+        connector_cutout_radius = 2.6;
+        connector_cutout_dimple_radius = 2.7;
+        connector_cutout_separation = 2.5;
+        connector_cutout_height = 2.4;
+        dimple_radius = 0.75/2;
+        
+        attachable(anchor, spin, orient, size=[connector_cutout_radius*2-0.1 ,connector_cutout_radius*2,connector_cutout_height]){
+            //connector cutout tool
+            tag_scope()
+            translate([-connector_cutout_radius+0.05,0,-connector_cutout_height/2])
+            render()
+            half_of(RIGHT, s=connector_cutout_dimple_radius*4)
+                linear_extrude(height = connector_cutout_height) 
+                union(){
+                    left(0.1)
+                    diff(){
+                        $fn=50;
+                        //primary round pieces
+                        hull()
+                            xcopies(spacing=connector_cutout_radius*2)
+                                circle(r=connector_cutout_radius);
+                        //inset clip
+                        tag("remove")
+                        right(connector_cutout_radius-connector_cutout_separation)
+                            ycopies(spacing = (connector_cutout_radius+connector_cutout_separation)*2)
+                                circle(r=connector_cutout_dimple_radius);
+                        //dimple (ass) to force seam. Only needed for positive connector piece (not delete tool)
+                        //tag("remove")
+                        //right(connector_cutout_radius*2 + 0.45 )//move dimple in or out
+                        //    yflip_copy(offset=(dimple_radius+connector_cutout_radius)/2)//both sides of the dimpme
+                        //        rect([1,dimple_radius+connector_cutout_radius], rounding=[0,-connector_cutout_radius,-dimple_radius,0], $fn=32); //rect with rounding of inner flare and outer smoothing
 
-
-
-//APROACH 1 - 2D Extrusion
-//This Render_Method takes the profile of the long ways and corners and sweeps them around the tile. The profiles attempt to derive the points from the variables in the original design. 
-fillBack=5; //fillback is needed for the corners to fill gaps that would otherwise be in the corners.
-
-module wonderboardTileAp1(){
-    intersection() {
-        union(){
-            move([-Tile_Size/2,-Tile_Size/2,0]) 
-                path_sweep2d(full_tile_profile, turtle(["move", Tile_Size+0.01, "turn", 90], repeat=4));
-            zrot(45)move([-calculatedCornerSquare/2,-calculatedCornerSquare/2,0]) 
-                path_sweep2d(full_tile_corners_profile, turtle(["move", calculatedCornerSquare, "turn", 90], repeat=4));
-            zrot(45)rect_tube(isize=[calculatedCornerSquare-1,calculatedCornerSquare-1], wall=fillBack, h=Tile_Thickness);
+                    }
+                    //outward flare fillet for easier insertion
+                    rect([1,connector_cutout_separation*2-(connector_cutout_dimple_radius-connector_cutout_separation)], rounding=[0,-.25,-.25,0], $fn=32, corner_flip=true, anchor=LEFT);
+                }
+            children();
         }
-        cuboid([Tile_Size,Tile_Size,Tile_Thickness], anchor=BOT);
     }
+    //END CUTOUT TOOL
+
+    //BEGIN APROACH 1 - 2D Extrusion
+    //This Render_Method takes the profile of the long ways and corners and sweeps them around the tile. The profiles attempt to derive the points from the variables in the original design. 
+    module wonderboardTileAp1(tileSize = 28){
+        //Begin Tile Profile
+        Tile_Thickness = 6.8;
+        
+        Outside_Extrusion = 0.8;
+        Inside_Grid_Top_Chamfer = 0.4;
+        Inside_Grid_Middle_Chamfer = 1;
+        Top_Capture_Initial_Inset = 2.4;
+        Corner_Square_Thickness = 2.6;
+        Intersection_Distance = 4.2;
+
+        Tile_Inner_Size_Difference = 3;
+        fillBack=5; //fillback is needed for the corners to fill gaps that would otherwise be in the corners.
+
+
+
+        calculatedCornerSquare = sqrt(tileSize^2+tileSize^2)-2*sqrt(Intersection_Distance^2/2);
+        Tile_Inner_Size = tileSize - Tile_Inner_Size_Difference; //25mm default
+        insideExtrusion = (tileSize-Tile_Inner_Size)/2-Outside_Extrusion; //0.7 default
+        middleDistance = Tile_Thickness-Top_Capture_Initial_Inset*2;
+        cornerChamfer = Top_Capture_Initial_Inset-Inside_Grid_Middle_Chamfer; //1.4 default
+
+
+
+        
+        full_tile_profile = [
+            [0,0],
+            [Outside_Extrusion+insideExtrusion-Inside_Grid_Top_Chamfer,0],
+            [Outside_Extrusion+insideExtrusion,Inside_Grid_Top_Chamfer],
+            [Outside_Extrusion+insideExtrusion,Top_Capture_Initial_Inset-Inside_Grid_Middle_Chamfer],
+            [Outside_Extrusion,Top_Capture_Initial_Inset],
+            [Outside_Extrusion,Tile_Thickness-Top_Capture_Initial_Inset],
+            [Outside_Extrusion+insideExtrusion,Tile_Thickness-Top_Capture_Initial_Inset+Inside_Grid_Middle_Chamfer],
+            [Outside_Extrusion+insideExtrusion,Tile_Thickness-Inside_Grid_Top_Chamfer],
+            [Outside_Extrusion+insideExtrusion-Inside_Grid_Top_Chamfer,Tile_Thickness],
+            [0,Tile_Thickness]
+            ];
+
+        full_tile_corners_profile = [
+            [0,0],
+            [Corner_Square_Thickness-cornerChamfer,0],
+            [Corner_Square_Thickness,cornerChamfer],
+            [Corner_Square_Thickness,Tile_Thickness-cornerChamfer],
+            [Corner_Square_Thickness-cornerChamfer,Tile_Thickness],
+            [0,Tile_Thickness]
+
+            ];
+        
+        intersection() {
+            union(){
+                move([-tileSize/2,-tileSize/2,0]) 
+                    path_sweep2d(full_tile_profile, turtle(["move", tileSize+0.01, "turn", 90], repeat=4));
+                zrot(45)move([-calculatedCornerSquare/2,-calculatedCornerSquare/2,0]) 
+                    path_sweep2d(full_tile_corners_profile, turtle(["move", calculatedCornerSquare, "turn", 90], repeat=4));
+                zrot(45)rect_tube(isize=[calculatedCornerSquare-1,calculatedCornerSquare-1], wall=fillBack, h=Tile_Thickness);
+            }
+            cuboid([tileSize,tileSize,Tile_Thickness], anchor=BOT);
+        }
+    }
+    //END TILE Approach 1
+
 }
-
-full_tile_profile = [
-    [0,0],
-    [Outside_Extrusion+insideExtrusion-Inside_Grid_Top_Chamfer,0],
-    [Outside_Extrusion+insideExtrusion,Inside_Grid_Top_Chamfer],
-    [Outside_Extrusion+insideExtrusion,Top_Capture_Initial_Inset-Inside_Grid_Middle_Chamfer],
-    [Outside_Extrusion,Top_Capture_Initial_Inset],
-    [Outside_Extrusion,Tile_Thickness-Top_Capture_Initial_Inset],
-    [Outside_Extrusion+insideExtrusion,Tile_Thickness-Top_Capture_Initial_Inset+Inside_Grid_Middle_Chamfer],
-    [Outside_Extrusion+insideExtrusion,Tile_Thickness-Inside_Grid_Top_Chamfer],
-    [Outside_Extrusion+insideExtrusion-Inside_Grid_Top_Chamfer,Tile_Thickness],
-    [0,Tile_Thickness]
-    ];
-
-full_tile_corners_profile = [
-    [0,0],
-    [Corner_Square_Thickness-cornerChamfer,0],
-    [Corner_Square_Thickness,cornerChamfer],
-    [Corner_Square_Thickness,Tile_Thickness-cornerChamfer],
-    [Corner_Square_Thickness-cornerChamfer,Tile_Thickness],
-    [0,Tile_Thickness]
-
-    ];
-
-//echo(str(full_tile_profile));
-//echo(str(half_tile_corners_profile));
-
 
 /*
 //APPROACH 2 (slower) - 3D Shapes - This method uses the 3D shapes to create the tile. This method is slower but can be more accurate and easier to understand.
 module wonderboardTileAp2(chamfer_edges = []){
+    Tile_Thickness = 6.8;
+    Intersection_Distance = 4.2;
+
     tag_scope()
     diff()
-        cuboid([Tile_Size+0.02,Tile_Size+0.02,Tile_Thickness], chamfer=Intersection_Distance, edges=chamfer_edges, except=[TOP, BOT], anchor=BOT)
+        cuboid([tileSize+0.02,tileSize+0.02,Tile_Thickness], chamfer=Intersection_Distance, edges=chamfer_edges, except=[TOP, BOT], anchor=BOT)
             attach(BOT, BOT, inside=true, shiftout=0.01)
                 wonderboardTileDeleteToolAp2();
 }
 
 module wonderboardTileDeleteToolAp2(){
-    //Render_Method 2
+    //Begin Tile Profile
+    Tile_Thickness = 6.8;
     
+    Outside_Extrusion = 0.8;
+    Inside_Grid_Top_Chamfer = 0.4;
+    Inside_Grid_Middle_Chamfer = 1;
+    Top_Capture_Initial_Inset = 2.4;
+    Corner_Square_Thickness = 2.6;
+    Intersection_Distance = 4.2;
+
+    Tile_Inner_Size_Difference = 3;
+
+    //Render_Method 2
+    calculatedCornerSquare = sqrt(tileSize^2+tileSize^2)-2*sqrt(Intersection_Distance^2/2);
+    Tile_Inner_Size = tileSize - Tile_Inner_Size_Difference; //25mm default
+    insideExtrusion = (tileSize-Tile_Inner_Size)/2-Outside_Extrusion; //0.7 default
+    middleDistance = Tile_Thickness-Top_Capture_Initial_Inset*2;
+    cornerChamfer = Top_Capture_Initial_Inset-Inside_Grid_Middle_Chamfer; //1.4 default
+
+
+
     intersection() {
         //bottom chamfer
         render(convexity=1)
