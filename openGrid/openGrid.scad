@@ -25,7 +25,7 @@ Board_Height= 2;
 
 /*[Style and Mounting Options]*/
 //Screw holes for mounting -  
-Screw_Mounting = "Everywhere"; //[Everywhere, Corners, None]
+Screw_Mounting = "Corners"; //[Everywhere, Corners, None]
 //Cosmetic bevels - If screw holes turned on, bevels will only be on the outside corners. 
 Bevels = "Corners"; //[Everywhere, Corners, None]
 Connector_Holes = true;
@@ -166,15 +166,17 @@ module wonderboardGrid(Board_Width, Board_Height){
                     attach(BOT, TOP) cyl(d2=Screw_Head_Diameter, d1=Screw_Diameter, h=sqrt((Screw_Head_Diameter/2-Screw_Diameter/2)^2))
                         attach(BOT, TOP) cyl(d=Screw_Diameter, h=Tile_Thickness+0.02);
         if(Connector_Holes){
+            if(Board_Height > 1)
             tag("remove")
             up(Full_or_Lite == "Full" ? Tile_Thickness/2 : Tile_Thickness-connector_cutout_height/2-lite_cutout_distance_from_top)
             xflip_copy(offset = -Tile_Size*Board_Width/2-0.005)
-                ycopies(spacing=Tile_Size, l=Board_Height*Tile_Size-Tile_Size*2)
+                ycopies(spacing=Tile_Size, l=Board_Height > 2 ? Board_Height*Tile_Size-Tile_Size*2 : Board_Height*Tile_Size - Tile_Size - 1)
                     connector_cutout_delete_tool(anchor=LEFT);
+            if(Board_Width > 1)
             tag("remove")
             up(Full_or_Lite == "Full" ? Tile_Thickness/2 : Tile_Thickness-connector_cutout_height/2-lite_cutout_distance_from_top)
             yflip_copy(offset = -Tile_Size*Board_Height/2-0.005)
-                xcopies(spacing=Tile_Size, l=Board_Width*Tile_Size-Tile_Size*2)
+                xcopies(spacing=Tile_Size, l=Board_Width > 2 ? Board_Width*Tile_Size-Tile_Size*2 : Board_Width*Tile_Size-Tile_Size-1)
                     zrot(90)
                         connector_cutout_delete_tool(anchor=LEFT);
         }
@@ -229,7 +231,7 @@ full_tile_corners_profile = [
 //echo(str(half_tile_corners_profile));
 
 
-
+/*
 //APPROACH 2 (slower) - 3D Shapes - This method uses the 3D shapes to create the tile. This method is slower but can be more accurate and easier to understand.
 module wonderboardTileAp2(chamfer_edges = []){
     tag_scope()
@@ -269,3 +271,4 @@ module wonderboardTileDeleteToolAp2(){
 
     }
 }
+*/
