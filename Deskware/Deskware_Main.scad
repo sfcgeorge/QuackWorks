@@ -22,9 +22,9 @@ include <BOSL2/std.scad>
 //Width (in mm) from riser to riser measured from the center
 Core_Section_Width = 192; //[108:84:948]
 //Depth (in mm) from front of the riser to the rear of the backer
-Core_Section_Depth = 196.5;
+Core_Section_Depth = 196.5; //[56.5:28:840.5]
 //Height of the core section from the bottom of the riser to the bottom of the base plate
-Core_Section_Height = 80;
+Core_Section_Height = 80; //[40:40:640]
 
 
 
@@ -64,70 +64,44 @@ back(Riser_Depth/2+10)
 xcopies(spacing = Backer_Width)
 Riser();
 
-up(Riser_Height + 100)
-BasePlateOG(Base_Plate_Width, Base_Plate_Depth, anchor=BOT);
+up(Riser_Height + 25)
+//BasePlateOG(Base_Plate_Width, Base_Plate_Depth, anchor=BOT);
+BasePlate(width = Base_Plate_Width, depth = Base_Plate_Depth);
+
 
 //BasePlateOGRail(Base_Plate_Width);
 
-module BasePlateOG(width, depth, height = 22, anchor=CENTER, spin=0, orient=UP){
+module BasePlate(width, depth, height = 19){
     Grid_Min_Side_Clearance = Riser_Width/2;
-    Available_Grid_Width = quantdn((width-Grid_Min_Side_Clearance*2)/openGridSize, 1);
+    Grid_Min_FrontBack_Clearance = 2;
+    Tile_Thickness = 11.5;
+    Top_Chamfer = 3;
+    Bottom_Front_Chamfer = 5;
+    
+    Available_Grid_Width_Units = quantdn((width-Grid_Min_Side_Clearance*2)/openGridSize, 1);
+    Available_Grid_Depth_Units = quantdn((depth-Grid_Min_Side_Clearance*2)/openGridSize, 1);
+    Grid_Width_mm = Available_Grid_Width_Units*openGridSize;
+    Grid_Depth_mm = Available_Grid_Depth_Units*openGridSize;
 
     diff(){
-        BasePlateRAW(width = width, depth = depth, height = height){
-            //up(10)
-            ycopies(spacing = 140)
-            attach(BOT, BOT, inside=true, shiftout=0.01) 
-                BasePlateOGRailDeleteTool(width)
-                    attach(BOT, BOT, inside=true, shiftout=0.01) 
-                        tag("keep")openGrid(Board_Width = Available_Grid_Width, Board_Height = 1, Tile_Thickness = 11.5);
-            children();
+        //main plate
+        cuboid([width, depth, height], anchor=BOT){
+            //cutout for opengrid and opengrid. 
+            attach(BOT, BOT, inside=true, shiftout=0.01)
+                cuboid([Grid_Width_mm, Grid_Depth_mm, Tile_Thickness]){
+                    tag("keep")
+                        openGrid(Board_Width = Available_Grid_Width_Units, Board_Height = Available_Grid_Depth_Units, Tile_Thickness = Tile_Thickness);
+                            //top cutout
+                            attach(TOP, BOT, overlap=0.01)
+                                prismoid(size1=[width+0.02, Grid_Depth_mm + Grid_Min_FrontBack_Clearance*2], size2=[width+0.02, Grid_Depth_mm + Grid_Min_FrontBack_Clearance*2 + (height - Tile_Thickness)*2], h=height - Tile_Thickness+0.04);
+                }
+            //front and back top chamfers
+            tag("keep")
+            edge_profile_asym([TOP+FRONT, TOP+BACK], corner_type="chamfer")
+                yflip() mask2d_chamfer(x=Top_Chamfer);
+            edge_profile(BOT+FRONT)
+                mask2d_chamfer(x=Bottom_Front_Chamfer);
         }
-    }
-}
-
-module BasePlateRAW(width, depth, height = 22, anchor=CENTER, spin=0, orient=UP){
-    attachable(anchor, spin, orient, size=[width,depth, height]){
-        tag_scope()
-        move([width/2, depth/2, -22/2])
-            yrot(-90)
-            zrot(-90)
-            linear_sweep(BasePlateProfile(), h = width) ;
-        children();
-    }
-
-    function BasePlateProfile() = [
-        [0,0],
-        [0,height],
-        [3,height-3],
-        [depth-3, height-3],
-        [depth,height],
-        [depth, 5],
-        [depth-8, 0]
-    ];
-}
-
-module BasePlateOGRailDeleteTool(width, anchor=CENTER, spin=0, orient=UP){
-    Grid_Min_Side_Clearance = Riser_Width/2;
-    Available_Grid_Width = quantdn((width-Grid_Min_Side_Clearance*2)/openGridSize, 1);
-    
-    Grid_Min_Depth_Clearance = 3;
-    Tile_Thickness = 11.5;
-
-    openingFlair = 7.5;
-    
-    
-    attachable(anchor, spin, orient, size=[width,openGridSize + Grid_Min_Depth_Clearance*2+openingFlair*2,Tile_Thickness+openingFlair]){
-
-        //tag_scope()
-        down(openingFlair/2){
-            force_tag()
-                cuboid([Available_Grid_Width*openGridSize, openGridSize, Tile_Thickness+0.02]);
-            force_tag()
-                up(Tile_Thickness/2)
-                    prismoid(size1=[width+0.02, openGridSize + Grid_Min_Depth_Clearance*2], size2=[width+0.02, openGridSize + Grid_Min_Depth_Clearance*2+openingFlair*2], h=openingFlair+0.02);
-        }
-        children();
     }
 }
 
@@ -140,7 +114,7 @@ module Backer(anchor=CENTER, spin=0, orient=UP){
     sideCutoutDepth = 5;
     sideCutoutWidth = 9;
 
-    Available_Grid_Width = quantdn((Backer_Width-Grid_Min_Side_Clearance*2)/openGridSize, 1);
+    Available_Grid_Width_Units = quantdn((Backer_Width-Grid_Min_Side_Clearance*2)/openGridSize, 1);
     Available_Grid_Height = quantdn((Backer_Height-Grid_Dist_From_Bot)/openGridSize, 1);
     
         //main body
@@ -149,12 +123,12 @@ module Backer(anchor=CENTER, spin=0, orient=UP){
                 //clear space for opengrid
                 up(Grid_Dist_From_Bot)
                     attach(BACK, BOT, inside=true, align=BOT, shiftout=0.01) 
-                        cuboid([Available_Grid_Width*openGridSize-0.02, Available_Grid_Height*openGridSize -0.02, Backer_Thickness+0.02]);
+                        cuboid([Available_Grid_Width_Units*openGridSize-0.02, Available_Grid_Height*openGridSize -0.02, Backer_Thickness+0.02]);
                 //opengrid
                 tag("keep")
                 up(Grid_Dist_From_Bot)
                 attach(BACK, BOT, inside=true, align=BOT) 
-                    openGrid(Available_Grid_Width, Available_Grid_Height);
+                    openGrid(Available_Grid_Width_Units, Available_Grid_Height);
                 attach(FRONT, FRONT, inside=true, shiftout=0.01, align=[LEFT, RIGHT])
                     cuboid([sideCutoutWidth,sideCutoutDepth,Backer_Height+0.02]);
                 children();
