@@ -26,9 +26,16 @@ Core_Section_Depth = 196.5; //[56.5:28:840.5]
 //Height of the core section from the bottom of the riser to the bottom of the base plate
 Core_Section_Height = 80; //[40:40:640]
 
+/*[Select Parts]*/
+Show_Baseplate = true;
 
+Show_Risers = true;
 
-/*[Riser Slide]*/
+Show_Backer = true;
+
+/*[Hidden]*/
+
+///*[Riser Slide]*/
 //Width (and rise of angle) of the slide recess
 Slide_Width = 4;
 //Total height of the slide recess
@@ -40,16 +47,15 @@ Slide_Distance_From_Bottom = 11.75;
 //Minimum clearance required for a top of a slide to the top of the riser
 Slide_Minimum_Distance_From_Top = 17.75;
 
-/*[Base Plate]*/
-Base_Plate_Front_Overhang = 10.5;
+///*[Base Plate]*/
 Base_Plate_Width = Core_Section_Width;
 Base_Plate_Depth = Core_Section_Depth + 10.5;
 
-/*[Advanced]*/
+///*[Advanced]*/
 clearance = 0.15;
 openGridSize = 28;
 
-/*[Hidden]*/
+
 ///*[Riser]*/
 Riser_Depth = Core_Section_Depth - 7.5;
 Riser_Height = Core_Section_Height;
@@ -59,15 +65,17 @@ Riser_Width = 18;
 Backer_Width = Core_Section_Width;
 Backer_Height = Core_Section_Height;
 
-back(Riser_Depth/2+10)
-    Backer();
-xcopies(spacing = Backer_Width)
-Riser();
+if(Show_Backer)
+    back(Riser_Depth/2+10)
+        Backer();
 
-up(Riser_Height + 25)
-//BasePlateOG(Base_Plate_Width, Base_Plate_Depth, anchor=BOT);
-BasePlate(width = Base_Plate_Width, depth = Base_Plate_Depth);
+if(Show_Risers)
+    xcopies(spacing = Backer_Width)
+        Riser();
 
+if(Show_Baseplate)
+    up(Riser_Height + 25)
+        BasePlate(width = Base_Plate_Width, depth = Base_Plate_Depth);
 
 //BasePlateOGRail(Base_Plate_Width);
 
@@ -77,6 +85,9 @@ module BasePlate(width, depth, height = 19){
     Tile_Thickness = 11.5;
     Top_Chamfer = 3;
     Bottom_Front_Chamfer = 5;
+
+    TabDistanceFromOutsideEdge = 6;
+    TabProtrusionHeight = 4;
     
     Available_Grid_Width_Units = quantdn((width-Grid_Min_Side_Clearance*2)/openGridSize, 1);
     Available_Grid_Depth_Units = quantdn((depth-Grid_Min_Side_Clearance*2)/openGridSize, 1);
@@ -95,6 +106,10 @@ module BasePlate(width, depth, height = 19){
                             attach(TOP, BOT, overlap=0.01)
                                 prismoid(size1=[width+0.02, Grid_Depth_mm + Grid_Min_FrontBack_Clearance*2], size2=[width+0.02, Grid_Depth_mm + Grid_Min_FrontBack_Clearance*2 + (height - Tile_Thickness)*2], h=height - Tile_Thickness+0.04);
                 }
+            //top plate tabs
+            tag("keep")
+            attach(BOT, BOT, inside=true, align=[LEFT, RIGHT], inset=TabDistanceFromOutsideEdge)
+                TopPlateTab(height = height + TabProtrusionHeight);
             //front and back top chamfers
             tag("keep")
             edge_profile_asym([TOP+FRONT, TOP+BACK], corner_type="chamfer")
@@ -103,6 +118,16 @@ module BasePlate(width, depth, height = 19){
                 mask2d_chamfer(x=Bottom_Front_Chamfer);
         }
     }
+}
+
+module TopPlateTab(height = 19, anchor=CENTER, spin=0, orient=UP){
+    TopPlateTabWidth = 3;
+    TopPlateTabDepth = 20;
+    //TopPlateTabHeight = 4;
+    TopPlateTabChamfer = 0.5;
+
+    cuboid([TopPlateTabWidth, TopPlateTabDepth, height], chamfer=TopPlateTabChamfer, except=BOT)
+        children();
 }
 
 module Backer(anchor=CENTER, spin=0, orient=UP){
