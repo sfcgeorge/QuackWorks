@@ -127,12 +127,13 @@ if(Show_Risers)
     xcopies(spacing = Backer_Width)
         Riser();
 
+basePlateHeight = 50;
 if(Show_Baseplate)
-    up(Riser_Height + 25)
+    up(Riser_Height + basePlateHeight)
         BasePlate(width = Base_Plate_Width, depth = Base_Plate_Depth);
-    left (100) up(Riser_Height + 25)
+    left (100) up(Riser_Height + basePlateHeight)
         BasePlateEndRounded(width = Base_Plate_Width, depth = Base_Plate_Depth, half=LEFT, style="Rounded");
-    right (100) up(Riser_Height + 25)
+    right (100) up(Riser_Height + basePlateHeight)
         BasePlateEndRounded(width = Base_Plate_Width, depth = Base_Plate_Depth, half=RIGHT, style="Oct");
 
 if(Show_Top_Plate)
@@ -150,9 +151,9 @@ if(Show_Top_Plate)
     left (100) back(Core_Section_Depth+50) up(Riser_Height + 150)
         TopPlateEndSquared(width = Base_Plate_Width, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=LEFT);
 
-
-Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, depth = Drawer_Outside_Depth);
-up(40)fwd(2)Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, depth = Drawer_Outside_Depth);
+//bottom drawer
+fwd(50)Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, depth = Drawer_Outside_Depth);
+up(40)fwd(0)Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, depth = Drawer_Outside_Depth);
 
 module Drawer(height_units, inside_width, depth){
     //FORCE INSIDE TO STANDARD UNITS
@@ -174,6 +175,31 @@ module Drawer(height_units, inside_width, depth){
         xcopies(spacing=inside_width_adjusted - 28 )
         attach(FRONT, FRONT, inside=true, shiftout=0.01, align=TOP, inset=-0.01)
             cuboid([DrawerDovetailWidth+DrawerThickness*2, DrawerThickness+0.02, DrawerDovetailHeight*height_units], chamfer=DrawerThickness+0.02, edges=[FRONT+LEFT, FRONT+RIGHT]);
+        //front drawer pull
+        attach(FRONT, FRONT, inside=true, shiftout=0.01, align=TOP, inset=-0.01)
+            cuboid([inside_width_adjusted-84, DrawerThickness+0.02, 15], 
+                        //bottom rounding at 5 or maximum possible given cutout width
+                        rounding = min(5,5), 
+                        edges=[LEFT+BOT, RIGHT+BOT]) 
+                        //top round out
+                        edge_profile_asym(TOP, corner_type="round") xflip() mask2d_roundover(2) 
+                        ;
+        //Back cable port
+        attach(BACK, FRONT, inside=true, shiftout=0.01, align=TOP, inset=-0.01)
+            cuboid([20, DrawerThickness+0.02, 15], 
+                        //bottom rounding at 5 or maximum possible given cutout width
+                        rounding = min(5,5), 
+                        edges=[LEFT+BOT, RIGHT+BOT]) 
+                        //top round out
+                        edge_profile_asym(TOP, corner_type="round") xflip() mask2d_roundover(3) 
+                        ;
+        //Back cable port inside
+        attach(BACK, FRONT, inside=true, shiftout=0.01, align=TOP, inset=20)
+            cuboid([20, DrawerThickness+0.02, 10], 
+                        //bottom rounding at 5 or maximum possible given cutout width
+                        rounding = 2, 
+                        edges=[LEFT+BOT, RIGHT+BOT, TOP+LEFT, TOP+RIGHT]) 
+                        ;
     }
 }
 
