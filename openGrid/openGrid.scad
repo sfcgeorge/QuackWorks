@@ -41,11 +41,26 @@ Tile_Size = 28;
 //Thickness of the tile (full only)
 Tile_Thickness = 6.8;
 
+/*[Tile Stacking]*/
+Stack_Count = 2;
+//Thickness of the interface between tiles. This is the distance between the top of the tile and the bottom of the next tile.
+Interface_Thickness = 0.4; 
+//Distance between the interface and the tile. This is the distance between the top of the tile and the bottom of the interface.
+Interface_Separation = 0.05;
+
 //GENERATE TILES
-if(Full_or_Lite == "Full") openGrid(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Bevels = Bevels, anchor=BOT);
-else openGridLite(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size,  Screw_Mounting = Screw_Mounting, Bevels = Bevels, anchor=BOT);
+if(Full_or_Lite == "Full" && Stack_Count == 1) openGrid(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Bevels = Bevels, anchor=BOT);
+if(Full_or_Lite == "Lite") openGridLite(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size,  Screw_Mounting = Screw_Mounting, Bevels = Bevels, anchor=BOT);
 
+//Stacked tiles
+if(Full_or_Lite == "Full" && Stack_Count > 1){
+    zcopies(spacing = Tile_Thickness + Interface_Thickness, n=Stack_Count, sp=[0,0,0])
+        openGrid(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Bevels = Bevels, anchor=BOT);
+    zcopies(spacing = Tile_Thickness + Interface_Thickness, n=Stack_Count-1, sp=[0,0,Tile_Thickness + Interface_Separation])
+        color("red") interfaceLayer(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Bevels = Bevels, Connector_Holes = Connector_Holes, anchor=BOT);
+}
 
+//interfaceLayer(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Bevels = Bevels, anchor=BOT);
 
 module openGridLite(Board_Width, Board_Height, tileSize = 28, Screw_Mounting = "None", Bevels = "None",  anchor=CENTER, spin=0, orient=UP){
     //Screw_Mounting options: [Everywhere, Corners, None]
@@ -62,9 +77,18 @@ module openGridLite(Board_Width, Board_Height, tileSize = 28, Screw_Mounting = "
         openGrid(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = tileSize, Screw_Mounting = Screw_Mounting, Bevels = Bevels, anchor=BOT);
     children();
     }
-    
 }
 
+module interfaceLayer(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, Screw_Mounting = "None", Bevels = "None", Connector_Holes = false, anchor=CENTER, spin=0, orient=UP){
+    linear_extrude(height = Interface_Thickness - Interface_Separation*2) 
+            interfaceLayer2D(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = tileSize, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Bevels = Bevels);
+}
+//create a 2d profile of the interface layer to be extruded later. This is used to create the interface layer between tiles.
+module interfaceLayer2D(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, Screw_Mounting = "None", Bevels = "None", Connector_Holes = false, anchor=CENTER, spin=0, orient=UP){
+    projection()
+        bottom_half(z=-Tile_Thickness/2+0.01)
+            openGrid(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = tileSize, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Bevels = Bevels);
+}
 
 module openGrid(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, Screw_Mounting = "None", Bevels = "None", Connector_Holes = false, anchor=CENTER, spin=0, orient=UP){
     //Screw_Mounting options: [Everywhere, Corners, None]
