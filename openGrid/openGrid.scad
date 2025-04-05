@@ -41,7 +41,8 @@ Tile_Size = 28;
 //Thickness of the tile (full only)
 Tile_Thickness = 6.8;
 
-/*[Tile Stacking - Not Working Yet]*/
+/*[Tile Stacking - Full Tile Only]*/
+//Full Tile Only - Lite tiles coming soon
 Stack_Count = 1;
 //Thickness of the interface between tiles. This is the distance between the top of the tile and the bottom of the next tile.
 Interface_Thickness = 0.4; 
@@ -83,12 +84,11 @@ module interfaceLayer(Board_Width, Board_Height, tileSize = 28, Tile_Thickness =
     linear_extrude(height = Interface_Thickness - Interface_Separation*2) 
             interfaceLayer2D(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = tileSize, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Bevels = Bevels);
 }
+
 //create a 2d profile of the interface layer to be extruded later. This is used to create the interface layer between tiles.
 module interfaceLayer2D(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, Screw_Mounting = "None", Bevels = "None", Connector_Holes = false, anchor=CENTER, spin=0, orient=UP){
-    projection()
-        
-        bottom_half(z=-Tile_Thickness/2+0.1)
-            openGrid(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = tileSize, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Bevels = Bevels);
+    projection(cut=true)
+            openGrid(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = tileSize, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Bevels = Bevels, anchor=BOT);
 }
 
 module openGrid(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, Screw_Mounting = "None", Bevels = "None", Connector_Holes = false, anchor=CENTER, spin=0, orient=UP){
