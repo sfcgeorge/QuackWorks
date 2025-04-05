@@ -28,7 +28,7 @@ Core_Section_Depth = 196.5; //[56.5:28:840.5]
 Core_Section_Height = 80; //[40:40:640]
 
 /*[Ends]*/
-End_Style = "Rounded"; //[Rounded, Oct, Rounded Square]
+End_Style = "Rounded"; //[Rounded, Hex, Oct, Rounded Square]
 Rounded_Square_Rounding = 50;
 
 /*[Drawers]*/
@@ -44,6 +44,8 @@ Show_Baseplate = true;
 Show_Risers = true;
 
 Show_Backer = true;
+Show_Drawers = true;
+Show_Top_Plate_all_options = true;
 
 /*[Debug]*/
 openGrid_Render = true;
@@ -88,7 +90,10 @@ Backer_Height = Core_Section_Height;
 Backer_Thickness = 12.5;
 
 //Baseplate to top plate interface parameters
+//The chamfer depth and height of the outermost chamfer on the base plate
 Top_Bot_Plates_Interface_Chamfer = 3;
+//The minimum depth of the surface that the top plate rests on the base plate (excluding the chamfer above)
+Minimum_Flat_Resting_Surface = 7.5;
 TabDistanceFromOutsideEdge = 6;
 TabProtrusionHeight = 4;
 
@@ -96,7 +101,7 @@ TabProtrusionHeight = 4;
 Grid_Min_Side_Clearance = Riser_Width/2;
 Grid_Min_FrontBack_Clearance = 2;
 Tile_Thickness = 11.5;
-Bottom_Front_Chamfer = 5;
+Baseplate_Bottom_Chamfer = 5;
 
 //Tab parameters
 TopPlateTabWidth = 3;
@@ -130,30 +135,54 @@ if(Show_Risers)
 basePlateHeight = 50;
 if(Show_Baseplate)
     up(Riser_Height + basePlateHeight)
-        BasePlate(width = Base_Plate_Width, depth = Base_Plate_Depth);
-    left (100) up(Riser_Height + basePlateHeight)
-        BasePlateEndRounded(width = Base_Plate_Width, depth = Base_Plate_Depth, half=LEFT, style="Rounded");
-    right (100) up(Riser_Height + basePlateHeight)
-        BasePlateEndRounded(width = Base_Plate_Width, depth = Base_Plate_Depth, half=RIGHT, style="Oct");
+        BasePlateCore(width = Base_Plate_Width, depth = Base_Plate_Depth);
+    if(End_Style == "Rounded Square"){
+        left (100) up(Riser_Height + basePlateHeight)
+            BasePlateEndSquared(width = Base_Plate_Width, depth = Base_Plate_Depth, half=LEFT, style=End_Style);
+        right (100) up(Riser_Height + basePlateHeight)
+            BasePlateEndSquared(width = Base_Plate_Width, depth = Base_Plate_Depth, half=RIGHT, style=End_Style);
+    }
+    else{
+        left (100) up(Riser_Height + basePlateHeight)
+            BasePlateEndRounded(width = Base_Plate_Width, depth = Base_Plate_Depth, half=LEFT, style=End_Style);
+        right (100) up(Riser_Height + basePlateHeight)
+            BasePlateEndRounded(width = Base_Plate_Width, depth = Base_Plate_Depth, half=RIGHT, style=End_Style);
+    }
 
-if(Show_Top_Plate)
+if(Show_Top_Plate){
     up(Riser_Height + 150)
-        TopPlate(width = Base_Plate_Width, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness);
+        TopPlateCore(width = Base_Plate_Width, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness);
+    if(End_Style != "Rounded Square"){
+        left (100) up(Riser_Height + 150)
+            TopPlateEndRounded(depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=LEFT, style = End_Style);
+        right (100) up(Riser_Height + 150)
+            TopPlateEndRounded(depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=RIGHT, style = End_Style);
+    }
+    else{
+        left (100) up(Riser_Height + 150)
+            TopPlateEndSquared(width = Base_Plate_Width, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=LEFT);
+        right (100) up(Riser_Height + 150)
+            TopPlateEndSquared(width = Base_Plate_Width, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=RIGHT);
+    }
+}
 
-if(Show_Top_Plate)
-    //if(End_Style == "Rounded"){
-    left (100) up(Riser_Height + 150)
-        TopPlateEndRounded(depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=LEFT);
-    right (100) up(Riser_Height + 150)
+if(Show_Top_Plate_all_options){
+    
+    left (100) back(Core_Section_Depth*2+75) up(Riser_Height + 150)
+        TopPlateEndRounded(depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=LEFT, style = "Rounded");
+    right (100) back(Core_Section_Depth*2+75) up(Riser_Height + 150)
         TopPlateEndRounded(depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=RIGHT, style = "Oct");
-    //}
-    //else
     left (100) back(Core_Section_Depth+50) up(Riser_Height + 150)
         TopPlateEndSquared(width = Base_Plate_Width, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=LEFT);
+    right (100) back(Core_Section_Depth+50) up(Riser_Height + 150)
+        TopPlateEndRounded(depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=RIGHT, style = "Hex");
+}
 
-//bottom drawer
-fwd(50)Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, depth = Drawer_Outside_Depth);
-up(40)fwd(0)Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, depth = Drawer_Outside_Depth);
+if(Show_Drawers){
+    //bottom drawer
+    fwd(50)Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, depth = Drawer_Outside_Depth);
+    up(40)fwd(0)Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, depth = Drawer_Outside_Depth);
+}
 
 module Drawer(height_units, inside_width, depth){
     //FORCE INSIDE TO STANDARD UNITS
@@ -204,7 +233,7 @@ module Drawer(height_units, inside_width, depth){
 }
 
 
-module TopPlate(width, depth, thickness){
+module TopPlateCore(width, depth, thickness){
     topChamfer = 2;
     topLip = 0.5;
     
@@ -258,17 +287,20 @@ module TopPlateEndRounded(depth, thickness, half = LEFT, style = "Rounded"){
     topChamfer = 2;
     topLip = 0.5;
 
-
-
     $fn = 
         style == "Rounded" ? curve_resolution : 
         style == "Oct" ? 8 :
+        style == "Hex" ? 6 :
         curve_resolution;
 
-    
+    //adjust the diameter if a hexagon
+    adjusted_diameter = 
+        style == "Hex" ? depth * sqrt(3) / 1.5 +1: depth;
+
     diff()
-    half_of(half, s = depth*2 + 5)
-    cyl(d = depth+Top_Bot_Plates_Interface_Chamfer*2, h=thickness+topLip){
+    half_of(half, s = adjusted_diameter*2 + 5)
+    //zrot(22.5)
+    cyl(d = adjusted_diameter+Top_Bot_Plates_Interface_Chamfer*2, h=thickness+topLip){
         //bot chamfer
         edge_profile([BOT])
             mask2d_chamfer(x=Top_Bot_Plates_Interface_Chamfer*2);
@@ -277,7 +309,7 @@ module TopPlateEndRounded(depth, thickness, half = LEFT, style = "Rounded"){
             mask2d_chamfer(x=topChamfer-topLip);
         //top lip
         attach(TOP, TOP, inside=true, shiftout=0.01)
-            cyl(d = depth+Top_Bot_Plates_Interface_Chamfer-topLip*2, h = topLip);
+            cyl(d = adjusted_diameter+Top_Bot_Plates_Interface_Chamfer-topLip*2, h = topLip);
         //top plate tabs
         right(half == LEFT ? -TabDistanceFromOutsideEdge-clearance-TopPlateTabWidth/2 : TabDistanceFromOutsideEdge+clearance+TopPlateTabWidth)
         attach(BOT, BOT, inside=true, shiftout=0.01)
@@ -286,32 +318,24 @@ module TopPlateEndRounded(depth, thickness, half = LEFT, style = "Rounded"){
     }
 }
 
-module BasePlateEndRounded(width, depth, height = 19, half = LEFT, style="Oct"){
-
-    $fn = 
-        style == "Rounded" ? curve_resolution : 
-        style == "Oct" ? 8 :
-        curve_resolution;
-
-    Available_Grid_Width_Units = quantdn((width-Grid_Min_Side_Clearance*2)/openGridSize, 1);
-    Available_Grid_Depth_Units = quantdn((depth-Grid_Min_Side_Clearance*2)/openGridSize, 1);
-    Grid_Width_mm = Available_Grid_Width_Units*openGridSize;
-    Grid_Depth_mm = Available_Grid_Depth_Units*openGridSize;
+module BasePlateEndSquared(width, depth, radius = 50, height = 19, half = LEFT, style="Oct"){
 
     half_of(half, s = depth*2 + 5)
     diff(){
         //main plate
-        cyl(d=depth, h= height+Top_Bot_Plates_Interface_Chamfer, anchor=BOT){
+        cuboid([width, depth, height+Top_Bot_Plates_Interface_Chamfer], rounding = radius, edges= [LEFT+FRONT, LEFT+BACK, RIGHT+FRONT, RIGHT+BACK], anchor=BOT){
             //bot chamfer
-            edge_profile([BOT])
-                mask2d_chamfer(x=Bottom_Front_Chamfer);
+            face_profile(BOT, r = radius)
+                mask2d_chamfer(x=Top_Bot_Plates_Interface_Chamfer*2);
+
+            //edge_profile([BOT])
+            //    mask2d_chamfer(x=Baseplate_Bottom_Chamfer);
             //top chamfer
             attach(TOP, TOP, inside=true, shiftout=0.01)
-                cyl(d=depth, h=Top_Bot_Plates_Interface_Chamfer, chamfer1 = Top_Bot_Plates_Interface_Chamfer);
+                cuboid([width, depth, Top_Bot_Plates_Interface_Chamfer], chamfer = Top_Bot_Plates_Interface_Chamfer, edges=BOT);
             //inside cutout
-            //down(Top_Bot_Plates_Interface_Chamfer)
                 attach(TOP, TOP, inside=true, shiftout=0.02)
-                    cyl(d=Grid_Depth_mm + Grid_Min_FrontBack_Clearance*2+ (height - Tile_Thickness)*2, h=height-Tile_Thickness+Top_Bot_Plates_Interface_Chamfer, chamfer1 = (height - Tile_Thickness));
+                    cuboid([width - radius*1.5, depth-Minimum_Flat_Resting_Surface*2-Top_Bot_Plates_Interface_Chamfer*2, height-Tile_Thickness+Top_Bot_Plates_Interface_Chamfer],  chamfer = (height - Tile_Thickness), edges=BOT);
             //top plate tabs
             tag("keep")
             right(half == LEFT ? -TabDistanceFromOutsideEdge-TopPlateTabWidth/2 : TabDistanceFromOutsideEdge+TopPlateTabWidth)
@@ -333,7 +357,53 @@ module BasePlateEndRounded(width, depth, height = 19, half = LEFT, style="Oct"){
     }
 }
 
-module BasePlate(width, depth, height = 19){
+module BasePlateEndRounded(width, depth, height = 19, half = LEFT, style="Oct"){
+
+    $fn = 
+        style == "Rounded" ? curve_resolution : 
+        style == "Oct" ? 8 :
+        style == "Hex" ? 6 :
+        curve_resolution;
+
+    //adjust the diameter if a hexagon
+    adjusted_diameter = 
+        style == "Hex" ? depth * sqrt(3) / 1.5 +1: depth;
+
+    half_of(half, s = adjusted_diameter*2 + 5)
+    diff(){
+        //main plate
+        cyl(d=adjusted_diameter, h= height+Top_Bot_Plates_Interface_Chamfer, anchor=BOT){
+            //bot chamfer
+            edge_profile([BOT])
+                mask2d_chamfer(x=Baseplate_Bottom_Chamfer);
+            //top chamfer
+            attach(TOP, TOP, inside=true, shiftout=0.01)
+                cyl(d=adjusted_diameter, h=Top_Bot_Plates_Interface_Chamfer, chamfer1 = Top_Bot_Plates_Interface_Chamfer);
+            //inside cutout
+            attach(TOP, TOP, inside=true, shiftout=0.02)
+                cyl(d=depth-Minimum_Flat_Resting_Surface*2-Top_Bot_Plates_Interface_Chamfer*2, h=height-Tile_Thickness+Top_Bot_Plates_Interface_Chamfer, chamfer1 = (height - Tile_Thickness));
+            //top plate tabs
+            tag("keep")
+            right(half == LEFT ? -TabDistanceFromOutsideEdge-TopPlateTabWidth/2 : TabDistanceFromOutsideEdge+TopPlateTabWidth)
+            attach(BOT, BOT, inside=true, shiftout=0.01)
+                TopPlateTab(height = height + TabProtrusionHeight, deleteTool = false);
+
+            //HOK Connector cutouts
+            attach(BOT, BOT, inside=true, shiftout=0.01) 
+                grid_copies(spacing=[HOK_Connector_Inset*2,HOK_Connector_Spacing_Depth])
+                zrot(90)
+                    HOKConnectorDeleteTool();
+            if(Additional_Top_Plate_Support)
+                //middle support
+                tag("keep")
+                down(Top_Bot_Plates_Interface_Chamfer)
+                attach(TOP, TOP, inside=true)
+                    cuboid([28*2.5-2,28*4,height - 4], chamfer=height-Tile_Thickness, edges=[TOP]);
+        }
+    }
+}
+
+module BasePlateCore(width, depth, height = 19){
     
     Available_Grid_Width_Units = quantdn((width - Grid_Min_Side_Clearance*2) / openGridSize, 1);
     Available_Grid_Depth_Units = quantdn((depth - Grid_Min_Side_Clearance*2) / openGridSize, 1);
@@ -342,15 +412,18 @@ module BasePlate(width, depth, height = 19){
 
     diff(){
         //main plate
-        cuboid([width, depth, height], anchor=BOT){
+        cuboid([width, depth, height + Top_Bot_Plates_Interface_Chamfer], chamfer=Baseplate_Bottom_Chamfer, edges=BOT+FRONT, anchor=BOT){
+            //top chamfer
+            attach(TOP, TOP, inside=true, shiftout=0.01)
+                cuboid([width+0.02, depth, Top_Bot_Plates_Interface_Chamfer+0.02], chamfer = Top_Bot_Plates_Interface_Chamfer, edges=[BOT+FRONT, BOT+BACK]);
+            //Inside cutout
+            attach(TOP, TOP, inside=true, shiftout=0.01)
+                cuboid([width+0.02, depth-Minimum_Flat_Resting_Surface*2-Top_Bot_Plates_Interface_Chamfer*2, height + Top_Bot_Plates_Interface_Chamfer - Tile_Thickness +0.02],  chamfer = (height - Tile_Thickness), edges=[BOT+FRONT, BOT+BACK]);
             //cutout for opengrid and opengrid. 
             attach(BOT, BOT, inside=true, shiftout=0.01)
-                cuboid([Grid_Width_mm, Grid_Depth_mm, Tile_Thickness]){
+                cuboid([Grid_Width_mm, Grid_Depth_mm, Tile_Thickness+0.01]){
                     tag("keep")
                         openGrid(Board_Width = openGrid_Render ? Available_Grid_Width_Units : 1, Board_Height = openGrid_Render ? Available_Grid_Depth_Units : 1, Tile_Thickness = Tile_Thickness);
-                            //top cutout
-                            attach(TOP, BOT, overlap=0.01)
-                                prismoid(size1=[width+0.02, Grid_Depth_mm + Grid_Min_FrontBack_Clearance*2], size2=[width+0.02, Grid_Depth_mm + Grid_Min_FrontBack_Clearance*2 + (height - Tile_Thickness)*2], h=height - Tile_Thickness+0.04);
                 }
             //HOK connector cutouts back
             attach(BOT, BOT, inside=true, shiftout=0.01, align=BACK) 
@@ -361,18 +434,11 @@ module BasePlate(width, depth, height = 19){
             attach(BOT, BOT, inside=true, shiftout=0.01, align=[LEFT, RIGHT], inset=HOK_Connector_Inset) 
                     back($idx == 1 ? HOK_Connector_Width/2 : -HOK_Connector_Width/2)
                     ycopies(spacing = HOK_Connector_Spacing_Depth)
-                        
                             HOKConnectorDeleteTool(spin=90);
             //top plate tabs
             tag("keep")
             attach(BOT, BOT, inside=true, align=[LEFT, RIGHT], inset=TabDistanceFromOutsideEdge)
                 TopPlateTab(height = height + TabProtrusionHeight);
-            //front and back top chamfers
-            tag("keep")
-            edge_profile_asym([TOP+FRONT, TOP+BACK], corner_type="chamfer")
-                yflip() mask2d_chamfer(x=Top_Bot_Plates_Interface_Chamfer);
-            edge_profile(BOT+FRONT)
-                mask2d_chamfer(x=Bottom_Front_Chamfer);
             if(Additional_Top_Plate_Support)
                 //middle support
                 tag("keep")
