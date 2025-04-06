@@ -612,14 +612,12 @@ module openGrid(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, 
         down(Tile_Thickness/2)
         render(convexity=2)
         diff(){
-            move([-Board_Width*tileSize/2, -Board_Height*tileSize/2, 0])
-            union()
-            for(i=[0: Board_Width-1]) {
-                for(j=[0: Board_Height-1]) {
-                    translate([tileSize/2+i*tileSize, tileSize/2+j*tileSize])
+            render() union() {
+                grid_copies(spacing = tileSize, n = [Board_Width, Board_Height])
+
                     if(Render_Method == "2D") openGridTileAp1(tileSize = tileSize, Tile_Thickness = Tile_Thickness);
                         else wonderboardTileAp2();
-                }
+                
             }
             //TODO: Modularize positioning (Outside Corners, inside corners, inside all) and holes (chamfer and screw holes)
             //Bevel Everywhere
@@ -722,7 +720,7 @@ module openGrid(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, 
         Tile_Thickness = Tile_Thickness;
         
         Outside_Extrusion = 0.8;
-        Inside_Grid_Top_Bot_Plates_Interface_Chamfer = 0.4;
+        Inside_Grid_Top_Chamfer = 0.4;
         Inside_Grid_Middle_Chamfer = 1;
         Top_Capture_Initial_Inset = 2.4;
         Corner_Square_Thickness = 2.6;
@@ -744,14 +742,14 @@ module openGrid(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, 
         
         full_tile_profile = [
             [0,0],
-            [Outside_Extrusion+insideExtrusion-Inside_Grid_Top_Bot_Plates_Interface_Chamfer,0],
-            [Outside_Extrusion+insideExtrusion,Inside_Grid_Top_Bot_Plates_Interface_Chamfer],
+            [Outside_Extrusion+insideExtrusion-Inside_Grid_Top_Chamfer,0],
+            [Outside_Extrusion+insideExtrusion,Inside_Grid_Top_Chamfer],
             [Outside_Extrusion+insideExtrusion,Top_Capture_Initial_Inset-Inside_Grid_Middle_Chamfer],
             [Outside_Extrusion,Top_Capture_Initial_Inset],
             [Outside_Extrusion,Tile_Thickness-Top_Capture_Initial_Inset],
             [Outside_Extrusion+insideExtrusion,Tile_Thickness-Top_Capture_Initial_Inset+Inside_Grid_Middle_Chamfer],
-            [Outside_Extrusion+insideExtrusion,Tile_Thickness-Inside_Grid_Top_Bot_Plates_Interface_Chamfer],
-            [Outside_Extrusion+insideExtrusion-Inside_Grid_Top_Bot_Plates_Interface_Chamfer,Tile_Thickness],
+            [Outside_Extrusion+insideExtrusion,Tile_Thickness-Inside_Grid_Top_Chamfer],
+            [Outside_Extrusion+insideExtrusion-Inside_Grid_Top_Chamfer,Tile_Thickness],
             [0,Tile_Thickness]
             ];
 
@@ -765,15 +763,17 @@ module openGrid(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, 
 
             ];
         
-        intersection() {
-            union(){
-                move([-tileSize/2,-tileSize/2,0]) 
-                    path_sweep2d(full_tile_profile, turtle(["move", tileSize+0.01, "turn", 90], repeat=4));
-                zrot(45)move([-calculatedCornerSquare/2,-calculatedCornerSquare/2,0]) 
-                    path_sweep2d(full_tile_corners_profile, turtle(["move", calculatedCornerSquare, "turn", 90], repeat=4));
-                zrot(45)rect_tube(isize=[calculatedCornerSquare-1,calculatedCornerSquare-1], wall=fillBack, h=Tile_Thickness);
-            }
-            cuboid([tileSize,tileSize,Tile_Thickness], anchor=BOT);
+        render() intersection() {
+        union() {
+            render() path_sweep(full_tile_profile, xflip(square(size=tileSize, center = true)), closed = true);
+            render() path_sweep(full_tile_corners_profile, xflip(square(size=calculatedCornerSquare, center = true)), closed = true, spin = 45);
+            
+            //vnf_polyhedron(TileSweep);
+            //vnf_polyhedron(TileSweep2);
+            rect_tube(isize = [calculatedCornerSquare - 1, calculatedCornerSquare - 1], wall = fillBack, h = Tile_Thickness, spin = 45);
+        } 
+        //rect_tube(isize = [tileSize, tileSize], wall = calculatedCornerSquare, h = Tile_Thickness);
+        cube([tileSize, tileSize, Tile_Thickness], anchor = BOT);
         }
     }
     //END TILE Approach 1
