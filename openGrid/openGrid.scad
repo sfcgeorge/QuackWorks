@@ -1,7 +1,7 @@
 /* 
 openGrid
 Design by DavidD
-OpenSCAD by BlackjackDuck (Andy)
+OpenSCAD by BlackjackDuck (Andy) https://makerworld.com/en/@BlackjackDuck
 This code is Licensed Creative Commons 4.0 Attribution Non-Commercial Share-Alike (CC-BY-NC-SA)
 Derived parts are licensed Creative Commons 4.0 Attribution (CC-BY)
 
@@ -10,9 +10,9 @@ Change Log:
     - Initial release
 
 Credit to 
-    @David D on Printables for openGrid
-    Katie and her community at Hands on Katie on Youtube, Patreon, and Discord
-    
+    @David D on Printables for openGrid https://www.printables.com/@DavidD
+    Katie and her community at Hands on Katie on Youtube, Patreon, and Discord https://handsonkatie.com/
+    Pedro Leite for research and contributions on script performance improvements https://makerworld.com/en/@pedroleite
 
 */
 
@@ -110,14 +110,12 @@ module openGrid(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, 
         down(Tile_Thickness/2)
         render(convexity=2)
         diff(){
-            move([-Board_Width*tileSize/2, -Board_Height*tileSize/2, 0])
-            union()
-            for(i=[0: Board_Width-1]) {
-                for(j=[0: Board_Height-1]) {
-                    translate([tileSize/2+i*tileSize, tileSize/2+j*tileSize])
+            render() union() {
+                grid_copies(spacing = tileSize, n = [Board_Width, Board_Height])
+
                     if(Render_Method == "2D") openGridTileAp1(tileSize = tileSize, Tile_Thickness = Tile_Thickness);
                         else wonderboardTileAp2();
-                }
+                
             }
             //TODO: Modularize positioning (Outside Corners, inside corners, inside all) and holes (chamfer and screw holes)
             //Bevel Everywhere
@@ -263,15 +261,17 @@ module openGrid(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, 
 
             ];
         
-        intersection() {
-            union(){
-                move([-tileSize/2,-tileSize/2,0]) 
-                    path_sweep2d(full_tile_profile, turtle(["move", tileSize+0.01, "turn", 90], repeat=4));
-                zrot(45)move([-calculatedCornerSquare/2,-calculatedCornerSquare/2,0]) 
-                    path_sweep2d(full_tile_corners_profile, turtle(["move", calculatedCornerSquare, "turn", 90], repeat=4));
-                zrot(45)rect_tube(isize=[calculatedCornerSquare-1,calculatedCornerSquare-1], wall=fillBack, h=Tile_Thickness);
-            }
-            cuboid([tileSize,tileSize,Tile_Thickness], anchor=BOT);
+        render() intersection() {
+        union() {
+            render() path_sweep(full_tile_profile, xflip(square(size=tileSize, center = true)), closed = true);
+            render() path_sweep(full_tile_corners_profile, xflip(square(size=calculatedCornerSquare, center = true)), closed = true, spin = 45);
+            
+            //vnf_polyhedron(TileSweep);
+            //vnf_polyhedron(TileSweep2);
+            rect_tube(isize = [calculatedCornerSquare - 1, calculatedCornerSquare - 1], wall = fillBack, h = Tile_Thickness, spin = 45);
+        } 
+        //rect_tube(isize = [tileSize, tileSize], wall = calculatedCornerSquare, h = Tile_Thickness);
+        cube([tileSize, tileSize, Tile_Thickness], anchor = BOT);
         }
     }
     //END TILE Approach 1
