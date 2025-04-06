@@ -137,15 +137,15 @@ if(Show_Baseplate)
     up(Riser_Height + basePlateHeight)
         BasePlateCore(width = Base_Plate_Width, depth = Base_Plate_Depth);
     if(End_Style == "Rounded Square"){
-        left (100) up(Riser_Height + basePlateHeight)
+        left (Core_Section_Width / 2 + 25) up(Riser_Height + basePlateHeight)
             BasePlateEndSquared(width = Base_Plate_Width, depth = Base_Plate_Depth, half=LEFT, style=End_Style);
-        right (100) up(Riser_Height + basePlateHeight)
+        right (Core_Section_Width / 2 + 25) up(Riser_Height + basePlateHeight)
             BasePlateEndSquared(width = Base_Plate_Width, depth = Base_Plate_Depth, half=RIGHT, style=End_Style);
     }
     else{
-        left (100) up(Riser_Height + basePlateHeight)
+        left (Core_Section_Width / 2 + 25) up(Riser_Height + basePlateHeight)
             BasePlateEndRounded(width = Base_Plate_Width, depth = Base_Plate_Depth, half=LEFT, style=End_Style);
-        right (100) up(Riser_Height + basePlateHeight)
+        right (Core_Section_Width / 2 + 25) up(Riser_Height + basePlateHeight)
             BasePlateEndRounded(width = Base_Plate_Width, depth = Base_Plate_Depth, half=RIGHT, style=End_Style);
     }
 
@@ -153,28 +153,28 @@ if(Show_Top_Plate){
     up(Riser_Height + 150)
         TopPlateCore(width = Base_Plate_Width, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness);
     if(End_Style != "Rounded Square"){
-        left (100) up(Riser_Height + 150)
+        left (Core_Section_Width / 2 + 25) up(Riser_Height + 150)
             TopPlateEndRounded(depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=LEFT, style = End_Style);
-        right (100) up(Riser_Height + 150)
+        right (Core_Section_Width / 2 + 25) up(Riser_Height + 150)
             TopPlateEndRounded(depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=RIGHT, style = End_Style);
     }
     else{
-        left (100) up(Riser_Height + 150)
+        left (Core_Section_Width / 2 + 25) up(Riser_Height + 150)
             TopPlateEndSquared(width = Base_Plate_Width, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=LEFT);
-        right (100) up(Riser_Height + 150)
+        right (Core_Section_Width / 2 + 25) up(Riser_Height + 150)
             TopPlateEndSquared(width = Base_Plate_Width, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=RIGHT);
     }
 }
 
 if(Show_Top_Plate_all_options){
     
-    left (100) back(Core_Section_Depth*2+75) up(Riser_Height + 150)
+    left (Core_Section_Width / 2 + 25) back(Core_Section_Depth*2+75) up(Riser_Height + 150)
         TopPlateEndRounded(depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=LEFT, style = "Rounded");
-    right (100) back(Core_Section_Depth*2+75) up(Riser_Height + 150)
+    right (Core_Section_Width / 2 + 25) back(Core_Section_Depth*2+75) up(Riser_Height + 150)
         TopPlateEndRounded(depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=RIGHT, style = "Oct");
-    left (100) back(Core_Section_Depth+50) up(Riser_Height + 150)
+    left (Core_Section_Width / 2 + 25) back(Core_Section_Depth+50) up(Riser_Height + 150)
         TopPlateEndSquared(width = Base_Plate_Width, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=LEFT);
-    right (100) back(Core_Section_Depth+50) up(Riser_Height + 150)
+    right (Core_Section_Width / 2 + 25) back(Core_Section_Depth+50) up(Riser_Height + 150)
         TopPlateEndRounded(depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=RIGHT, style = "Hex");
 }
 
