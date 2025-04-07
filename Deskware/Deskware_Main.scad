@@ -189,8 +189,10 @@ if(Show_Top_Plate_all_options){
 
 if(Show_Drawers){
     //bottom drawer
-    fwd(50)Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth);
-    up(40)fwd(4)Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth);
+    fwd(Show_Connected ? 4 : 50)
+        Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth);
+    up(40)fwd(4)
+        Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth);
 }
 
 module Drawer(height_units, inside_width, Drawer_Outside_Depth){
