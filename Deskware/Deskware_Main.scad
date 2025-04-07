@@ -451,6 +451,7 @@ module BasePlateCore(width, depth, height = 19){
             if(Additional_Top_Plate_Support)
                 //middle support
                 tag("keep")
+                down(Top_Bot_Plates_Interface_Chamfer)
                 attach(TOP, TOP, inside=true, align=[LEFT, RIGHT])
                     cuboid([28*2.5-2,28*4,height - 4], chamfer=height-Tile_Thickness, edges=[TOP], except=$idx == 0 ? LEFT : RIGHT);
         }
