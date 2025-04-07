@@ -56,6 +56,7 @@ Middle_Seam_Width = 5;
 Total_Trim_Height = 20;
 
 /*[Screw Mounting]*/
+Screw_Mounting = true;
 //Wood screw diameter (in mm)
 Wood_Screw_Thread_Diameter = 3.5;
 //Wood Screw Head Diameter (in mm)
@@ -152,6 +153,7 @@ if(Select_Part == "Drawer Wall Mounts"){
             attach(BOT, TOP, align=BACK)
                 cuboid([max(Wall_Thickness*2+Material_Thickness, Wall_Thickness*2+Material_Thickness+Wood_Screw_Head_Diameter*2+Screw_Backer_Buffer_Width*2), Channel_Length, Adhesive_Backer_Thickness])
                     //wood screw head
+                    if(Screw_Mounting)
                     attach(TOP, TOP, inside=true, shiftout=0.01)
                     xcopies(n=2, spacing = Wall_Thickness*2+Material_Thickness+Wood_Screw_Head_Diameter+4) 
                         cyl(h=Wood_Screw_Head_Height+0.05, d1=Wood_Screw_Thread_Diameter, d2=Wood_Screw_Head_Diameter, $fn=25)
