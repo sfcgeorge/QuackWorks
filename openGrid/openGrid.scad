@@ -263,12 +263,12 @@ module openGrid(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, 
         
         render() intersection() {
         union() {
-            render() path_sweep(full_tile_profile, xflip(square(size=tileSize, center = true)), closed = true);
-            render() path_sweep(full_tile_corners_profile, xflip(square(size=calculatedCornerSquare, center = true)), closed = true, spin = 45);
-            
-            //vnf_polyhedron(TileSweep);
-            //vnf_polyhedron(TileSweep2);
-            rect_tube(isize = [calculatedCornerSquare - 1, calculatedCornerSquare - 1], wall = fillBack, h = Tile_Thickness, spin = 45);
+            move([-tileSize/2,-tileSize/2,0]) 
+                path_sweep2d(full_tile_profile, turtle(["move", tileSize+0.01, "turn", 90], repeat=4));
+            zrot(45)move([-calculatedCornerSquare/2,-calculatedCornerSquare/2,0]) 
+                path_sweep2d(full_tile_corners_profile, turtle(["move", calculatedCornerSquare, "turn", 90], repeat=4));
+            zrot(45)
+                rect_tube(isize=[calculatedCornerSquare-1,calculatedCornerSquare-1], wall=fillBack, h=Tile_Thickness);        
         } 
         //rect_tube(isize = [tileSize, tileSize], wall = calculatedCornerSquare, h = Tile_Thickness);
         cube([tileSize, tileSize, Tile_Thickness], anchor = BOT);
