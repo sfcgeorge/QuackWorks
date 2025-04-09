@@ -23,6 +23,9 @@ Change Log:
     - Thanks @SnazzyGreenWarrior!
 - 2025-01-16
     - Added GOEWS cleats option (@andrew_3d)
+- 2025-04-08
+    - Added openGrid standard for Multiconnect
+    - Improved backer-only mounting plate generation
 
 Notes:
 - Slot test fit - For a slot test fit, set the following parameters
@@ -35,17 +38,20 @@ Notes:
 include <BOSL2/std.scad>
 include <BOSL2/walls.scad>
 
-/* [Beta Feature - Slot Type] */
-//Multipoint in Beta - Please share feedback! How do you intend to mount the item holder to a surface such as Multipoint connections or DavidD's Multiconnect?
-Connection_Type = "Multiconnect"; // [Multipoint, Multiconnect, GOEWS]
+/* [Slot Type] */
+//How do you intend to mount the item holder to a surface such as Multipoint connections or DavidD's Multiconnect?
+Connection_Type = "Multiconnect - Multiboard"; // [Multipoint, Multiconnect - Multiboard, Multiconnect - openGrid, Multiconnect - Custom Size, GOEWS]
 
 /* [Internal Dimensions] */
 //Height (in mm) from the top of the back to the base of the internal floor
 internalHeight = 50.0; //.1
 //Width (in mm) of the internal dimension or item you wish to hold
-internalWidth = 50.0; //.1
+internalWidth = 60.0; //.1
 //Length (i.e., distance from back) (in mm) of the internal dimension or item you wish to hold
 internalDepth = 15.0; //.1
+
+//Only generate the backer mounting plate (for remixing)
+backPlateOnly = false;
 
 /*[Style Customizations]*/
 //Edge rounding (in mm)
@@ -107,13 +113,12 @@ leftLateralCapture = 3;
 wallThickness = 2; //.1
 //Thickness of bin  (in mm)
 baseThickness = 3; //.1
-//Only generate the backer mounting plate
-backPlateOnly = false;
+
 
 /*[Slot Customization]*/
 onRampHalfOffset = true;
 //Distance between Multiconnect slots on the back (25mm is standard for MultiBoard)
-distanceBetweenSlots = 25;
+customDistanceBetweenSlots = 25;
 //Reduce the number of slots
 subtractedSlots = 0;
 //QuickRelease removes the small indent in the top of the slots that lock the part into place
@@ -138,17 +143,30 @@ GOEWS_Cleat_custom_height_from_top_of_back = 11.24;
 /* [Hidden] */
 debugCutoutTool = false;
 
+distanceBetweenSlots = 
+    Connection_Type == "Multiconnect - openGrid" ? 28 :
+    Connection_Type == "Multiconnect - Custom Size" ? customDistanceBetweenSlots :
+    25; //default for multipoint
+
+Connection_Standard = 
+    Connection_Type == "Multipoint" ? "Multipoint" :
+    Connection_Type == "Multiconnect - Multiboard" ? "Multiconnect" :
+    Connection_Type == "Multiconnect - openGrid" ? "Multiconnect" :
+    Connection_Type == "Multiconnect - Custom Size" ? "Multiconnect" :
+    Connection_Type == "GOEWS" ? "GOEWS" : 
+    "Unknown";
+
 if(debugCutoutTool){
-    if(Connection_Type == "Multiconnect") multiConnectSlotTool(totalHeight);
+    if(Connection_Standard == "Multiconnect - Multiboard") multiConnectSlotTool(totalHeight);
     else multiPointSlotTool(totalHeight);
 }
 
 onRampEveryXSlots = On_Ramp_Every_X_Slots;
 
 //Calculated
-totalHeight = internalHeight+baseThickness;
-totalDepth = internalDepth + wallThickness;
-totalWidth = internalWidth + wallThickness*2;
+totalHeight = !backPlateOnly ? internalHeight+baseThickness : internalHeight;
+totalDepth = !backPlateOnly ? internalDepth + wallThickness : internalDepth;
+totalWidth = !backPlateOnly ? internalWidth + wallThickness*2 : internalWidth;
 totalCenterX = internalWidth/2;
 
 if(!debugCutoutTool)
@@ -158,7 +176,7 @@ union(){
     translate(v = [-internalWidth/2,0,0]) 
         basket();
         //slotted back
-    if(Connection_Type == "Multipoint"){
+    if(Connection_Standard == "Multipoint"){
     translate([-max(totalWidth,distanceBetweenSlots)/2,0.01,-baseThickness])
         makebackPlate(
             backWidth = totalWidth, 
@@ -166,7 +184,7 @@ union(){
             distanceBetweenSlots = distanceBetweenSlots,
             backThickness=4.8);
     }
-    if(Connection_Type == "Multiconnect"){
+    if(Connection_Standard == "Multiconnect"){
         translate([-max(totalWidth,distanceBetweenSlots)/2,0.01,-baseThickness])
         makebackPlate(
             backWidth = totalWidth, 
@@ -174,7 +192,7 @@ union(){
             distanceBetweenSlots = distanceBetweenSlots,
             backThickness=6.5);
     }
-    if(Connection_Type == "GOEWS"){
+    if(Connection_Standard == "GOEWS"){
         translate([-max(totalWidth,distanceBetweenSlots)/2,0.01,-baseThickness])
         makebackPlate(
             backWidth = totalWidth, 
@@ -237,7 +255,7 @@ module makebackPlate(backWidth, backHeight, distanceBetweenSlots, backThickness,
     //slot count calculates how many slots can fit on the back. Based on internal width for buffer. 
     //slot width needs to be at least the distance between slot for at least 1 slot to generate
     let (backWidth = max(backWidth,distanceBetweenSlots), backHeight = max(backHeight, 25),slotCount = floor(backWidth/distanceBetweenSlots)- subtractedSlots){
-        if(Connection_Type != "GOEWS"){
+        if(Connection_Standard != "GOEWS"){
             difference() {
                 translate(v = [0,-backThickness,0]) 
                 cuboid(size = [backWidth,backThickness,backHeight], rounding=edgeRounding, except_edges=BACK, anchor=FRONT+LEFT+BOT);
@@ -245,10 +263,10 @@ module makebackPlate(backWidth, backHeight, distanceBetweenSlots, backThickness,
                 //Note: I kept doing math until it looked right. It's possible this can be simplified.
                 for (slotNum = [0:1:slotCount-1]) {
                     translate(v = [distanceBetweenSlots/2+(backWidth/distanceBetweenSlots-slotCount)*distanceBetweenSlots/2+slotNum*distanceBetweenSlots,-2.35+slotDepthMicroadjustment,backHeight-Multiconnect_Stop_Distance_From_Back]) {
-                        if(Connection_Type == "Multipoint"){
+                        if(Connection_Standard == "Multipoint"){
                             multiPointSlotTool(totalHeight);
                         }
-                        if(Connection_Type == "Multiconnect"){
+                        if(Connection_Standard == "Multiconnect"){
                             multiConnectSlotTool(totalHeight);
                         }
                     }
