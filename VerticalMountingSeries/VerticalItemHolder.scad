@@ -39,7 +39,7 @@ include <BOSL2/std.scad>
 include <BOSL2/walls.scad>
 
 /* [Slot Type] */
-//How do you intend to mount the item holder to a surface such as Multipoint connections or DavidD's Multiconnect?
+//How do you intend to mount to a surface and which surface?
 Connection_Type = "Multiconnect - Multiboard"; // [Multipoint, Multiconnect - Multiboard, Multiconnect - openGrid, Multiconnect - Custom Size, GOEWS]
 
 /* [Internal Dimensions] */
