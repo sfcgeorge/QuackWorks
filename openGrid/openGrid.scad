@@ -46,8 +46,8 @@ Tile_Thickness = 6.8;
 Stack_Count = 1;
 //Thickness of the interface between tiles. This is the distance between the top of the tile and the bottom of the next tile.
 Interface_Thickness = 0.4; 
-//Distance between the interface and the tile. This is the distance between the top of the tile and the bottom of the interface.
-Interface_Separation = 0.05;
+//Distance between the interface and the tile. This is the distance between the top of the tile and the bottom of the interface. Try to use a multiple of the layer height when combined with the interface thickness.
+Interface_Separation = 0.1;
 
 //GENERATE TILES
 if(Full_or_Lite == "Full" && Stack_Count == 1) openGrid(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Bevels = Bevels, anchor=BOT, Connector_Holes = Connector_Holes);
