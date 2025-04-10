@@ -9,7 +9,9 @@ Change Log:
 - 2024-12-09 
     - Added ability to set different widths for the intersections
     - Fix to threading of snap connector by adding flare and new slop parameter
-
+- 2025-04-09
+    - Additional Holding Strength now available! For larger channels, I recommend 0.6.
+    
 Credit to 
     First and foremost - Katie and her community at Hands on Katie on Youtube, Patreon, and Discord
     @David D on Printables for Multiconnect

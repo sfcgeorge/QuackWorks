@@ -65,10 +65,9 @@ if(Full_or_Lite == "Full" && Stack_Count > 1){
 if(Full_or_Lite == "Lite" && Stack_Count > 1){
     Lite_Tile_Thickness = 4;
     zcopies(spacing = Lite_Tile_Thickness + Interface_Thickness + 2*Interface_Separation, n=Stack_Count, sp=[0,0,Lite_Tile_Thickness])
-        zflip()
-        openGridLite(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size,  Screw_Mounting = Screw_Mounting, Bevels = Bevels, anchor=BOT);
+        openGridLite(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size,  Screw_Mounting = Screw_Mounting, Bevels = Bevels, anchor=$idx % 2 == 0 ? TOP : BOT, orient=$idx % 2 == 0 ? UP : DOWN);
     zcopies(spacing = Lite_Tile_Thickness + Interface_Thickness + 2*Interface_Separation, n=Stack_Count-1, sp=[0,0,Lite_Tile_Thickness + Interface_Separation])
-        color("red") interfaceLayer(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Bevels = Bevels, Connector_Holes = Connector_Holes, boardType = "Lite");
+        color("red") interfaceLayer2D(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Bevels = Bevels, Connector_Holes = Connector_Holes, boardType = "Lite", topSide = $idx % 2 == 0 ? false : true);
 }
 
 //down(Interface_Separation+Interface_Thickness) color("green") interfaceLayer(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Bevels = Bevels, anchor=BOT, boardType = Full_or_Lite, Connector_Holes = Connector_Holes);
@@ -99,14 +98,29 @@ module openGridLite(Board_Width, Board_Height, tileSize = 28, Screw_Mounting = "
 
 module interfaceLayer(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, Screw_Mounting = "None", Bevels = "None", Connector_Holes = false, anchor=CENTER, spin=0, orient=UP, boardType = "Full"){
     linear_extrude(height = Interface_Thickness) 
+        projection(cut=true)
             interfaceLayer2D(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = tileSize, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Bevels = Bevels, boardType = boardType);
 }
-
+/*
+projection(cut=true)
+down(0.01)openGridLite(
+                    Board_Width = Board_Width,
+                    Board_Height = Board_Height,
+                    tileSize = 28,
+                    Screw_Mounting = Screw_Mounting,
+                    Bevels = Bevels,
+                    Connector_Holes = Connector_Holes,
+                    anchor=BOT,
+                    orient=UP
+                );
+*/
 //create a 2d profile of the interface layer to be extruded later. This is used to create the interface layer between tiles.
-module interfaceLayer2D(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, Screw_Mounting = "None", Bevels = "None", Connector_Holes = false, anchor=CENTER, spin=0, orient=UP, boardType = "Full"){
-    projection(cut=true)
-            bottom_half(z = 0.1, s = max(tileSize * Board_Width, tileSize * Board_Height) * 2)
+module interfaceLayer2D(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, Screw_Mounting = "None", Bevels = "None", Connector_Holes = false, anchor=CENTER, spin=0, orient=UP, boardType = "Full", topSide = false){
+    linear_extrude(height = Interface_Thickness) 
+        projection(cut=true)
+            //bottom_half(z = 0.1, s = max(tileSize * Board_Width, tileSize * Board_Height) * 2)
             if (boardType == "Lite") {
+                down(0.01)
                 openGridLite(
                     Board_Width = Board_Width,
                     Board_Height = Board_Height,
@@ -114,7 +128,8 @@ module interfaceLayer2D(Board_Width, Board_Height, tileSize = 28, Tile_Thickness
                     Screw_Mounting = Screw_Mounting,
                     Bevels = Bevels,
                     Connector_Holes = Connector_Holes,
-                    anchor=BOT
+                    anchor=topSide ? BOT : TOP,
+                    orient=topSide ? UP : DOWN
                 );
             } else {
                 openGrid(

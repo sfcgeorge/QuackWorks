@@ -26,6 +26,9 @@ Change Log:
 - 2025-04-08
     - Added openGrid standard for Multiconnect
     - Improved backer-only mounting plate generation
+- 2025-04-09
+    - Added Command Strip Mounting
+    - Added rounding for top cutout
 
 Notes:
 - Slot test fit - For a slot test fit, set the following parameters
@@ -40,7 +43,7 @@ include <BOSL2/walls.scad>
 
 /* [Slot Type] */
 //How do you intend to mount to a surface and which surface?
-Connection_Type = "Multiconnect - Multiboard"; // [Multipoint, Multiconnect - Multiboard, Multiconnect - openGrid, Multiconnect - Custom Size, GOEWS]
+Connection_Type = "Multiconnect - Multiboard"; // [Multipoint, Multiconnect - Multiboard, Multiconnect - openGrid, Multiconnect - Custom Size, GOEWS, Command Strip]
 
 /* [Internal Dimensions] */
 //Height (in mm) from the top of the back to the base of the internal floor
@@ -140,13 +143,20 @@ Multiconnect_Stop_Distance_From_Back = 13;
 GOEWS_Cleat_position = "normal"; // [normal, top, bottom, custom]
 GOEWS_Cleat_custom_height_from_top_of_back = 11.24;
 
+/*[Command Strip Customization]*/
+Command_Strip_Width = 20;
+Command_Strip_Depth = 1.5;
+Command_Strip_Height = 90;
+Command_Strip_Slots = 1;
+Command_Strip_Distance_From_Top = 5;
+
 /* [Hidden] */
 debugCutoutTool = false;
 
 distanceBetweenSlots = 
     Connection_Type == "Multiconnect - openGrid" ? 28 :
     Connection_Type == "Multiconnect - Custom Size" ? customDistanceBetweenSlots :
-    25; //default for multipoint
+    customDistanceBetweenSlots; //default for multipoint
 
 Connection_Standard = 
     Connection_Type == "Multipoint" ? "Multipoint" :
@@ -154,6 +164,7 @@ Connection_Standard =
     Connection_Type == "Multiconnect - openGrid" ? "Multiconnect" :
     Connection_Type == "Multiconnect - Custom Size" ? "Multiconnect" :
     Connection_Type == "GOEWS" ? "GOEWS" : 
+    Connection_Type == "Command Strip" ? "Command Strip" : 
     "Unknown";
 
 if(debugCutoutTool){
@@ -201,6 +212,16 @@ union(){
             backThickness=7
         );
     }
+    if(Connection_Standard == "Command Strip"){
+        translate([0,0.01,-baseThickness])
+        commandStrip(
+            backWidth = totalWidth, 
+            backHeight = totalHeight, 
+            distanceBetweenSlots = 25,
+            backThickness=3,
+            anchor=BOT+BACK
+        );
+    }
 }
 
 //Create Basket
@@ -224,7 +245,7 @@ module basket() {
         //frontCaptureDeleteTool for item holders
             if (frontCutout == true)
                 translate([frontLateralCapture,internalDepth-1,frontLowerCapture])
-                    cube([internalWidth-frontLateralCapture*2,wallThickness+2,internalHeight-frontLowerCapture-frontUpperCapture+0.01]);
+                    cuboid([internalWidth-frontLateralCapture*2,wallThickness+2,internalHeight-frontLowerCapture-frontUpperCapture+0.01], rounding=-3, edges = [TOP+LEFT, TOP+RIGHT], anchor=BOT+FRONT+LEFT, $fn = 25);
             if (bottomCutout == true)
                 translate(v = [bottomSideCapture,bottomBackCapture,-baseThickness-1]) 
                     cube([internalWidth-bottomSideCapture*2,internalDepth-bottomFrontCapture-bottomBackCapture,baseThickness+2]);
@@ -250,6 +271,16 @@ module basket() {
 
 //BEGIN MODULES
 //Slotted back Module
+
+module commandStrip(backWidth, backHeight, distanceBetweenSlots, backThickness = 3, rounding = 1, $fn = 25, spin = 0, orient = UP, anchor = CENTER) {
+    diff()
+    cuboid(size = [backWidth, backThickness, backHeight], rounding=edgeRounding, except_edges=BACK, anchor=anchor,spin=spin,orient=orient){
+        children();
+        xcopies(n = Command_Strip_Slots, spacing = distanceBetweenSlots)
+            attach(FRONT, FRONT, inside=true, shiftout=0.01, align=TOP, inset = Command_Strip_Distance_From_Top)
+                cuboid(size = [Command_Strip_Width,Command_Strip_Depth, backHeight+0.02], rounding = 1, edges = [TOP+LEFT, TOP+RIGHT]);
+    }
+}
 module makebackPlate(backWidth, backHeight, distanceBetweenSlots, backThickness, slotStopFromBack = 13)
 {
     //slot count calculates how many slots can fit on the back. Based on internal width for buffer. 
