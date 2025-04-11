@@ -223,10 +223,14 @@ if(Show_Drawers){
     //bottom drawer
     xcopies(spacing = Core_Section_Width, n=Core_Section_Count)
         fwd(Show_Connected ? 4 : 50)
-            Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth);
+            Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth, anchor=BOT)
+                attach(FRONT, TOP)
+                    DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2);
     xcopies(spacing = Core_Section_Width, n=Core_Section_Count)
         up(40)fwd(4)
-            Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth);
+            Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth, anchor=BOT);
+    fwd(Core_Section_Depth/2 + 25 + 50)
+    DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2);
 }
 
 if(HOK_Connector_Fit_Test){
@@ -236,7 +240,31 @@ if(HOK_Connector_Fit_Test){
             HOKConnectorDeleteTool();
 }
 
-module Drawer(height_units, inside_width, Drawer_Outside_Depth){
+
+module DrawerFront(height_units, inside_width, anchor=CENTER, orient=UP, spin=0){
+    drawerFrontThickness = 3.5;
+    drawerFrontChamfer = 1;
+    drawerFrontRecess = 3.1;
+    drawer_height = height_units * Slide_Vertical_Separation - DrawerVerticalClearance;
+    drawerFrontHeightReduction = 4.5;
+
+    drawerFrontLateralClearance = 2;
+    
+    inside_width_adjusted = quant(inside_width, 42);
+    drawerOuterWidth = inside_width_adjusted + DrawerThickness*2;
+    drawerFrontWidth = drawerOuterWidth + Riser_Width/2 - drawerFrontLateralClearance*2;
+
+    tag_scope()
+    cuboid([drawerFrontWidth, drawer_height, drawerFrontThickness], chamfer = drawerFrontChamfer, edges=BOT, anchor=anchor, orient=orient, spin=spin){
+        //drawer dovetails
+        xcopies(spacing=inside_width_adjusted - 28 )
+        attach(TOP, FRONT, overlap=0.01, align=BACK, inset=drawerFrontHeightReduction)
+            cuboid([DrawerDovetailWidth+DrawerThickness*2-clearance*2, DrawerThickness+0.02, DrawerDovetailHeight*height_units - clearance], chamfer=DrawerThickness, edges=[FRONT+LEFT, FRONT+RIGHT]);
+        children();
+    }
+}
+
+module Drawer(height_units, inside_width, Drawer_Outside_Depth, anchor=CENTER, orient=UP, spin=0){
     //FORCE INSIDE TO STANDARD UNITS
     inside_width_adjusted = quant(inside_width, 42);
 
@@ -247,8 +275,9 @@ module Drawer(height_units, inside_width, Drawer_Outside_Depth){
     drawerInsideRounding = 3.75;
     drawerFrontHeightReduction = 4.5;
 
+    tag_scope()
     diff()
-    rect_tube(size = [drawerOuterWidth, Drawer_Outside_Depth], h = drawer_height, wall=DrawerThickness){
+    rect_tube(size = [drawerOuterWidth, Drawer_Outside_Depth], h = drawer_height, wall=DrawerThickness, anchor=anchor, orient=orient, spin=spin){
         attach([LEFT, RIGHT], LEFT, align=TOP, overlap=0.01, inset=Drawer_Slide_From_Top)
             Drawer_Slide(length = Drawer_Outside_Depth);
         //drawer bottom
@@ -263,13 +292,13 @@ module Drawer(height_units, inside_width, Drawer_Outside_Depth){
         attach(FRONT, FRONT, inside=true, shiftout=0.01, align=TOP, inset=-0.01)
             cuboid([drawerOuterWidth+0.02, DrawerThickness+0.02, drawerFrontHeightReduction]);
         //front drawer pull
-        attach(FRONT, FRONT, inside=true, shiftout=0.01, align=TOP, inset=-0.01)
-            cuboid([inside_width_adjusted/3, DrawerThickness+0.02, 15], 
+        attach(FRONT, FRONT, inside=true, shiftout=0.01, align=TOP, inset=drawerFrontHeightReduction-0.02)
+            cuboid([inside_width_adjusted/3, DrawerThickness+0.02, 20], 
                         //bottom rounding at 5 or maximum possible given cutout width
                         rounding = min(5,5), 
                         edges=[LEFT+BOT, RIGHT+BOT]) 
                         //top round out
-                        edge_profile_asym(TOP, corner_type="round") xflip() mask2d_roundover(2) 
+                        edge_profile_asym([TOP+LEFT, TOP+RIGHT], corner_type="round") xflip() mask2d_roundover(2) 
                         ;
         //Back cable port
         attach(BACK, FRONT, inside=true, shiftout=0.01, align=TOP, inset=-0.01)
@@ -287,6 +316,7 @@ module Drawer(height_units, inside_width, Drawer_Outside_Depth){
                         rounding = 2, 
                         edges=[LEFT+BOT, RIGHT+BOT, TOP+LEFT, TOP+RIGHT]) 
                         ;
+        children();
     }
 }
 
