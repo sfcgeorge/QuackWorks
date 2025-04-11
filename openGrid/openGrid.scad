@@ -283,13 +283,13 @@ module openGrid(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, 
 
 
 
-        calculatedCornerSquare = sqrt(tileSize^2+tileSize^2)-2*sqrt(Intersection_Distance^2/2);
+        calculatedCornerSquare = sqrt(tileSize^2+tileSize^2)-2*sqrt(Intersection_Distance^2/2)-Intersection_Distance/2;
         Tile_Inner_Size = tileSize - Tile_Inner_Size_Difference; //25mm default
         insideExtrusion = (tileSize-Tile_Inner_Size)/2-Outside_Extrusion; //0.7 default
         middleDistance = Tile_Thickness-Top_Capture_Initial_Inset*2;
         cornerChamfer = Top_Capture_Initial_Inset-Inside_Grid_Middle_Chamfer; //1.4 default
 
-
+        CalculatedCornerChamfer = sqrt(Intersection_Distance^2 / 2);
 
         
         full_tile_profile = [
@@ -306,37 +306,49 @@ module openGrid(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, 
             ];
 
         full_tile_corners_profile = [
-            [0,0],
+            [-Intersection_Distance,0],
             [Corner_Square_Thickness-cornerChamfer,0],
             [Corner_Square_Thickness,cornerChamfer],
             [Corner_Square_Thickness,Tile_Thickness-cornerChamfer],
             [Corner_Square_Thickness-cornerChamfer,Tile_Thickness],
-            [0,Tile_Thickness]
+            [-Intersection_Distance,Tile_Thickness]
 
             ];
-        path_tile = [[0,0],[tileSize+0.02,0]];
-        path_corners = [[0,0],[calculatedCornerSquare,0]];
+        path_tile = [[tileSize/2+0.02,-tileSize/2-0.01],[-tileSize/2-0.01,-tileSize/2-0.01]];
+        path_corners = [[Intersection_Distance-tileSize/2,-tileSize/2],[-tileSize/2,Intersection_Distance-tileSize/2]];
         
-        render() intersection() {
+        intersection() {
         union() {
             //old
             //move([-tileSize/2,-tileSize/2,0]) 
             //    path_sweep2d(full_tile_profile, turtle(["move", tileSize+0.01, "turn", 90], repeat=4));
             //new
             zrot_copies(n=4)
-                move([tileSize/2,-tileSize/2,0]) 
-                    path_sweep(full_tile_profile, path_tile, spin=90);
+                union() {
+                //move([tileSize/2,-tileSize/2,0]) 
+                    //color("red") path_sweep(full_tile_profile, path_tile);
+                    //color("green") 
+                    path_extrude2d(path_tile) 
+                    // mirror([1,0,0]) 
+                    polygon(full_tile_profile);
+                    //move([-calculatedCornerSquare/2,-calculatedCornerSquare/2,0])
+                    //zrot(45)
+                    // color("red") path_sweep(full_tile_corners_profile, path_corners);
+                    // color("green") 
+                    path_extrude2d(path_corners) 
+                    // mirror([1,0,0]) 
+                    polygon(full_tile_corners_profile);
+                }
             //old
             //zrot(45)
             //    move([-calculatedCornerSquare/2,-calculatedCornerSquare/2,0]) 
             //        path_sweep2d(full_tile_corners_profile, turtle(["move", calculatedCornerSquare, "turn", 90], repeat=4));
             //new
-            zrot_copies(n=4)
-                zrot(45)
-                    move([-calculatedCornerSquare/2,-calculatedCornerSquare/2,0]) 
-                        path_sweep(full_tile_corners_profile, path_corners);
-            zrot(45)
-                rect_tube(isize=[calculatedCornerSquare-1,calculatedCornerSquare-1], wall=fillBack, h=Tile_Thickness);        
+            //zrot_copies(n=4)
+                //zrot(45)
+            //zrot(45)
+
+                // rect_tube(isize=[calculatedCornerSquare-1,calculatedCornerSquare-1], wall=fillBack, h=Tile_Thickness, spin=45);        
         } 
         //rect_tube(isize = [tileSize, tileSize], wall = calculatedCornerSquare, h = Tile_Thickness);
         cube([tileSize, tileSize, Tile_Thickness], anchor = BOT);
