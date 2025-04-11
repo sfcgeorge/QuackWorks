@@ -9,6 +9,7 @@ Change Log:
 - 2025-04-08
     - Initial release
 - 2025-04-10
+    - Tile stacking added for lite tiles with updated interface layer
     -Significant performance improvements (thanks Pedro Leite!)
 
 Credit to 
@@ -43,8 +44,8 @@ Tile_Size = 28;
 //Thickness of the tile (full only)
 Tile_Thickness = 6.8;
 
-/*[Tile Stacking - Full Tile Only]*/
-//Full Tile Only - Lite tiles coming soon
+/*[Tile Stacking]*/
+//Stacking more than 6 tiles may time out. Desktop version recommended for larger stacks.
 Stack_Count = 1;
 //Thickness of the interface between tiles. This is the distance between the top of the tile and the bottom of the next tile.
 Interface_Thickness = 0.4; 
