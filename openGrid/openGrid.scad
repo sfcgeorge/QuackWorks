@@ -6,8 +6,10 @@ This code is Licensed Creative Commons 4.0 Attribution Non-Commercial Share-Alik
 Derived parts are licensed Creative Commons 4.0 Attribution (CC-BY)
 
 Change Log:
-- 2025- 
+- 2025-04-08
     - Initial release
+- 2025-04-10
+    -Significant performance improvements (thanks Pedro Leite!)
 
 Credit to 
     @David D on Printables for openGrid https://www.printables.com/@DavidD
@@ -265,10 +267,7 @@ module openGrid(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, 
     }
     //END CUTOUT TOOL
 
-    //BEGIN APROACH 1 - 2D Extrusion
-    //This Render_Method takes the profile of the long ways and corners and sweeps them around the tile. The profiles attempt to derive the points from the variables in the original design. 
     module openGridTileAp1(tileSize = 28, Tile_Thickness = 6.8){
-        //Begin Tile Profile
         Tile_Thickness = Tile_Thickness;
         
         Outside_Extrusion = 0.8;
@@ -279,7 +278,6 @@ module openGrid(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, 
         Intersection_Distance = 4.2;
 
         Tile_Inner_Size_Difference = 3;
-        fillBack=5; //fillback is needed for the corners to fill gaps that would otherwise be in the corners.
 
 
 
@@ -290,7 +288,9 @@ module openGrid(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, 
         cornerChamfer = Top_Capture_Initial_Inset-Inside_Grid_Middle_Chamfer; //1.4 default
 
         CalculatedCornerChamfer = sqrt(Intersection_Distance^2 / 2);
+        cornerOffset = CalculatedCornerChamfer + Corner_Square_Thickness; //5.56985 (half of 11.1397)
 
+        CorderSquareWidth = sqrt(Corner_Square_Thickness^2 + Corner_Square_Thickness^2)+Intersection_Distance;
         
         full_tile_profile = [
             [0,0],
@@ -304,120 +304,33 @@ module openGrid(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, 
             [Outside_Extrusion+insideExtrusion-Inside_Grid_Top_Chamfer,Tile_Thickness],
             [0,Tile_Thickness]
             ];
-
         full_tile_corners_profile = [
-            [-Intersection_Distance,0],
-            [Corner_Square_Thickness-cornerChamfer,0],
-            [Corner_Square_Thickness,cornerChamfer],
-            [Corner_Square_Thickness,Tile_Thickness-cornerChamfer],
-            [Corner_Square_Thickness-cornerChamfer,Tile_Thickness],
-            [-Intersection_Distance,Tile_Thickness]
+            [0,0],
+            [cornerOffset-cornerChamfer,0],
+            [cornerOffset,cornerChamfer],
+            [cornerOffset,Tile_Thickness-cornerChamfer],
+            [cornerOffset-cornerChamfer,Tile_Thickness],
+            [0,Tile_Thickness]
 
             ];
-        path_tile = [[tileSize/2+0.02,-tileSize/2-0.01],[-tileSize/2-0.01,-tileSize/2-0.01]];
-        path_corners = [[Intersection_Distance-tileSize/2,-tileSize/2],[-tileSize/2,Intersection_Distance-tileSize/2]];
+        
+        path_tile = [[tileSize/2,-tileSize/2],[-tileSize/2,-tileSize/2]];
         
         intersection() {
         union() {
-            //old
-            //move([-tileSize/2,-tileSize/2,0]) 
-            //    path_sweep2d(full_tile_profile, turtle(["move", tileSize+0.01, "turn", 90], repeat=4));
-            //new
             zrot_copies(n=4)
                 union() {
-                //move([tileSize/2,-tileSize/2,0]) 
-                    //color("red") path_sweep(full_tile_profile, path_tile);
-                    //color("green") 
                     path_extrude2d(path_tile) 
-                    // mirror([1,0,0]) 
-                    polygon(full_tile_profile);
-                    //move([-calculatedCornerSquare/2,-calculatedCornerSquare/2,0])
-                    //zrot(45)
-                    // color("red") path_sweep(full_tile_corners_profile, path_corners);
-                    // color("green") 
-                    path_extrude2d(path_corners) 
-                    // mirror([1,0,0]) 
-                    polygon(full_tile_corners_profile);
+                        polygon(full_tile_profile);
+                    move([-tileSize/2,-tileSize/2])
+                        rotate([0,0,45])
+                            back(cornerOffset)
+                                rotate([90,0,0])
+                                    linear_extrude(cornerOffset*2) 
+                                        polygon(full_tile_corners_profile);
                 }
-            //old
-            //zrot(45)
-            //    move([-calculatedCornerSquare/2,-calculatedCornerSquare/2,0]) 
-            //        path_sweep2d(full_tile_corners_profile, turtle(["move", calculatedCornerSquare, "turn", 90], repeat=4));
-            //new
-            //zrot_copies(n=4)
-                //zrot(45)
-            //zrot(45)
-
-                // rect_tube(isize=[calculatedCornerSquare-1,calculatedCornerSquare-1], wall=fillBack, h=Tile_Thickness, spin=45);        
         } 
-        //rect_tube(isize = [tileSize, tileSize], wall = calculatedCornerSquare, h = Tile_Thickness);
         cube([tileSize, tileSize, Tile_Thickness], anchor = BOT);
         }
     }
-    //END TILE Approach 1
-
 }
-
-/*
-//APPROACH 2 (slower) - 3D Shapes - This method uses the 3D shapes to create the tile. This method is slower but can be more accurate and easier to understand.
-module wonderboardTileAp2(chamfer_edges = []){
-    Tile_Thickness = 6.8;
-    Intersection_Distance = 4.2;
-
-    tag_scope()
-    diff()
-        cuboid([tileSize+0.02,tileSize+0.02,Tile_Thickness], chamfer=Intersection_Distance, edges=chamfer_edges, except=[TOP, BOT], anchor=BOT)
-            attach(BOT, BOT, inside=true, shiftout=0.01)
-                wonderboardTileDeleteToolAp2();
-}
-
-module wonderboardTileDeleteToolAp2(){
-    //Begin Tile Profile
-    Tile_Thickness = 6.8;
-    
-    Outside_Extrusion = 0.8;
-    Inside_Grid_Top_Chamfer = 0.4;
-    Inside_Grid_Middle_Chamfer = 1;
-    Top_Capture_Initial_Inset = 2.4;
-    Corner_Square_Thickness = 2.6;
-    Intersection_Distance = 4.2;
-
-    Tile_Inner_Size_Difference = 3;
-
-    //Render_Method 2
-    calculatedCornerSquare = sqrt(tileSize^2+tileSize^2)-2*sqrt(Intersection_Distance^2/2);
-    Tile_Inner_Size = tileSize - Tile_Inner_Size_Difference; //25mm default
-    insideExtrusion = (tileSize-Tile_Inner_Size)/2-Outside_Extrusion; //0.7 default
-    middleDistance = Tile_Thickness-Top_Capture_Initial_Inset*2;
-    cornerChamfer = Top_Capture_Initial_Inset-Inside_Grid_Middle_Chamfer; //1.4 default
-
-
-
-    intersection() {
-        //bottom chamfer
-        render(convexity=1)
-        prismoid(h=Inside_Grid_Top_Chamfer, size1 = [Tile_Inner_Size+Inside_Grid_Top_Chamfer*2,Tile_Inner_Size+Inside_Grid_Top_Chamfer*2], size2=[Tile_Inner_Size,Tile_Inner_Size], anchor=BOT)
-            //bottom cuboid
-            attach(TOP, BOT) cuboid([Tile_Inner_Size,Tile_Inner_Size,Top_Capture_Initial_Inset-Inside_Grid_Middle_Chamfer-Inside_Grid_Top_Chamfer+0.02])
-                //middle lower chamfer
-                attach(TOP, BOT) prismoid(size1 = [Tile_Inner_Size, Tile_Inner_Size], size2 = [Tile_Inner_Size+insideExtrusion*2, Tile_Inner_Size+insideExtrusion*2], h = Inside_Grid_Middle_Chamfer+0.02)
-                    //middle straight section
-                    attach(TOP, BOT) cuboid([Tile_Inner_Size+insideExtrusion*2, Tile_Inner_Size+insideExtrusion*2, middleDistance+0.02])
-                        //middle upper chamfer
-                        attach(TOP, BOT) prismoid(size2 = [Tile_Inner_Size, Tile_Inner_Size], size1 = [Tile_Inner_Size+insideExtrusion*2, Tile_Inner_Size+insideExtrusion*2], h = Inside_Grid_Middle_Chamfer+0.02)
-                            //Top Cuboid
-                            attach(TOP, BOT) cuboid([Tile_Inner_Size,Tile_Inner_Size,Top_Capture_Initial_Inset-Inside_Grid_Middle_Chamfer-Inside_Grid_Top_Chamfer+0.02])
-                                //Top chamfer
-                                attach(TOP, BOT) prismoid(h=Inside_Grid_Top_Chamfer, size2 = [Tile_Inner_Size+Outside_Extrusion,Tile_Inner_Size+Outside_Extrusion], size1=[Tile_Inner_Size,Tile_Inner_Size]);
-        zrot(45)
-        //corner square
-            prismoid(h=cornerChamfer+0.01, size1=[calculatedCornerSquare-Corner_Square_Thickness*2+cornerChamfer*2,calculatedCornerSquare-Corner_Square_Thickness*2+cornerChamfer*2], size2 = [calculatedCornerSquare-Corner_Square_Thickness*2,calculatedCornerSquare-Corner_Square_Thickness*2])
-                attach(TOP, BOT, overlap=0.01)
-                    cuboid([calculatedCornerSquare-Corner_Square_Thickness*2, calculatedCornerSquare-Corner_Square_Thickness*2, Tile_Thickness-cornerChamfer*2+0.02])
-                        attach(TOP, BOT, overlap=0.01)
-                            prismoid(h=cornerChamfer+0.01, size2=[calculatedCornerSquare-Corner_Square_Thickness*2+cornerChamfer*2,calculatedCornerSquare-Corner_Square_Thickness*2+cornerChamfer*2], size1 = [calculatedCornerSquare-Corner_Square_Thickness*2,calculatedCornerSquare-Corner_Square_Thickness*2]);
-
-
-    }
-}
-*/
