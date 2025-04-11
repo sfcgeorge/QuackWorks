@@ -34,7 +34,7 @@ End_Style = "Rounded"; //[Rounded, Oct, Hex - Coming Soon, Rounded Square - Comi
 Rounded_Square_Rounding = 50;
 
 /*[Drawers]*/
-
+Drawer_Pull_Screw_Diameter = 3;
 
 /*[Options]*/
 //Additional reach of top plate support built into the baseplate. 1 = 1 openGrid unit.
@@ -224,13 +224,14 @@ if(Show_Drawers){
     xcopies(spacing = Core_Section_Width, n=Core_Section_Count)
         fwd(Show_Connected ? 4 : 50)
             Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth, anchor=BOT)
+                if(Show_Connected)
                 attach(FRONT, TOP)
                     DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2);
     xcopies(spacing = Core_Section_Width, n=Core_Section_Count)
         up(40)fwd(4)
             Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth, anchor=BOT);
     fwd(Core_Section_Depth/2 + 25 + 50)
-    DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2);
+        DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2);
 }
 
 if(HOK_Connector_Fit_Test){
@@ -254,12 +255,17 @@ module DrawerFront(height_units, inside_width, anchor=CENTER, orient=UP, spin=0)
     drawerOuterWidth = inside_width_adjusted + DrawerThickness*2;
     drawerFrontWidth = drawerOuterWidth + Riser_Width/2 - drawerFrontLateralClearance*2;
 
-    tag_scope()
+    diff()
     cuboid([drawerFrontWidth, drawer_height, drawerFrontThickness], chamfer = drawerFrontChamfer, edges=BOT, anchor=anchor, orient=orient, spin=spin){
         //drawer dovetails
+        tag("keep")
         xcopies(spacing=inside_width_adjusted - 28 )
         attach(TOP, FRONT, overlap=0.01, align=BACK, inset=drawerFrontHeightReduction)
             cuboid([DrawerDovetailWidth+DrawerThickness*2-clearance*2, DrawerThickness+0.02, DrawerDovetailHeight*height_units - clearance], chamfer=DrawerThickness, edges=[FRONT+LEFT, FRONT+RIGHT]);
+        //drawer pull screw hole
+        tag("remove")
+        attach(TOP, BOT, inside = true, shiftout=0.01)
+            cyl(d=Drawer_Pull_Screw_Diameter, h = drawerFrontThickness + 0.02, $fn = 25);
         children();
     }
 }
