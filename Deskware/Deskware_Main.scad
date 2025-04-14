@@ -290,14 +290,14 @@ module mw_plate_1(){
 
 //Plate 2 - Risers and Backer
 module mw_plate_2(){
-    widthOfAllRisers = (Core_Section_Count + 1) * (Riser_Width+5);
-    widthOfAllBackers = Core_Section_Count * (Backer_Height + 5);
+    widthOfAllRisers = (2) * (Riser_Width+5); //removed dynamic riser adds based on core count (to keep render times down)
+    widthOfAllBackers = 1 * (Backer_Height + 5); //removed dynamic riser adds based on core count (to keep render times down)
 
     left(widthOfAllRisers/2)
-    xcopies(spacing = Riser_Width+5, n = Core_Section_Count + 1)
+    xcopies(spacing = Riser_Width+5, n = 2)
         Riser(orient=DOWN, anchor=TOP) ;
     right(widthOfAllBackers/2)
-        xcopies(spacing = Backer_Height + 5, n=Core_Section_Count)
+        xcopies(spacing = Backer_Height + 5, n=1)
             zrot(90)
                 Backer(orient=BACK, anchor=BACK);
 }
@@ -353,6 +353,7 @@ module mw_plate_8(){
         DrawerFront(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2);
     }
 }
+
 
 //END MAKERWORLD PLATING
 
@@ -480,8 +481,9 @@ module TopPlateEndSquared(width, depth, thickness, radius = 50, half = LEFT){
             topPlateBuilder(totalHeight = thicknessAdjusted, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer)
                 rect([width,depthAdjusted], rounding = [radius,radius,radius,radius]);
             tag("remove")
-                xcopies(spacing = TopPlateTabWidth+TabDistanceFromOutsideEdge*2)
-                    TopPlateTab(height = TabProtrusionHeight, deleteTool = true);
+               up(TabProtrusionHeight/2-0.01)
+               xcopies(spacing = TopPlateTabWidth+TabDistanceFromOutsideEdge*2)
+                    TopPlateTab(height = TabProtrusionHeight, deleteTool = true, anchor=BOT);
     }
 }
 
@@ -495,7 +497,8 @@ module TopPlateEndRoundNew(depth, thickness, half = LEFT){
             topPlateBuilder(totalHeight = thicknessAdjusted, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer)
                 ellipse(d=depthAdjusted);
         tag("remove")
-            xcopies(spacing = TopPlateTabWidth+TabDistanceFromOutsideEdge*2)
+            up(TabProtrusionHeight/2-0.01)
+            #xcopies(spacing = TopPlateTabWidth+TabDistanceFromOutsideEdge*2)
                 TopPlateTab(height = TabProtrusionHeight, deleteTool = true);
     }
 }
