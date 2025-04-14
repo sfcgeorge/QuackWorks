@@ -26,6 +26,7 @@ Core_Section_Width = 196; //[112:84:952]
 Core_Section_Depth = 196.5; //[56.5:28:840.5]
 //Height of the core section from the bottom of the riser to the bottom of the base plate (Note: Drawers take 40mm of vertical space)
 Core_Section_Height = 80; //[40:40:640]
+//DISPLAY PURPOSES ONLY - The output will always contain the parts needed for 1 core. For extra cores, simply print 1 more of the following: 1 Riser, 1 Backer, 1 Baseplate, 1 Top plate
 Core_Section_Count = 1; //[1:1:8]
 
 /*[Ends]*/
@@ -35,7 +36,13 @@ Rounded_Square_Rounding = 50;
 
 
 /*[Drawers]*/
+Drawer_Pull_Type = "Screw Holes - Single"; //[Screw Holes - Single, Screw Holes - Double]
 Drawer_Pull_Screw_Diameter = 5;
+//Distance from screw hole centers if using double-screw drawer pulls
+Drawer_Pull_Double_Screw_Hole_Distance_from_Center = 75;
+//Adjust the height (mm) of the drawer pull holes up(positive) or down (negative)
+Drawer_Pull_Height_Adjustement = 0;
+
 
 /*[Options]*/
 //Additional reach of top plate support built into the baseplate. 1 = 1 openGrid unit.
@@ -154,6 +161,10 @@ Drawer_Outside_Depth = quantdn(Core_Section_Depth - sideCutoutDepth - clearance,
 Drawer_Slide_From_Top = Slide_Vertical_Separation - Slide_Distance_From_Bottom - Slide_Height-Slide_Clearance-DrawerVerticalClearance+clearance;
 DrawerDovetailWidth = 10;
 DrawerDovetailHeight = 25;
+DrawerPullHoleCount = 
+    Drawer_Pull_Type == "Screw Holes - Single" ? 1 :
+    Drawer_Pull_Type == "Screw Holes - Double" ? 2 :
+    0;
 
 //Bed Size Calculations
 availablePrintVolume = 
@@ -233,21 +244,32 @@ module mw_assembly_view() {
     if(Show_Drawers){
         //bottom drawer
         up(DrawerSlideHeightMicroadjustement)
-        zcopies(spacing = 40, sp=0)
         xcopies(spacing = Core_Section_Width, n=Core_Section_Count)
             fwd(Show_Connected ? 8.5 : 50)
-                Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth, anchor=BOT)
-                    //drawer fronts
-                    if(Show_Connected)
-                    attach(FRONT, TOP)
-                        DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2);
+                if($idx == 0){
+                    zcopies(spacing = 40, sp=0)
+                    Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth, anchor=BOT)
+                        //drawer fronts
+                        if(Show_Connected)
+                        attach(FRONT, TOP)
+                            DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2);
+                }
+                else
+                    Drawer(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth, anchor=BOT)
+                        //drawer fronts
+                        if(Show_Connected)
+                        attach(FRONT, TOP)
+                            DrawerFront(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2);
         //drawer fronts if not connected
         if(!Show_Connected)
             up(DrawerSlideHeightMicroadjustement)
             fwd(Core_Section_Depth/2 + 25 + 60)
                 xcopies(spacing = Core_Section_Width, n=Core_Section_Count)
+                    if($idx == 0)
                     ycopies(spacing = 40)
                         DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2);
+                    else
+                        DrawerFront(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2);
     }
 
     if(HOK_Connector_Fit_Test){
@@ -313,20 +335,23 @@ module mw_plate_5(){
 
 }
 
-//Plate 6 - Drawer 1
+//Plate 6 - Drawer 1 Unit High
 module mw_plate_6(){
     Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth, anchor=BOT);
 }
 
-//Plate 7 - Drawer 2
+//Plate 7 - Drawer 2 Units High
 module mw_plate_7(){
-    Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth, anchor=BOT);
+    Drawer(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth, anchor=BOT);
+
 }
 
 //Plate 8 - Drawer Fronts
 module mw_plate_8(){
-    ycopies(spacing = 45, n = 2)
-    DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2);
+    ydistribute(sizes=[40, 80], spacing = 5){
+        DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2);
+        DrawerFront(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2);
+    }
 }
 
 //END MAKERWORLD PLATING
@@ -344,6 +369,7 @@ module DrawerFront(height_units, inside_width, anchor=CENTER, orient=UP, spin=0)
     drawerOuterWidth = inside_width_adjusted + DrawerThickness*2;
     drawerFrontWidth = drawerOuterWidth + Riser_Width - drawerFrontLateralClearance*2;
 
+    tag_scope()
     diff()
     cuboid([drawerFrontWidth, drawer_height, drawerFrontThickness], chamfer = drawerFrontChamfer, edges=BOT, anchor=anchor, orient=orient, spin=spin){
         //drawer dovetails
@@ -351,10 +377,12 @@ module DrawerFront(height_units, inside_width, anchor=CENTER, orient=UP, spin=0)
         xcopies(spacing=inside_width_adjusted - 28 )
         attach(TOP, FRONT, overlap=0.01, align=BACK, inset=drawerFrontHeightReduction)
             cuboid([DrawerDovetailWidth+DrawerThickness*2-clearance*2, DrawerThickness+0.02, DrawerDovetailHeight*height_units - clearance], chamfer=DrawerThickness, edges=[FRONT+LEFT, FRONT+RIGHT]);
-        //drawer pull screw hole
+        //drawer pull screw hole(s)
         tag("remove")
-        attach(TOP, BOT, inside = true, shiftout=0.01)
-            cyl(d=Drawer_Pull_Screw_Diameter, h = drawerFrontThickness + 0.02, $fn = 25);
+            back(Drawer_Pull_Height_Adjustement)
+            xcopies(spacing = Drawer_Pull_Double_Screw_Hole_Distance_from_Center, n=DrawerPullHoleCount)
+            attach(TOP, BOT, inside = true, shiftout=0.01)
+                cyl(d=Drawer_Pull_Screw_Diameter, h = drawerFrontThickness + 0.02, $fn = 25);
         children();
     }
 }
@@ -411,6 +439,12 @@ module Drawer(height_units, inside_width, Drawer_Outside_Depth, anchor=CENTER, o
                         rounding = 2, 
                         edges=[LEFT+BOT, RIGHT+BOT, TOP+LEFT, TOP+RIGHT]) 
                         ;
+        //drawer pull screw hole(s)
+        tag("remove")
+            up(Drawer_Pull_Height_Adjustement)
+            xcopies(spacing = Drawer_Pull_Double_Screw_Hole_Distance_from_Center, n=DrawerPullHoleCount)
+            attach(FRONT, BOT, inside = true, shiftout=0.01)
+                cyl(d=Drawer_Pull_Screw_Diameter, h = DrawerThickness + 0.02, $fn = 25);
         children();
     }
 }
