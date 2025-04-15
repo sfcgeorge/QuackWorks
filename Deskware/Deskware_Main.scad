@@ -14,16 +14,18 @@ Change Log:
 Credit to 
     @David D on Printables for openGrid
     Katie and her community at Hands on Katie on Youtube, Patreon, and Discord
+    Pedro Leite for openGrid optimization
 */
 
 include <BOSL2/std.scad>
 include <BOSL2/rounding.scad>
+include <BOSL2/joiners.scad>
 
 /*[Core Section Dimensions]*/
 //Width (in mm) from riser to riser measured from the center
 Core_Section_Width = 196; //[112:84:952]
 //Depth (in mm) from front of the riser to the rear of the backer (top plate will stick out a little more)
-Core_Section_Depth = 196.5; //[56.5:28:840.5]
+Core_Section_Depth = 196.5; //[112.5:28:840.5]
 //Height of the core section from the bottom of the riser to the bottom of the base plate (Note: Drawers take 40mm of vertical space)
 Core_Section_Height = 80; //[40:40:640]
 //DISPLAY PURPOSES ONLY - The output will always contain the parts needed for 1 core. For extra cores, simply print 1 more of the following: 1 Riser, 1 Backer, 1 Baseplate, 1 Top plate
@@ -56,7 +58,7 @@ Show_Risers = true;
 Show_Backer = true;
 Show_Top_Plate = true;
 Show_Drawers = true;
-HOK_Connector_Fit_Test = false;
+Connector_Fit_Tests = false;
 
 
 /*[Debug]*/
@@ -119,12 +121,22 @@ Backer_Thickness = 12.5;
 //these are the cutouts that allow the riser to overlap with the backer
 sideCutoutDepth = 3.65;
 sideCutoutWidth = Riser_Width/2+clearance;
+Backer_To_Riser_Tab_Inset = 2;
+Backer_To_Riser_Tab_Depth = 8;
 
 //Baseplate parameters
 Grid_Min_Side_Clearance = Riser_Width/2;
 Grid_Min_FrontBack_Clearance = 2;
 Tile_Thickness = 11.5;
 Baseplate_Bottom_Chamfer = 5;
+
+//Baseplate Dovetails
+Dovetail_Spacing = 40;
+Dovetail_Depth = 3.15;
+Dovetail_Width = 10;
+Dovetail_Height = 9;
+Dovetail_Chamfer = 0.6;
+Dovetail_Slop = 0.1;
 
 //Baseplate to top plate interface parameters
 //The chamfer depth and height of the outermost chamfer on the base plate
@@ -272,11 +284,23 @@ module mw_assembly_view() {
                         DrawerFront(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2);
     }
 
-    if(HOK_Connector_Fit_Test){
+    if(Connector_Fit_Tests){
         diff()
-        cube([19,5,18])
+        cube([19,5,18], anchor=BOT)
             attach(TOP, BOT, inside=true, shiftout=0.01)
                 HOKConnectorDeleteTool();
+        
+        move([10,20])
+            Dovetail_Male(anchor=UP, orient=DOWN);
+
+        ycopies(spacing = Dovetail_Width+5)
+        
+        diff()
+        move([-10,20])
+            zrot($idx == 0 ? 180 : 0)
+            cuboid([Dovetail_Width+4,Dovetail_Width,Dovetail_Depth+1], anchor=BOT)
+                attach(TOP, BACK, align = FRONT, inside=true) 
+                        Dovetail_Female();
     }
 }
 
@@ -614,7 +638,12 @@ module baseplateEndSquaredNew(width = 120, depth = 207, height = 19, radius = 50
                     tag("keep")
                     down(Top_Bot_Plates_Interface_Chamfer)
                     attach(TOP, TOP, inside=true, align=RIGHT)
-                        cuboid([20,28*4,height - 4], chamfer=height-Tile_Thickness, edges=TOP, except_edges=RIGHT);
+                        cuboid([20,28*4,height - 4], chamfer=height-Tile_Thickness, edges=TOP, except_edges=RIGHT)
+                            tag("HOKConnectors")
+                            attach(RIGHT, BOT, inside=true, shiftout = 0.01, align=TOP) 
+                                    xcopies(spacing = Dovetail_Spacing)
+                                        Dovetail_Female();
+                                    //dovetail("female", slide=Dovetail_Depth, width=Dovetail_Width, height=Dovetail_Height,chamfer=0.6);
                 //top plate tabs
                 tag("keep")
                 attach(BOT, BOT, inside=true, shiftout=0.01, align=RIGHT, inset=TabDistanceFromOutsideEdge)
@@ -625,6 +654,18 @@ module baseplateEndSquaredNew(width = 120, depth = 207, height = 19, radius = 50
                     xcopies(spacing=HOK_Connector_Spacing_Depth)
                     //zrot(90)
                         HOKConnectorDeleteTool();
+                //openGrid
+                /* disabling for now due to print orientation challenges
+                tag("r1")
+                    attach(BOT, BOT, inside=true, align=RIGHT)
+                    ycopies(spacing = openGridSize*5)
+                    up(Tile_Thickness-4+0.02) left(openGridSize/2 - clearance)
+                        cube([openGridSize,openGridSize,height])
+                            tag("keep")                                
+                                
+                                attach(BOT, BOT, inside=true, align=RIGHT)
+                                    openGridLite(Board_Width = 1, Board_Height = 1);
+                */
                 children();
             }
     }
@@ -708,8 +749,8 @@ module BasePlateEndRounded(width, depth, height = 19, half = LEFT, style="Oct"){
         style == "Hex" ? depth * sqrt(3) / 1.5 +1: depth;
 
     half_of(half, s = adjusted_diameter*2 + 5)
-    diff("HOKConnectors", "k1")
-    diff("r1", "keep HOKConnectors"){
+    diff("HOKConnectors Dovetails", "k1")
+    diff("r1", "keep HOKConnectors Dovetails"){
         //main plate
         cyl(d=adjusted_diameter, h= height+Top_Bot_Plates_Interface_Chamfer, anchor=BOT){
             //bot chamfer
@@ -741,7 +782,14 @@ module BasePlateEndRounded(width, depth, height = 19, half = LEFT, style="Oct"){
                 tag("keep")
                 down(Top_Bot_Plates_Interface_Chamfer)
                 attach(TOP, TOP, inside=true)
-                    cuboid([28*2.5-2,28*4,height - 4], chamfer=height-Tile_Thickness, edges=[TOP]);
+                    cuboid([28*2.5-2,28*4,height - 4], chamfer=height-Tile_Thickness, edges=[TOP])
+                    //dovetails
+                    right(half == LEFT ? -4.5 : 4.5)zrot(half == LEFT ? 90 : -90)
+                    tag("Dovetails")
+                        attach(TOP, BACK, inside=true, shiftout = 0.01) 
+                            xcopies(spacing = Dovetail_Spacing)
+                                Dovetail_Female();
+                                //dovetail("female", slide=Dovetail_Depth, width=Dovetail_Width, height=Dovetail_Height,chamfer=Dovetail_Chamfer);
         }
     }
 }
@@ -753,8 +801,8 @@ module BasePlateCore(width, depth, height = 19, spin = 0, orient = UP, anchor=CE
     Grid_Width_mm = Available_Grid_Width_Units * openGridSize;
     Grid_Depth_mm = Available_Grid_Depth_Units * openGridSize;
 
-    diff("HOKConnectors", "k1")
-        diff("r1", "keep HOKConnectors"){
+    diff("HOKConnectors Dovetails", "k1")
+        diff("r1", "keep HOKConnectors Dovetails"){
         //main plate
         cuboid([width-clearance*2, depth, height + Top_Bot_Plates_Interface_Chamfer], chamfer=Baseplate_Bottom_Chamfer, edges=BOT+FRONT, anchor=BOT, spin=0,orient=UP){
             //top chamfer
@@ -780,7 +828,22 @@ module BasePlateCore(width, depth, height = 19, spin = 0, orient = UP, anchor=CE
             tag_this("keep")
             down(Top_Bot_Plates_Interface_Chamfer)
                 attach(TOP, TOP, inside=true, align=[LEFT, RIGHT])
-                    cuboid([28*(Additional_Top_Plate_Support + 0.5),28*4,height - 6.8], chamfer=height-Tile_Thickness, edges=[TOP], except=$idx == 0 ? LEFT : RIGHT);
+                    cuboid([28*(Additional_Top_Plate_Support + 0.5),28*4,height - 6.8], chamfer=height-Tile_Thickness, edges=[TOP], except=$idx == 0 ? LEFT : RIGHT){
+                        //dovetail
+                        tag("Dovetails")
+                            attach($idx == 0 ? LEFT : RIGHT, BOT, inside=true, shiftout = 0.01, align=TOP) 
+                                xcopies(spacing = Dovetail_Spacing)
+                                Dovetail_Female();
+                        //display-only male dovetails
+                        if(Show_Connected){
+                            #tag("keep")
+                            back($idx == 0 ? Dovetail_Width/2 : -Dovetail_Width/2)
+                                attach(TOP, TOP, inside=true, shiftout = 0.01, align=$idx == 0 ? LEFT : RIGHT, inset = 0) 
+                                    ycopies(spacing = Dovetail_Spacing)
+                                        zrot(90)
+                                            Dovetail_Male();
+                        }
+                    }
             children();
         
             //HOK connector cutouts back
@@ -813,19 +876,23 @@ module Backer(anchor=BOT, spin=0, orient=UP){
 
     Grid_Dist_From_Bot = 2;
     Grid_Min_Side_Clearance = Riser_Width/2;
+    minimumTopSpacing = 17;
 
 
 
     Available_Grid_Width_Units = quantdn((Backer_Width-Grid_Min_Side_Clearance*2)/openGridSize, 1);
-    Available_Grid_Height = quantdn((Backer_Height-Grid_Dist_From_Bot)/openGridSize, 1);
+    Available_Grid_Height = quantdn((Backer_Height-Grid_Dist_From_Bot-minimumTopSpacing)/openGridSize, 1);
     
+
         //main body
-        diff(){
+        diff("HOKConnector", "k1")
+        diff("remove", "keep HOKConnector"){
             cuboid([Backer_Width-clearance*2, Backer_Thickness, Backer_Height], anchor=anchor, orient=orient, spin=spin){
                 //clear space for opengrid
+                //if(Available_Grid_Height>0)
                 up(Grid_Dist_From_Bot)
                     attach(BACK, BOT, inside=true, align=BOT, shiftout=0.01) 
-                        cuboid([Available_Grid_Width_Units*openGridSize-0.02, Available_Grid_Height*openGridSize -0.02, Backer_Thickness+0.02]);
+                        cuboid([Available_Grid_Width_Units*openGridSize-0.02, Available_Grid_Height > 0 ? Available_Grid_Height*openGridSize -0.02 : Backer_Height - minimumTopSpacing - Grid_Dist_From_Bot, Backer_Thickness+0.02]);
                 //opengrid
                 tag("keep")
                 up(Grid_Dist_From_Bot)
@@ -835,10 +902,16 @@ module Backer(anchor=BOT, spin=0, orient=UP){
                 attach(FRONT, FRONT, inside=true, shiftout=0.01, align=[LEFT, RIGHT])
                     cuboid([sideCutoutWidth,sideCutoutDepth,Backer_Height+0.02]);
                 //HOK Connector cutouts
+                tag("HOKConnector")
                 attach(TOP, BOT, inside=true, shiftout=0.01, align=BACK) 
                     fwd(HOK_Connector_Inset-HOK_Connector_Thickness/2)
                     xcopies(spacing = HOK_Connector_Spacing_Depth)
                         HOKConnectorDeleteTool(anchor=CENTER);
+                //Riser Tabs
+                tag("keep")
+                attach(BACK, BOT, align=[LEFT, RIGHT], inset=Backer_To_Riser_Tab_Inset-clearance, inside=true)
+                    TopPlateTab(height = Backer_Thickness - sideCutoutDepth + Backer_To_Riser_Tab_Depth, deleteTool = false);
+
                 children();
             }
         }          
@@ -860,9 +933,26 @@ module Riser(anchor=BOT, spin=0, orient=UP){
                 grid_copies(spacing=[HOK_Connector_Inset*2-clearance,HOK_Connector_Spacing_Depth])
                 zrot(90)
                     HOKConnectorDeleteTool();
+            xcopies(spacing = TopPlateTabWidth + Backer_To_Riser_Tab_Inset*2)
+            attach(BACK, BOT, inside=true, shiftout=0.01)
+                    TopPlateTab(height = Backer_To_Riser_Tab_Depth + clearance, deleteTool = true);
             children();
         }
     }
+}
+
+
+module Dovetail_Male(anchor=CENTER, spin = 0, orient = UP){
+    attachable(anchor, spin, orient, size=[Dovetail_Width,Dovetail_Height*2,Dovetail_Depth]){
+        mirror_copy([0,1,0])
+            dovetail("male", slide=Dovetail_Depth-0.6, width=Dovetail_Width, height=Dovetail_Height,chamfer=Dovetail_Chamfer, taper = -10, slope = 4, anchor=BOT, orient=FRONT);
+        children();
+    }
+}
+
+module Dovetail_Female(anchor=BOT, spin = 0, orient = DOWN){
+    dovetail("female", slide=Dovetail_Depth, width=Dovetail_Width, height=Dovetail_Height, chamfer=Dovetail_Chamfer, slope = 4, taper = -10, $slop = 0, anchor=anchor, spin=spin, orient=orient)
+        children();
 }
 
 module Drawer_Slide(length = Riser_Depth+0.02, deleteTool = false, anchor=CENTER, spin=0, orient=UP){
