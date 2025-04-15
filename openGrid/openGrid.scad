@@ -78,7 +78,20 @@ module interfaceLayer(Board_Width, Board_Height, tileSize = 28, Tile_Thickness =
         projection(cut=true)
             interfaceLayer2D(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = tileSize, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Bevels = Bevels, boardType = boardType);
 }
-
+/*
+projection(cut=true)
+down(0.01)openGridLite(
+                    Board_Width = Board_Width,
+                    Board_Height = Board_Height,
+                    tileSize = 28,
+                    Screw_Mounting = Screw_Mounting,
+                    Bevels = Bevels,
+                    Connector_Holes = Connector_Holes,
+                    anchor=BOT,
+                    orient=UP
+                );
+*/
+//create a 2d profile of the interface layer to be extruded later. This is used to create the interface layer between tiles.
 module interfaceLayer2D(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, Screw_Mounting = "None", Bevels = "None", Connector_Holes = false, anchor=CENTER, spin=0, orient=UP, boardType = "Full", topSide = false){
     linear_extrude(height = Interface_Thickness) 
         projection(cut=true)
