@@ -11,6 +11,8 @@ Change Log:
 - 2025-04-10
     - Tile stacking added for lite tiles with updated interface layer
     -Significant performance improvements (thanks Pedro Leite!)
+- 2025-04-15
+    - Tile stacking for ironing mode (vs. interface layer)
 
 Credit to 
     @David D on Printables for openGrid https://www.printables.com/@DavidD
@@ -47,10 +49,15 @@ Tile_Thickness = 6.8;
 /*[Tile Stacking]*/
 //Stacking more than 6 tiles may time out. Desktop version recommended for larger stacks.
 Stack_Count = 1;
+//Use Interface Layer if you have a multimaterial printer or AMS to alternative PLA and PETG. Use Ironing for single-material printing and ironing of top-layer.
+Stacking_Method = "Interface Layer";//[Interface Layer, Ironing - BETA]
 //Thickness of the interface between tiles. This is the distance between the top of the tile and the bottom of the next tile.
 Interface_Thickness = 0.4; 
 //Distance between the interface and the tile. This is the distance between the top of the tile and the bottom of the interface. Try to use a multiple of the layer height when combined with the interface thickness.
-Interface_Separation = 0.1;
+Interface_Separation = 0.1; 
+
+adjustedInterfaceThickness = 
+    Stacking_Method == "Interface Layer" ? Interface_Thickness : 0;
 
 //GENERATE TILES
 if(Full_or_Lite == "Full" && Stack_Count == 1) openGrid(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Bevels = Bevels, anchor=BOT, Connector_Holes = Connector_Holes);
@@ -58,19 +65,21 @@ if(Full_or_Lite == "Lite" && Stack_Count == 1) openGridLite(Board_Width = Board_
 
 //Stacked tiles
 if(Full_or_Lite == "Full" && Stack_Count > 1){
-    zcopies(spacing = Tile_Thickness + Interface_Thickness + 2*Interface_Separation, n=Stack_Count, sp=[0,0,Tile_Thickness])
+    zcopies(spacing = Tile_Thickness + adjustedInterfaceThickness + 2*Interface_Separation, n=Stack_Count, sp=[0,0,Tile_Thickness])
         zflip()
         openGrid(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Bevels = Bevels, anchor=BOT, Connector_Holes = Connector_Holes);
-    zcopies(spacing = Tile_Thickness + Interface_Thickness + 2*Interface_Separation, n=Stack_Count-1, sp=[0,0,Tile_Thickness + Interface_Separation])
-        color("red") interfaceLayer(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Bevels = Bevels, boardType = "Full", anchor=BOT);
+    if(Stacking_Method == "Interface Layer")
+        zcopies(spacing = Tile_Thickness + adjustedInterfaceThickness + 2*Interface_Separation, n=Stack_Count-1, sp=[0,0,Tile_Thickness + Interface_Separation])
+            color("red") interfaceLayer(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Bevels = Bevels, boardType = "Full", anchor=BOT);
 }
 
 if(Full_or_Lite == "Lite" && Stack_Count > 1){
     Lite_Tile_Thickness = 4;
-    zcopies(spacing = Lite_Tile_Thickness + Interface_Thickness + 2*Interface_Separation, n=Stack_Count, sp=[0,0,Lite_Tile_Thickness])
+    zcopies(spacing = Lite_Tile_Thickness + adjustedInterfaceThickness + 2*Interface_Separation, n=Stack_Count, sp=[0,0,Lite_Tile_Thickness])
         openGridLite(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size,  Screw_Mounting = Screw_Mounting, Bevels = Bevels, Connector_Holes = Connector_Holes, anchor=$idx % 2 == 0 ? TOP : BOT, orient=$idx % 2 == 0 ? UP : DOWN);
-    zcopies(spacing = Lite_Tile_Thickness + Interface_Thickness + 2*Interface_Separation, n=Stack_Count-1, sp=[0,0,Lite_Tile_Thickness + Interface_Separation])
-        color("red") interfaceLayer2D(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Bevels = Bevels, boardType = "Lite", topSide = $idx % 2 == 0 ? false : true);
+    if(Stacking_Method == "Interface Layer") 
+        zcopies(spacing = Lite_Tile_Thickness + adjustedInterfaceThickness + 2*Interface_Separation, n=Stack_Count-1, sp=[0,0,Lite_Tile_Thickness + Interface_Separation])
+            color("red") interfaceLayer2D(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Bevels = Bevels, boardType = "Lite", topSide = $idx % 2 == 0 ? false : true);
 }
 
 module interfaceLayer(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, Screw_Mounting = "None", Bevels = "None", Connector_Holes = false, anchor=CENTER, spin=0, orient=UP, boardType = "Full"){
@@ -78,20 +87,7 @@ module interfaceLayer(Board_Width, Board_Height, tileSize = 28, Tile_Thickness =
         projection(cut=true)
             interfaceLayer2D(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = tileSize, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Bevels = Bevels, boardType = boardType);
 }
-/*
-projection(cut=true)
-down(0.01)openGridLite(
-                    Board_Width = Board_Width,
-                    Board_Height = Board_Height,
-                    tileSize = 28,
-                    Screw_Mounting = Screw_Mounting,
-                    Bevels = Bevels,
-                    Connector_Holes = Connector_Holes,
-                    anchor=BOT,
-                    orient=UP
-                );
-*/
-//create a 2d profile of the interface layer to be extruded later. This is used to create the interface layer between tiles.
+
 module interfaceLayer2D(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, Screw_Mounting = "None", Bevels = "None", Connector_Holes = false, anchor=CENTER, spin=0, orient=UP, boardType = "Full", topSide = false){
     linear_extrude(height = Interface_Thickness) 
         projection(cut=true)
