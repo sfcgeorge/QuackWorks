@@ -32,8 +32,8 @@ Total_Height = 107.5; //[27.5:40:387.5]
 Core_Section_Count = 1; //[1:1:8]
 
 /*[Ends]*/
-End_Style = "Rounded Square"; //[Rounded, Rounded Square]
-//[Rounded, Hex, Oct, Rounded Square]
+End_Style = "Rounded Square"; //[Rounded, Squared, Rounded Square]
+//Change the rounding radius of the rounded square
 Rounded_Square_Rounding = 50;
 
 
@@ -262,9 +262,15 @@ module mw_assembly_view() {
                 BasePlateCore(width = Base_Plate_Width, depth = Base_Plate_Depth,  height = Base_Plate_Thickness);
             if(End_Style == "Rounded Square"){
                 xcopies(spacing = Core_Section_Width * Core_Section_Count + (Show_Connected ? 0: 50))
-                        zrot($idx == 0 ? 0 : 180)
+                    zrot($idx == 0 ? 0 : 180)
                         baseplateEndSquared(depth = Base_Plate_Depth, height = Base_Plate_Thickness, radius = Rounded_Square_Rounding, anchor=BOT+RIGHT);
             }
+            else if(End_Style == "Squared"){
+                xcopies(spacing = Core_Section_Width * Core_Section_Count + (Show_Connected ? 0: 50))
+                    zrot($idx == 0 ? 0 : 180)
+                        baseplateEndSquared(depth = Base_Plate_Depth, height = Base_Plate_Thickness, radius = 1, anchor=BOT+RIGHT);
+            }
+
             else{
                 left (Core_Section_Width / 2 * Core_Section_Count + (Show_Connected ? 0 : 25))
                     BasePlateEndRounded(width = Base_Plate_Width, depth = Base_Plate_Depth, height = Base_Plate_Thickness, half=LEFT, style=End_Style);
@@ -278,9 +284,13 @@ module mw_assembly_view() {
         {
             xcopies(n=Core_Section_Count, spacing = Core_Section_Width)
                 TopPlateCore(width = Base_Plate_Width, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, anchor=BOT);
-            if(End_Style != "Rounded Square"){
+            if(End_Style == "Rounded"){
                 xcopies(spacing = Core_Section_Width * Core_Section_Count + (Show_Connected ? clearance*2: 50))
                     TopPlateEndRoundNew(depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=$idx == 0 ? LEFT : RIGHT);
+            }
+            else if(End_Style == "Squared"){
+                xcopies(spacing = Core_Section_Width * Core_Section_Count + (Show_Connected ? clearance*2: 50))
+                    TopPlateEndSquared(width = baseplateEndAngleDistance*2, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, radius = 1, half=$idx == 0 ? LEFT : RIGHT);
             }
             else{
                 xcopies(spacing = Core_Section_Width * Core_Section_Count + (Show_Connected ? clearance*2: 50))
@@ -367,7 +377,13 @@ module mw_plate_3(){
                 xcopies(spacing = -5)
                     zrot($idx == 0 ? 0 : 180)
                         baseplateEndSquared(depth = Base_Plate_Depth, height = Base_Plate_Thickness, radius = Rounded_Square_Rounding, anchor=BOT+RIGHT, orient=RIGHT);
-            }
+    }
+    if(End_Style == "Squared"){
+        xcopies(spacing = -5)
+            zrot($idx == 0 ? 0 : 180)
+                baseplateEndSquared(depth = Base_Plate_Depth, height = Base_Plate_Thickness, radius = Rounded_Square_Rounding, anchor=BOT+RIGHT, orient=RIGHT);
+    }
+
     else{
             xcopies(spacing = 5)
                 BasePlateEndRounded(width = Base_Plate_Width, depth = Base_Plate_Depth, height = Base_Plate_Thickness, half=$idx == 0 ? LEFT : RIGHT, style=End_Style);
@@ -386,9 +402,13 @@ module mw_plate_4(){
 
 //Plate 5 - Ends Top plate
 module mw_plate_5(){
-    if(End_Style != "Rounded Square"){
+    if(End_Style == "Rounded"){
         xcopies(spacing = 5)
             TopPlateEndRoundNew(depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=$idx == 0 ? LEFT : RIGHT);
+    }
+    else if(End_Style == "Squared"){
+        xcopies(5)
+            TopPlateEndSquared(width = baseplateEndAngleDistance*2, depth = Base_Plate_Depth, radius = 1, thickness = Top_Plate_Thickness, half=$idx == 0 ? LEFT : RIGHT);
     }
     else{
         xcopies(5)
