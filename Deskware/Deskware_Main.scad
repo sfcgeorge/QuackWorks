@@ -45,8 +45,12 @@ Drawer_Pull_Double_Screw_Hole_Distance_from_Center = 75;
 //Adjust the height (mm) of the drawer pull holes up(positive) or down (negative)
 Drawer_Pull_Height_Adjustement = 0;
 
+/*[Colors]*/
+Primary_Color = "#2e2e2e"; // color
+Drawer_Front_Color = "#00cf30"; // color
+Top_Plate_Color = "#00cf30"; // color
 
-/*[Options]*/
+/*[Advanced Options]*/
 //Additional reach of top plate support built into the baseplate. 1 = 1 openGrid unit.
 Additional_Top_Plate_Support = 1; //[1:1:8] 
 
@@ -66,6 +70,7 @@ openGrid_Render = true;
 Show_Connected=false;
 MakerWorld_Render_Mode = false;
 Show_Plate = 0;
+Disable_Colors = false;
 
 /*[Hidden]*/
 ///*[Advanced]*/
@@ -258,7 +263,7 @@ module mw_assembly_view() {
             if(End_Style == "Rounded Square"){
                 xcopies(spacing = Core_Section_Width * Core_Section_Count + (Show_Connected ? 0: 50))
                         zrot($idx == 0 ? 0 : 180)
-                        baseplateEndSquaredNew(depth = Base_Plate_Depth, height = Base_Plate_Thickness, radius = Rounded_Square_Rounding, anchor=BOT+RIGHT);
+                        baseplateEndSquared(depth = Base_Plate_Depth, height = Base_Plate_Thickness, radius = Rounded_Square_Rounding, anchor=BOT+RIGHT);
             }
             else{
                 left (Core_Section_Width / 2 * Core_Section_Count + (Show_Connected ? 0 : 25))
@@ -279,23 +284,8 @@ module mw_assembly_view() {
             }
             else{
                 xcopies(spacing = Core_Section_Width * Core_Section_Count + (Show_Connected ? clearance*2: 50))
-                    TopPlateEndSquared(width = baseplateEndAngleDistance*2, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=$idx == 0 ? LEFT : RIGHT);
+                    TopPlateEndSquared(width = baseplateEndAngleDistance*2, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, radius = Rounded_Square_Rounding, half=$idx == 0 ? LEFT : RIGHT);
             }
-        }
-    }
-
-
-
-    if(Show_Top_Plate_all_options){
-        up(Riser_Height + (Show_Connected ? Base_Plate_Thickness + Top_Plate_Thickness/2 + clearance*4: 150)){
-            left (Core_Section_Width / 2 + (Show_Connected ? clearance : 25)) back(Core_Section_Depth*2+75) 
-                TopPlateEndRoundedOld(depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=LEFT, style = "Rounded");
-            right (Core_Section_Width / 2 + (Show_Connected ? clearance : 25)) back(Core_Section_Depth*2+75) 
-                TopPlateEndRoundedOld(depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=RIGHT, style = "Oct");
-            left (Core_Section_Width / 2 + (Show_Connected ? clearance : 25)) back(Core_Section_Depth+50) 
-                TopPlateEndSquared(width = Base_Plate_Width, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=LEFT);
-            right (Core_Section_Width / 2 + (Show_Connected ? clearance : 25)) back(Core_Section_Depth+50) 
-                TopPlateEndRoundedOld(depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=RIGHT, style = "Hex");
         }
     }
 
@@ -376,7 +366,7 @@ module mw_plate_3(){
     if(End_Style == "Rounded Square"){
                 xcopies(spacing = -5)
                     zrot($idx == 0 ? 0 : 180)
-                        baseplateEndSquaredNew(depth = Base_Plate_Depth, height = Base_Plate_Thickness, radius = Rounded_Square_Rounding, anchor=BOT+RIGHT, orient=RIGHT);
+                        baseplateEndSquared(depth = Base_Plate_Depth, height = Base_Plate_Thickness, radius = Rounded_Square_Rounding, anchor=BOT+RIGHT, orient=RIGHT);
             }
     else{
             xcopies(spacing = 5)
@@ -402,7 +392,7 @@ module mw_plate_5(){
     }
     else{
         xcopies(5)
-            TopPlateEndSquared(width = baseplateEndAngleDistance*2, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, half=$idx == 0 ? LEFT : RIGHT);
+            TopPlateEndSquared(width = baseplateEndAngleDistance*2, depth = Base_Plate_Depth, radius = Rounded_Square_Rounding, thickness = Top_Plate_Thickness, half=$idx == 0 ? LEFT : RIGHT);
     }
 
 
@@ -444,6 +434,7 @@ module DrawerFront(height_units, inside_width, anchor=CENTER, orient=UP, spin=0)
     drawerFrontWidth = drawerOuterWidth + Riser_Width - drawerFrontLateralClearance*2;
 
     tag_scope()
+    recolor(Disable_Colors ? $color : Drawer_Front_Color)
     diff()
     cuboid([drawerFrontWidth, drawer_height, drawerFrontThickness], chamfer = drawerFrontChamfer, edges=BOT, anchor=anchor, orient=orient, spin=spin){
         //drawer dovetails
@@ -473,6 +464,7 @@ module Drawer(height_units, inside_width, Drawer_Outside_Depth, anchor=CENTER, o
     drawerFrontHeightReduction = 4.5;
 
     tag_scope()
+    recolor(Disable_Colors ? undef : Primary_Color)
     diff()
     rect_tube(size = [drawerOuterWidth, Drawer_Outside_Depth], h = drawer_height, wall=DrawerThickness, anchor=anchor, orient=orient, spin=spin){
         attach([LEFT, RIGHT], LEFT, align=TOP, overlap=0.01, inset=Drawer_Slide_From_Top+DrawerSlideHeightMicroadjustement)
@@ -489,6 +481,7 @@ module Drawer(height_units, inside_width, Drawer_Outside_Depth, anchor=CENTER, o
         attach(FRONT, FRONT, inside=true, shiftout=0.01, align=TOP, inset=-0.01)
             cuboid([drawerOuterWidth+0.02, DrawerThickness+0.02, drawerFrontHeightReduction]);
         //front drawer pull
+        color(Disable_Colors ? undef : Primary_Color)
         attach(FRONT, FRONT, inside=true, shiftout=0.01, align=TOP, inset=drawerFrontHeightReduction-0.02)
             cuboid([inside_width_adjusted/3, DrawerThickness+0.02, 20], 
                         //bottom rounding at 5 or maximum possible given cutout width
@@ -499,6 +492,7 @@ module Drawer(height_units, inside_width, Drawer_Outside_Depth, anchor=CENTER, o
                         ;
         //Back cable port
         attach(BACK, FRONT, inside=true, shiftout=0.01, align=TOP, inset=-0.01)
+            color(Disable_Colors ? undef : Primary_Color)
             cuboid([20, DrawerThickness+0.02, 15], 
                         //bottom rounding at 5 or maximum possible given cutout width
                         rounding = min(5,5), 
@@ -526,7 +520,7 @@ module Drawer(height_units, inside_width, Drawer_Outside_Depth, anchor=CENTER, o
 
 module TopPlateCore(width, depth, thickness, spin = 0, orient = UP, anchor=CENTER){
 
-    
+    color(Disable_Colors ? undef : Top_Plate_Color)
     diff()
     cuboid([width-clearance*2, depth+Top_Bot_Plates_Interface_Chamfer*2 - Top_Plate_Clearance*2, thickness+topLipHeight], spin=spin, orient=orient, anchor=anchor){
         //bot chamfer
@@ -549,6 +543,7 @@ module TopPlateEndSquared(width, depth, thickness, radius = 50, half = LEFT){
     depthAdjusted = depth + Top_Bot_Plates_Interface_Chamfer*2 - Top_Plate_Clearance*2;
     thicknessAdjusted = thickness + topLipHeight;
     
+    color(Disable_Colors ? undef : Top_Plate_Color)
     diff(){
         half_of(half, s = width*2 + 5)
             topPlateBuilder(totalHeight = thicknessAdjusted, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer)
@@ -565,6 +560,7 @@ module TopPlateEndRoundNew(depth, thickness, half = LEFT){
     depthAdjusted = depth + Top_Bot_Plates_Interface_Chamfer*2 - Top_Plate_Clearance*2;
     thicknessAdjusted = thickness + topLipHeight;
     
+    color(Disable_Colors ? undef : Top_Plate_Color)
     diff(){
         half_of(half, s = depth*2 + 5)
             topPlateBuilder(totalHeight = thicknessAdjusted, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer)
@@ -627,45 +623,12 @@ module topPlateBuilder(totalHeight = 9.5, bottomChamfer = 1, topChamfer = 1, top
         }
 }
 
-module TopPlateEndRoundedOld(depth, thickness, half = LEFT, style = "Rounded"){
-
-    $fn = 
-        style == "Rounded" ? curve_resolution : 
-        style == "Oct" ? 8 :
-        style == "Hex" ? 6 :
-        curve_resolution;
-
-    //adjust the diameter if a hexagon
-    adjusted_diameter = 
-        style == "Hex" ? depth * sqrt(3) / 1.5 +.5: depth;
-
-    diff()
-    half_of(half, s = adjusted_diameter*2 + 5)
-    //zrot(22.5)
-    cyl(d = adjusted_diameter+Top_Bot_Plates_Interface_Chamfer*2 - Top_Plate_Clearance*2, h=thickness+topLipHeight){
-        //bot chamfer
-        edge_profile([BOT])
-            mask2d_chamfer(x=Top_Bot_Plates_Interface_Chamfer*2);
-        //top chamfer
-        edge_profile([TOP])
-            mask2d_chamfer(x=topChamfer);
-        //top lip
-        attach(TOP, TOP, inside=true, shiftout=0.01)
-            cyl(d = adjusted_diameter+Top_Bot_Plates_Interface_Chamfer*2 - Top_Plate_Clearance*2 - topChamfer*2-topLipDepth*2, h = topLipHeight);
-        //top plate tabs
-        right(half == LEFT ? -TabDistanceFromOutsideEdge-TopPlateTabWidth/2 : TabDistanceFromOutsideEdge+TopPlateTabWidth/2)
-        attach(BOT, BOT, inside=true, shiftout=0.01)
-            TopPlateTab(height = TabProtrusionHeight, deleteTool = true);
-
-    }
-}
-
-module baseplateEndSquaredNew(width = 120, depth = 207, height = 19, radius = 50, spin = 0, orient = UP, anchor=CENTER){
+module baseplateEndSquared(width = 120, depth = 207, height = 19, radius = 50, spin = 0, orient = UP, anchor=CENTER){
     //NOTE: attachments are being passed through from main_section
     
     $fn = 150;
   
-    //diff()
+    color(Disable_Colors ? undef : Primary_Color)
     diff("HOKConnectors", "k1")
         diff("r1", "keep HOKConnectors"){
             main_section(spin = spin, orient = orient, anchor = anchor){
@@ -797,6 +760,7 @@ module BasePlateEndRounded(width, depth, height = 19, half = LEFT, style="Oct"){
     adjusted_diameter = 
         style == "Hex" ? depth * sqrt(3) / 1.5 +1: depth;
 
+    color(Disable_Colors ? undef : Primary_Color)
     half_of(half, s = adjusted_diameter*2 + 5)
     diff("HOKConnectors Dovetails", "k1")
     diff("r1", "keep HOKConnectors Dovetails"){
@@ -845,6 +809,8 @@ module BasePlateEndRounded(width, depth, height = 19, half = LEFT, style="Oct"){
 
 module BasePlateCore(width, depth, height = 19, spin = 0, orient = UP, anchor=CENTER){
 
+
+    color(Disable_Colors ? undef : Primary_Color)
     diff("HOKConnectors Dovetails", "k1")
         diff("r1", "keep HOKConnectors Dovetails"){
         //main plate
@@ -879,14 +845,14 @@ module BasePlateCore(width, depth, height = 19, spin = 0, orient = UP, anchor=CE
                                 xcopies(spacing = Dovetail_Spacing)
                                 Dovetail_Female();
                         //display-only male dovetails
-                        if(Show_Connected){
-                            #tag("keep")
-                            back($idx == 0 ? Dovetail_Width/2 : -Dovetail_Width/2)
-                                attach(TOP, TOP, inside=true, shiftout = 0.01, align=$idx == 0 ? LEFT : RIGHT, inset = 0) 
-                                    ycopies(spacing = Dovetail_Spacing)
-                                        zrot(90)
-                                            Dovetail_Male();
-                        }
+                        //if(Show_Connected){
+                        //    #tag("keep")
+                        //    back($idx == 0 ? Dovetail_Width/2 : -Dovetail_Width/2)
+                        //        attach(TOP, TOP, inside=true, shiftout = 0.01, align=$idx == 0 ? LEFT : RIGHT, inset = 0) 
+                        //            ycopies(spacing = Dovetail_Spacing)
+                        //                zrot(90)
+                        //                    Dovetail_Male();
+                        //}
                     }
             children();
         
@@ -919,6 +885,7 @@ module TopPlateTab(height = 19, deleteTool = false, anchor=CENTER, spin=0, orien
 module Backer(anchor=BOT, spin=0, orient=UP){
 
         //main body
+        color(Disable_Colors ? undef : Primary_Color)
         diff("HOKConnector", "k1")
         diff("remove", "keep HOKConnector"){
             cuboid([Backer_Width-clearance*2, Backer_Thickness, Backer_Height], anchor=anchor, orient=orient, spin=spin){
@@ -961,6 +928,7 @@ module Riser(anchor=BOT, spin=0, orient=UP){
     number_of_slides = quantdn((Riser_Height - Slide_Distance_From_Bottom - Slide_Height - Slide_Minimum_Distance_From_Top)/Slide_Vertical_Separation+1, 1);
     
     //main riser body
+    color(Disable_Colors ? undef : Primary_Color)
     diff(){
         cuboid([Riser_Width-clearance*2, Riser_Depth, Riser_Height], anchor=anchor, orient=orient, spin=spin){
             //Slides
