@@ -22,12 +22,12 @@ include <BOSL2/rounding.scad>
 include <BOSL2/joiners.scad>
 
 /*[Core Section Dimensions]*/
-//Width (in mm) from riser to riser measured from the center
-Core_Section_Width = 196; //[112:84:952]
-//Depth (in mm) from front of the riser to the rear of the backer (top plate will stick out a little more)
-Core_Section_Depth = 196.5; //[112.5:28:840.5]
-//Height of the core section from the bottom of the riser to the bottom of the base plate (Note: Drawers take 40mm of vertical space)
-Core_Section_Height = 80; //[40:40:640]
+//Width (in mm) from riser center to riser center. 84mm increments. 
+Core_Section_Width = 196; //[112:84:952] 
+//Depth (in mm) from front of the riser to the rear of the backer (top plate will be deeper out the front). 28mm increments.
+Core_Section_Depth = 196.5; //[112.5:84:840.5]
+//Total Height of the core section from the bottom of the riser to the base of the top plate.
+Total_Height = 107.5; //[27.5:40:387.5]
 //DISPLAY PURPOSES ONLY - The output will always contain the parts needed for 1 core. For extra cores, simply print 1 more of the following: 1 Riser, 1 Backer, 1 Baseplate, 1 Top plate
 Core_Section_Count = 1; //[1:1:8]
 
@@ -48,7 +48,7 @@ Drawer_Pull_Height_Adjustement = 0;
 
 /*[Options]*/
 //Additional reach of top plate support built into the baseplate. 1 = 1 openGrid unit.
-Additional_Top_Plate_Support = 1; //[0:1:8] 
+Additional_Top_Plate_Support = 1; //[1:1:8] 
 
 
 
@@ -65,6 +65,7 @@ Connector_Fit_Tests = false;
 openGrid_Render = true;
 Show_Connected=false;
 MakerWorld_Render_Mode = false;
+Show_Plate = 0;
 
 /*[Hidden]*/
 ///*[Advanced]*/
@@ -94,13 +95,6 @@ Slide_Distance_From_Bottom = 11.75;
 Slide_Minimum_Distance_From_Top = 16.75;
 Slide_Clearance = 0.25;
 
-///*[Base Plate]*/
-Base_Plate_Width = Core_Section_Width;
-Base_Plate_Depth = Core_Section_Depth + 10.5;
-Base_Plate_Thickness = 19;
-
-
-
 ///*[Top Plate]*/
 Top_Plate_Thickness = 8.5;
 //Clearance (in mm) between the top plate and the base plate
@@ -108,6 +102,13 @@ Top_Plate_Clearance = 1;
 topChamfer = 2;
 topLipDepth = 0.5;
 topLipHeight = 1;
+
+///*[Base Plate]*/
+Base_Plate_Width = Core_Section_Width;
+Base_Plate_Depth = Core_Section_Depth + 10.5;
+Base_Plate_Thickness = 19;
+
+Core_Section_Height = Total_Height - Top_Plate_Thickness - Base_Plate_Thickness;
 
 ///*[Riser]*/
 Riser_Depth = Core_Section_Depth - 7.5;
@@ -126,9 +127,41 @@ Backer_To_Riser_Tab_Depth = 8;
 
 //Baseplate parameters
 Grid_Min_Side_Clearance = Riser_Width/2;
+Grid_Min_Depth_Clearance = 18;
 Grid_Min_FrontBack_Clearance = 2;
 Tile_Thickness = 11.5;
 Baseplate_Bottom_Chamfer = 5;
+
+//oG Height Calculations
+Grid_Dist_From_Bot = 2; //size of base on bottom of BACKER before starting the grid
+minimumTopSpacing = 2; //minimum height of the grid from the top of the backer
+safeHOKClearance = 17;
+Available_Grid_Height = quantdn((Backer_Height-Grid_Dist_From_Bot-minimumTopSpacing)/openGridSize, 1);
+Grid_Height_mm = Available_Grid_Height * openGridSize;
+Grid_Height_is_Odd = Available_Grid_Height % 2 == 0 ? false : true; 
+enableHOKBlocks = Backer_Height - Grid_Height_mm - Grid_Dist_From_Bot < safeHOKClearance ? true : false;
+
+//oG Width Calculations
+Available_Grid_Width_Units = quantdn((Base_Plate_Width - Grid_Min_Side_Clearance*2) / openGridSize, 1);
+Grid_Width_is_Odd = Available_Grid_Width_Units % 2 == 0 ? false : true; 
+Grid_Width_mm = Available_Grid_Width_Units * openGridSize;
+
+//oG Depth Calculations
+Available_Grid_Depth_Units = quantdn((Base_Plate_Depth - Grid_Min_Depth_Clearance*2) / openGridSize, 1);
+Grid_Depth_is_Odd = Available_Grid_Depth_Units % 2 == 0 ? false : true; 
+Grid_Depth_mm = Available_Grid_Depth_Units * openGridSize;
+
+
+echo(str(Grid_Width_is_Odd));
+
+//HOK Parameters
+HOK_Connector_Spacing_Depth = Grid_Depth_is_Odd ? openGridSize*2 : openGridSize*3;
+
+Default_HOK_Connector_Spacing_Back = min(openGridSize*(Available_Grid_Width_Units - 1), Grid_Width_is_Odd ? openGridSize*4 : openGridSize*3); //Spacing between multiple HOK connecters (center to center). Either the outer grids or 
+//Distance from part edge to center of HOK Connector
+HOK_Connector_Inset = 4.5;
+HOK_Connector_Thickness = 3.00;
+HOK_Connector_Width = 8.9*2;
 
 //Baseplate Dovetails
 Dovetail_Spacing = 40;
@@ -155,12 +188,7 @@ baseplateEndLateralWidth = cos(baseplateEndAngleUp) * baseplateEndAngleDistance;
 //Tab parameters
 TopPlateTabWidth = 3;
 
-//Spacing between multiple HOK connecters (center to center)
-HOK_Connector_Spacing_Depth = 65;
-//Distance from part edge to center of HOK Connector
-HOK_Connector_Inset = 4.5;
-HOK_Connector_Thickness = 3.00;
-HOK_Connector_Width = 8.9*2;
+
 
 //Drawer Parameters
 DrawerThickness = 3;
@@ -192,8 +220,26 @@ print_volume_message =
 echo(print_volume_message);
 
 //If viewing on desktop
-if(!MakerWorld_Render_Mode)
+if(!MakerWorld_Render_Mode && Show_Plate == 0)
     mw_assembly_view();
+if(!MakerWorld_Render_Mode && Show_Plate == 1)
+    mw_plate_1();
+if(!MakerWorld_Render_Mode && Show_Plate == 2)
+    mw_plate_2();
+if(!MakerWorld_Render_Mode && Show_Plate == 3)
+    mw_plate_3();
+if(!MakerWorld_Render_Mode && Show_Plate == 4)
+    mw_plate_4();
+if(!MakerWorld_Render_Mode && Show_Plate == 5)
+    mw_plate_5();
+if(!MakerWorld_Render_Mode && Show_Plate == 6)
+    mw_plate_6();
+if(!MakerWorld_Render_Mode && Show_Plate == 7)
+    mw_plate_7();
+if(!MakerWorld_Render_Mode && Show_Plate == 8)
+    mw_plate_8();
+if(!MakerWorld_Render_Mode && Show_Plate == 9)
+    mw_plate_9();
 module mw_assembly_view() {
     if(Show_Backer)
         xcopies(spacing = Core_Section_Width, n=Core_Section_Count)
@@ -223,7 +269,7 @@ module mw_assembly_view() {
         }
 
     if(Show_Top_Plate){
-        up(Riser_Height + (Show_Connected ? Base_Plate_Thickness + Top_Plate_Thickness/2 + clearance*4: 150))
+        up(Riser_Height + (Show_Connected ? Base_Plate_Thickness: 150))
         {
             xcopies(n=Core_Section_Count, spacing = Core_Section_Width)
                 TopPlateCore(width = Base_Plate_Width, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, anchor=BOT);
@@ -258,7 +304,7 @@ module mw_assembly_view() {
         up(DrawerSlideHeightMicroadjustement)
         xcopies(spacing = Core_Section_Width, n=Core_Section_Count)
             fwd(Show_Connected ? 8.5 : 50)
-                if($idx == 0){
+                if($idx % 2 == 0){
                     zcopies(spacing = 40, sp=0)
                     Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth, anchor=BOT)
                         //drawer fronts
@@ -294,13 +340,12 @@ module mw_assembly_view() {
             Dovetail_Male(anchor=UP, orient=DOWN);
 
         ycopies(spacing = Dovetail_Width+5)
-        
-        diff()
-        move([-10,20])
-            zrot($idx == 0 ? 180 : 0)
-            cuboid([Dovetail_Width+4,Dovetail_Width,Dovetail_Depth+1], anchor=BOT)
-                attach(TOP, BACK, align = FRONT, inside=true) 
-                        Dovetail_Female();
+            diff()
+                move([-10,20])
+                    zrot($idx == 0 ? 180 : 0)
+                    cuboid([Dovetail_Width+4,Dovetail_Width,Dovetail_Depth+1], anchor=BOT)
+                        attach(TOP, BACK, align = FRONT, inside=true) 
+                                Dovetail_Female();
     }
 }
 
@@ -337,6 +382,10 @@ module mw_plate_3(){
             xcopies(spacing = 5)
                 BasePlateEndRounded(width = Base_Plate_Width, depth = Base_Plate_Depth, height = Base_Plate_Thickness, half=$idx == 0 ? LEFT : RIGHT, style=End_Style);
     }
+
+    move([0, Base_Plate_Depth/2 + 15])
+        xcopies(n = 4, spacing = 15)
+            Dovetail_Male(anchor=UP, orient=DOWN);
 }
 
 //Plate 4 - Core Top plate
@@ -522,7 +571,7 @@ module TopPlateEndRoundNew(depth, thickness, half = LEFT){
                 ellipse(d=depthAdjusted);
         tag("remove")
             up(TabProtrusionHeight/2-0.01)
-            #xcopies(spacing = TopPlateTabWidth+TabDistanceFromOutsideEdge*2)
+            xcopies(spacing = TopPlateTabWidth+TabDistanceFromOutsideEdge*2)
                 TopPlateTab(height = TabProtrusionHeight, deleteTool = true);
     }
 }
@@ -795,11 +844,6 @@ module BasePlateEndRounded(width, depth, height = 19, half = LEFT, style="Oct"){
 }
 
 module BasePlateCore(width, depth, height = 19, spin = 0, orient = UP, anchor=CENTER){
-    
-    Available_Grid_Width_Units = quantdn((width - Grid_Min_Side_Clearance*2) / openGridSize, 1);
-    Available_Grid_Depth_Units = quantdn((depth - Grid_Min_Side_Clearance*2) / openGridSize, 1);
-    Grid_Width_mm = Available_Grid_Width_Units * openGridSize;
-    Grid_Depth_mm = Available_Grid_Depth_Units * openGridSize;
 
     diff("HOKConnectors Dovetails", "k1")
         diff("r1", "keep HOKConnectors Dovetails"){
@@ -850,7 +894,7 @@ module BasePlateCore(width, depth, height = 19, spin = 0, orient = UP, anchor=CE
             tag("HOKConnectors")
             attach(BOT, BOT, inside=true, shiftout=0.01, align=BACK) 
                     fwd(HOK_Connector_Inset-HOK_Connector_Thickness/2)
-                    xcopies(spacing = HOK_Connector_Spacing_Depth)
+                    xcopies(spacing = Default_HOK_Connector_Spacing_Back)
                         HOKConnectorDeleteTool(anchor=CENTER);
             //HOK connector cutouts sides
             tag("HOKConnectors")
@@ -874,16 +918,6 @@ module TopPlateTab(height = 19, deleteTool = false, anchor=CENTER, spin=0, orien
 
 module Backer(anchor=BOT, spin=0, orient=UP){
 
-    Grid_Dist_From_Bot = 2;
-    Grid_Min_Side_Clearance = Riser_Width/2;
-    minimumTopSpacing = 17;
-
-
-
-    Available_Grid_Width_Units = quantdn((Backer_Width-Grid_Min_Side_Clearance*2)/openGridSize, 1);
-    Available_Grid_Height = quantdn((Backer_Height-Grid_Dist_From_Bot-minimumTopSpacing)/openGridSize, 1);
-    
-
         //main body
         diff("HOKConnector", "k1")
         diff("remove", "keep HOKConnector"){
@@ -897,7 +931,12 @@ module Backer(anchor=BOT, spin=0, orient=UP){
                 tag("keep")
                 up(Grid_Dist_From_Bot)
                 attach(BACK, BOT, inside=true, align=BOT) 
-                    openGrid(openGrid_Render ? Available_Grid_Width_Units : 1, openGrid_Render ? Available_Grid_Height : 1);
+                    openGrid(openGrid_Render ? Available_Grid_Width_Units : 1, openGrid_Render ? Available_Grid_Height : 1)
+                        //HOK Tab Blocks
+                        if(enableHOKBlocks)
+                        xcopies(spacing = Default_HOK_Connector_Spacing_Back)
+                        attach(BOT, TOP, inside=true, align=BACK, shiftout=0.01)
+                            cuboid([openGridSize, openGridSize, Backer_Thickness-sideCutoutDepth], chamfer=0.5, edges=BOT, except_edges=BACK);
                 //cutouts for risers
                 attach(FRONT, FRONT, inside=true, shiftout=0.01, align=[LEFT, RIGHT])
                     cuboid([sideCutoutWidth,sideCutoutDepth,Backer_Height+0.02]);
@@ -905,7 +944,7 @@ module Backer(anchor=BOT, spin=0, orient=UP){
                 tag("HOKConnector")
                 attach(TOP, BOT, inside=true, shiftout=0.01, align=BACK) 
                     fwd(HOK_Connector_Inset-HOK_Connector_Thickness/2)
-                    xcopies(spacing = HOK_Connector_Spacing_Depth)
+                    xcopies(spacing = Default_HOK_Connector_Spacing_Back)
                         HOKConnectorDeleteTool(anchor=CENTER);
                 //Riser Tabs
                 tag("keep")
@@ -945,13 +984,13 @@ module Riser(anchor=BOT, spin=0, orient=UP){
 module Dovetail_Male(anchor=CENTER, spin = 0, orient = UP){
     attachable(anchor, spin, orient, size=[Dovetail_Width,Dovetail_Height*2,Dovetail_Depth]){
         mirror_copy([0,1,0])
-            dovetail("male", slide=Dovetail_Depth-0.6, width=Dovetail_Width, height=Dovetail_Height,chamfer=Dovetail_Chamfer, taper = -10, slope = 4, anchor=BOT, orient=FRONT);
+            dovetail("male", slide=Dovetail_Depth-0.6, width=Dovetail_Width, height=Dovetail_Height,chamfer=Dovetail_Chamfer, taper = -3, slope = 4, anchor=BOT, orient=FRONT);
         children();
     }
 }
 
 module Dovetail_Female(anchor=BOT, spin = 0, orient = DOWN){
-    dovetail("female", slide=Dovetail_Depth, width=Dovetail_Width, height=Dovetail_Height, chamfer=Dovetail_Chamfer, slope = 4, taper = -10, $slop = 0, anchor=anchor, spin=spin, orient=orient)
+    dovetail("female", slide=Dovetail_Depth, width=Dovetail_Width, height=Dovetail_Height, chamfer=Dovetail_Chamfer, slope = 4, taper = -3, $slop = 0, anchor=anchor, spin=spin, orient=orient)
         children();
 }
 
