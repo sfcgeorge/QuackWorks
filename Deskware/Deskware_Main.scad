@@ -20,6 +20,8 @@ Credit to
 include <BOSL2/std.scad>
 include <BOSL2/rounding.scad>
 include <BOSL2/joiners.scad>
+include <BOSL2/threading.scad>
+
 
 /*[Core Section Dimensions]*/
 //Width (in mm) from riser center to riser center. 84mm increments. 
@@ -27,7 +29,7 @@ Core_Section_Width = 196; //[112:84:952]
 //Depth (in mm) from front of the riser to the rear of the backer (top plate will be deeper out the front). 28mm increments.
 Core_Section_Depth = 196.5; //[112.5:84:840.5]
 //Total Height of the core section from the bottom of the riser to the base of the top plate.
-Total_Height = 107.5; //[27.5:40:387.5]
+Total_Height = 107.5; //[67.5:40:387.5]
 //DISPLAY PURPOSES ONLY - The output will always contain the parts needed for 1 core. For extra cores, simply print 1 more of the following: 1 Riser, 1 Backer, 1 Baseplate, 1 Top plate
 Core_Section_Count = 1; //[1:1:8]
 
@@ -38,7 +40,7 @@ Rounded_Square_Rounding = 50;
 
 
 /*[Drawers]*/
-Drawer_Pull_Type = "Screw Holes - Single"; //[Screw Holes - Single, Screw Holes - Double]
+Drawer_Pull_Type = "Handle - Printed"; //[Screw Holes - Single, Screw Holes - Double, Handle - Printed]
 Drawer_Pull_Screw_Diameter = 5;
 //Distance from screw hole centers if using double-screw drawer pulls
 Drawer_Pull_Double_Screw_Hole_Distance_from_Center = 75;
@@ -49,6 +51,7 @@ Drawer_Pull_Height_Adjustement = 0;
 Primary_Color = "#2e2e2e"; // color
 Drawer_Front_Color = "#00cf30"; // color
 Top_Plate_Color = "#00cf30"; // color
+Drawer_Handle_Color = "#2e2e2e"; // color
 
 /*[Advanced Options]*/
 //Additional reach of top plate support built into the baseplate. 1 = 1 openGrid unit.
@@ -86,6 +89,8 @@ Custom_Bed_Width = 256;
 Custom_Bed_Depth = 256;
 
 curve_resolution = 100;
+
+
 
 ///*[Riser Slide]*/
 //Width (and rise of angle) of the slide recess
@@ -210,6 +215,33 @@ DrawerPullHoleCount =
     Drawer_Pull_Type == "Screw Holes - Single" ? 1 :
     Drawer_Pull_Type == "Screw Holes - Double" ? 2 :
     0;
+DrawerHandle_Connection_Type = "Screw";
+
+drawerFrontThickness = 3.5;
+
+
+//Printed Drawer Handle Dovetail Parameters
+handleDovetail_DistanceBetweenCenters = 70;
+handleDovetail_Slide = 4.8; //the height of the dovetail
+handleDovetail_width = 7;
+handleDovetail_height = drawerFrontThickness + DrawerThickness+0.01; //the depth of the dovetail which should just penetrate both the drawer front and the drawer casing
+handleDovetail_chamfer = 1;
+handleDovetail_taper = 6;
+handleDovetail_InsertHoleWidth = 8.1; //the hole above the drawer handle dovetail that allows insertion of the drawer handle
+handleDovetail_Center = 10 - handleDovetail_Slide*2;
+handleDovetail_Slop = 0.1; //enlargement of the male dovetail piece to increase friction fit
+
+///*[Small Screw Profile]*/
+//Distance (in mm) between threads
+Pitch_Sm = 3;
+//Diameter (in mm) at the outer threads
+Outer_Diameter_Sm = 6.747;
+//Angle of the one side of the thread
+Flank_Angle_Sm = 60;
+//Depth (in mm) of the thread
+Thread_Depth_Sm = 0.5;
+//Diameter of the hole down the middle of the screw (for strength)
+Inner_Hole_Diameter_Sm = 3.3;
 
 //Bed Size Calculations
 availablePrintVolume = 
@@ -304,22 +336,31 @@ module mw_assembly_view() {
         up(DrawerSlideHeightMicroadjustement)
         xcopies(spacing = Core_Section_Width, n=Core_Section_Count)
             fwd(Show_Connected ? 8.5 : 50)
+                //1-unit drawer
                 if($idx % 2 == 0){
-                    zcopies(spacing = 40, sp=0)
+                    zcopies(spacing = 40, sp=0, n = Riser_Height / 40)
                     Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth, anchor=BOT)
                         //drawer fronts
                         if(Show_Connected)
                         attach(FRONT, TOP)
-                            DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2);
+                            DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2)
+                                //drawer handle
+                                recolor(Disable_Colors ? undef : Drawer_Handle_Color)
+                                attach(BOT, BACK)
+                                        DrawerHandle();
                 }
                 else
                     Drawer(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth, anchor=BOT)
                         //drawer fronts
                         if(Show_Connected)
                         attach(FRONT, TOP)
-                            DrawerFront(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2);
+                            DrawerFront(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2)
+                                if(Drawer_Pull_Type == "Handle - Printed")
+                                recolor(Disable_Colors ? undef : Drawer_Handle_Color)
+                                attach(BOT, BACK)
+                                    DrawerHandle();
         //drawer fronts if not connected
-        if(!Show_Connected)
+        if(!Show_Connected){
             up(DrawerSlideHeightMicroadjustement)
             fwd(Core_Section_Depth/2 + 25 + 60)
                 xcopies(spacing = Core_Section_Width, n=Core_Section_Count)
@@ -328,7 +369,15 @@ module mw_assembly_view() {
                         DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2);
                     else
                         DrawerFront(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2);
+            if(Drawer_Pull_Type == "Handle - Printed"){
+                fwd(Core_Section_Depth/2 + 25 + 125)
+                    DrawerHandle();
+                fwd(Core_Section_Depth/2 + 25 + 125)
+                    xcopies(spacing = 150) T_Screw();
+            }
+        }
     }
+    
 
     if(Connector_Fit_Tests){
         diff()
@@ -378,7 +427,7 @@ module mw_plate_3(){
                     zrot($idx == 0 ? 0 : 180)
                         baseplateEndSquared(depth = Base_Plate_Depth, height = Base_Plate_Thickness, radius = Rounded_Square_Rounding, anchor=BOT+RIGHT, orient=RIGHT);
     }
-    if(End_Style == "Squared"){
+    else if(End_Style == "Squared"){
         xcopies(spacing = -5)
             zrot($idx == 0 ? 0 : 180)
                 baseplateEndSquared(depth = Base_Plate_Depth, height = Base_Plate_Thickness, radius = Rounded_Square_Rounding, anchor=BOT+RIGHT, orient=RIGHT);
@@ -389,7 +438,7 @@ module mw_plate_3(){
                 BasePlateEndRounded(width = Base_Plate_Width, depth = Base_Plate_Depth, height = Base_Plate_Thickness, half=$idx == 0 ? LEFT : RIGHT, style=End_Style);
     }
 
-    move([0, Base_Plate_Depth/2 + 15])
+    move([0, Base_Plate_Depth/2 + 15,0])
         xcopies(n = 4, spacing = 15)
             Dovetail_Male(anchor=UP, orient=DOWN);
 }
@@ -408,11 +457,11 @@ module mw_plate_5(){
     }
     else if(End_Style == "Squared"){
         xcopies(5)
-            TopPlateEndSquared(width = baseplateEndAngleDistance*2, depth = Base_Plate_Depth, radius = 1, thickness = Top_Plate_Thickness, half=$idx == 0 ? LEFT : RIGHT);
+            TopPlateEndSquared(width = baseplateEndAngleDistance*2, depth = Base_Plate_Depth, radius = Rounded_Square_Rounding, thickness = Top_Plate_Thickness, half=$idx == 0 ? LEFT : RIGHT);
     }
     else{
         xcopies(5)
-            TopPlateEndSquared(width = baseplateEndAngleDistance*2, depth = Base_Plate_Depth, radius = Rounded_Square_Rounding, thickness = Top_Plate_Thickness, half=$idx == 0 ? LEFT : RIGHT);
+            TopPlateEndSquared(width = baseplateEndAngleDistance*2, depth = Base_Plate_Depth, radius = 1, thickness = Top_Plate_Thickness, half=$idx == 0 ? LEFT : RIGHT);
     }
 
 
@@ -431,17 +480,59 @@ module mw_plate_7(){
 
 //Plate 8 - Drawer Fronts
 module mw_plate_8(){
-    ydistribute(sizes=[40, 80], spacing = 5){
+    ydistribute(sizes=[40, 80, 40], spacing = 5){
         DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2);
         DrawerFront(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2);
+        if(Drawer_Pull_Type == "Handle - Printed"){
+            DrawerHandle();
+            xcopies(spacing = 15)
+            back(10)T_Screw();
+        }
+    }
+}
+//END MAKERWORLD PLATING
+
+
+module DrawerHandle(handle_OutsideWidth = 100, handle_InsideDepth = 15, handle_Thickness = 10, spin = 0, orient = UP, anchor = CENTER){
+    attachable(anchor, spin, orient, size=[handle_OutsideWidth, handle_InsideDepth + handle_Thickness, handle_Thickness]){
+
+        recolor(Disable_Colors ? undef : Drawer_Handle_Color)
+        fwd(-handle_Thickness/2+ (handle_Thickness+handle_InsideDepth)/2)
+        diff("thread"){
+            //main handle
+            cuboid([handle_OutsideWidth, handle_Thickness, handle_Thickness]);
+            //handle pegs forced to standard width
+            back(handle_InsideDepth/2+handle_Thickness/2-0.01)
+            xcopies(spacing = handleDovetail_DistanceBetweenCenters)
+                cuboid([handle_Thickness, handle_InsideDepth, handle_Thickness])
+                    if(DrawerHandle_Connection_Type == "Screw")
+                    tag("thread")
+                    attach(BACK, BOT, inside=true, shiftout=0.01)
+                        DrawerHandleScrewFemale();
+                    //handle dovetails
+                    if(DrawerHandle_Connection_Type == "Dovetail")//bad method - do not use
+                    attach(BACK, BOT, align = BOT)
+                        DrawerHandleDovetailMale();
+        }
+        children();
     }
 }
 
+module DrawerHandleThread(){
+    trapezoidal_threaded_rod(d=Outer_Diameter_Sm, l=6, pitch=Pitch_Sm, flank_angle = Flank_Angle_Sm, thread_depth = Thread_Depth_Sm, $fn=50, internal=true, bevel2 = true, blunt_start=false, anchor=TOP, $slop=Slop);
+}
 
-//END MAKERWORLD PLATING
+module DrawerHandleDovetailMale(anchor=CENTER, orient=UP, spin=0){
+    dovetail("male", slide = handleDovetail_Slide, width = handleDovetail_width+handleDovetail_Slop, height =handleDovetail_height, slope = 8, taper = -handleDovetail_taper, chamfer = handleDovetail_chamfer, anchor=anchor, orient=orient, spin=spin)
+        children();
+}
+
+module DrawerHandleScrewFemale(anchor=TOP, orient=UP, spin=0){
+    trapezoidal_threaded_rod(d=Outer_Diameter_Sm, l=6, pitch=Pitch_Sm, flank_angle = Flank_Angle_Sm, thread_depth = Thread_Depth_Sm, $fn=50, internal=true, bevel2 = true, teardrop = true, blunt_start=false, $slop=0.075, anchor=anchor, orient=orient, spin=spin)
+        children();
+}
 
 module DrawerFront(height_units, inside_width, anchor=CENTER, orient=UP, spin=0){
-    drawerFrontThickness = 3.5;
     drawerFrontChamfer = 1;
     drawerFrontRecess = 3.1;
     drawer_height = height_units * Slide_Vertical_Separation - DrawerVerticalClearance;
@@ -454,7 +545,7 @@ module DrawerFront(height_units, inside_width, anchor=CENTER, orient=UP, spin=0)
     drawerFrontWidth = drawerOuterWidth + Riser_Width - drawerFrontLateralClearance*2;
 
     tag_scope()
-    recolor(Disable_Colors ? $color : Drawer_Front_Color)
+    recolor(Disable_Colors ? undef : Drawer_Front_Color)
     diff()
     cuboid([drawerFrontWidth, drawer_height, drawerFrontThickness], chamfer = drawerFrontChamfer, edges=BOT, anchor=anchor, orient=orient, spin=spin){
         //drawer dovetails
@@ -463,13 +554,33 @@ module DrawerFront(height_units, inside_width, anchor=CENTER, orient=UP, spin=0)
         attach(TOP, FRONT, overlap=0.01, align=BACK, inset=drawerFrontHeightReduction)
             cuboid([DrawerDovetailWidth+DrawerThickness*2-clearance*2, DrawerThickness+0.02, DrawerDovetailHeight*height_units - clearance], chamfer=DrawerThickness, edges=[FRONT+LEFT, FRONT+RIGHT]);
         //drawer pull screw hole(s)
+        if(Drawer_Pull_Type == "Screw Holes - Single" || Drawer_Pull_Type == "Screw Holes - Double")
         tag("remove")
             back(Drawer_Pull_Height_Adjustement)
             xcopies(spacing = Drawer_Pull_Double_Screw_Hole_Distance_from_Center, n=DrawerPullHoleCount)
             attach(TOP, BOT, inside = true, shiftout=0.01)
                 cyl(d=Drawer_Pull_Screw_Diameter, h = drawerFrontThickness + 0.02, $fn = 25);
+        if(Drawer_Pull_Type == "Handle - Printed"){
+            if(DrawerHandle_Connection_Type == "Screw")
+            tag("remove")
+                xcopies(spacing = handleDovetail_DistanceBetweenCenters)
+                    attach(BOT, TOP, inside=true, shiftout=0.01)
+                        cyl(d=Outer_Diameter_Sm+0.25, h=drawerFrontThickness + DrawerThickness + 0.02, $fn=25);
+            if(DrawerHandle_Connection_Type == "Dovetail")//bad method - do not use
+            tag("remove")
+                attach(BOT)
+                fwd(handleDovetail_Slide/2+handleDovetail_Center)
+                xcopies(spacing = handleDovetail_DistanceBetweenCenters)
+                    DrawerHandleDovetailSlot();
+        }
         children();
     }
+}
+
+module DrawerHandleDovetailSlot(){
+    dovetail("female", slide = handleDovetail_Slide, width = handleDovetail_width, height =handleDovetail_height, slope = 8, taper = -handleDovetail_taper, chamfer = handleDovetail_chamfer)
+        attach(BACK, BOT)
+            cube([handleDovetail_InsertHoleWidth,handleDovetail_height+0.02,handleDovetail_Slide+clearance]);
 }
 
 module Drawer(height_units, inside_width, Drawer_Outside_Depth, anchor=CENTER, orient=UP, spin=0){
@@ -503,7 +614,7 @@ module Drawer(height_units, inside_width, Drawer_Outside_Depth, anchor=CENTER, o
         //front drawer pull
         color(Disable_Colors ? undef : Primary_Color)
         attach(FRONT, FRONT, inside=true, shiftout=0.01, align=TOP, inset=drawerFrontHeightReduction-0.02)
-            cuboid([inside_width_adjusted/3, DrawerThickness+0.02, 20], 
+            cuboid([50, DrawerThickness+0.02, 20], 
                         //bottom rounding at 5 or maximum possible given cutout width
                         rounding = min(5,5), 
                         edges=[LEFT+BOT, RIGHT+BOT]) 
@@ -528,15 +639,39 @@ module Drawer(height_units, inside_width, Drawer_Outside_Depth, anchor=CENTER, o
                         edges=[LEFT+BOT, RIGHT+BOT, TOP+LEFT, TOP+RIGHT]) 
                         ;
         //drawer pull screw hole(s)
+        if(Drawer_Pull_Type == "Screw Holes - Single" || Drawer_Pull_Type == "Screw Holes - Double")
         tag("remove")
             up(Drawer_Pull_Height_Adjustement)
             xcopies(spacing = Drawer_Pull_Double_Screw_Hole_Distance_from_Center, n=DrawerPullHoleCount)
             attach(FRONT, BOT, inside = true, shiftout=0.01)
                 cyl(d=Drawer_Pull_Screw_Diameter, h = DrawerThickness + 0.02, $fn = 25);
+        //drawer handle dovetails
+        if(Drawer_Pull_Type == "Handle - Printed"){
+            if(DrawerHandle_Connection_Type == "Screw")
+            tag("remove")
+                xcopies(spacing = handleDovetail_DistanceBetweenCenters)
+                    attach(FRONT, TOP, inside=true, shiftout=0.01)
+                        cyl(d=Outer_Diameter_Sm+0.25, h=DrawerThickness-2.5, $fn=25)
+                            attach(BOT, TOP, overlap=0.01)
+                                cyl(d=15, h=DrawerThickness, $fn=25);
+        if(DrawerHandle_Connection_Type == "Dovetail")//bad method - do not use
+        tag("remove")
+            down(handleDovetail_Slide/2+handleDovetail_Center)
+            fwd(drawerFrontThickness)
+            attach(FRONT)
+                xcopies(spacing = handleDovetail_DistanceBetweenCenters)
+                    DrawerHandleDovetailSlot();
+        }
         children();
     }
 }
 
+module T_Screw(){
+    color(Disable_Colors ? undef : Primary_Color)
+    up(2)yrot(90)left_half(x=2)right_half(x=-2)cuboid([4,14,2.5], chamfer=0.75, edges=[LEFT+FRONT, RIGHT+FRONT, RIGHT+BACK, LEFT+BACK], anchor=BOT){
+        attach(TOP, BOT) trapezoidal_threaded_rod(d=Outer_Diameter_Sm, l=10, pitch=Pitch_Sm, flank_angle = Flank_Angle_Sm, thread_depth = Thread_Depth_Sm, $fn=50, bevel2 = true, blunt_start=false);
+    }
+}
 
 module TopPlateCore(width, depth, thickness, spin = 0, orient = UP, anchor=CENTER){
 
@@ -970,7 +1105,8 @@ module Riser(anchor=BOT, spin=0, orient=UP){
 
 
 module Dovetail_Male(anchor=CENTER, spin = 0, orient = UP){
-    attachable(anchor, spin, orient, size=[Dovetail_Width,Dovetail_Height*2,Dovetail_Depth]){
+    attachable(anchor, spin, orient, size=[Dovetail_Width,Dovetail_Height*2,Dovetail_Depth-0.6]){
+        color(Disable_Colors ? undef : Primary_Color)
         mirror_copy([0,1,0])
             dovetail("male", slide=Dovetail_Depth-0.6, width=Dovetail_Width, height=Dovetail_Height,chamfer=Dovetail_Chamfer, taper = -3, slope = 4, anchor=BOT, orient=FRONT);
         children();
