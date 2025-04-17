@@ -24,23 +24,25 @@ include <BOSL2/threading.scad>
 
 
 /*[Core Section Dimensions]*/
-//Width (in mm) from riser center to riser center. 84mm increments. 
+//Width (in mm) from riser center to riser center. 84mm increments (2 Gridfinity units / 6 openGrid units)
 Core_Section_Width = 196; //[112:84:952] 
-//Depth (in mm) from front of the riser to the rear of the backer (top plate will be deeper out the front). 28mm increments.
+//Depth (in mm) from front of the riser to the rear of the backer (top plate will be deeper out the front). 28mm increments (openGrid units).
 Core_Section_Depth = 196.5; //[112.5:84:840.5]
 //Total Height of the core section from the bottom of the riser to the base of the top plate.
 Total_Height = 107.5; //[67.5:40:387.5]
-//DISPLAY PURPOSES ONLY - The output will always contain the parts needed for 1 core. For extra cores, simply print 1 more of the following: 1 Riser, 1 Backer, 1 Baseplate, 1 Top plate
-Core_Section_Count = 1; //[1:1:8]
+//DISPLAY PURPOSES ONLY - May not render large displays on MakerWorld! For full display, use desktop OpenSCAD. The output will always contain the parts needed for 1 core. For extra cores, simply print 1 more of the following: 1 Riser, 1 Backer, 1 Baseplate, 1 Top plate.
+Core_Section_Count_DISPLAY_ONLY = 1; //[1:1:8]
 
-/*[Ends]*/
+/*[End Style]*/
+//Style of outer edges of Deskware.
 End_Style = "Rounded Square"; //[Rounded, Squared, Rounded Square]
-//Change the rounding radius of the rounded square
-Rounded_Square_Rounding = 50;
-
+//If selecting Rounded Square, change the rounding radius of the rounded square
+Rounded_Square_Rounding = 50; //[1:1:100]
 
 /*[Drawers]*/
-Drawer_Pull_Type = "Handle - Printed"; //[Screw Holes - Single, Screw Holes - Double, Handle - Printed]
+//Mounting method of drawer pull (printed vs hardware screws)
+Drawer_Mounting_Method = "Handle - Printed"; //[Screw Holes - Single, Screw Holes - Double, Handle - Printed]
+//If using screw holes for hardware, enger the diameter (mm) of the screw (5mm is common)
 Drawer_Pull_Screw_Diameter = 5;
 //Distance from screw hole centers if using double-screw drawer pulls
 Drawer_Pull_Double_Screw_Hole_Distance_from_Center = 75;
@@ -48,18 +50,18 @@ Drawer_Pull_Double_Screw_Hole_Distance_from_Center = 75;
 Drawer_Pull_Height_Adjustement = 0;
 
 /*[Colors]*/
-Primary_Color = "#2e2e2e"; // color
-Drawer_Front_Color = "#00cf30"; // color
-Top_Plate_Color = "#00cf30"; // color
-Drawer_Handle_Color = "#2e2e2e"; // color
+Primary_Color = "#dadada"; // color
+Drawer_Front_Color = "#dadada"; // color
+Top_Plate_Color = "#dadada"; // color
+Drawer_Handle_Color = "#dadada"; // color
+//dadada 00cf30 2e2e2e
 
 /*[Advanced Options]*/
 //Additional reach of top plate support built into the baseplate. 1 = 1 openGrid unit.
 Additional_Top_Plate_Support = 1; //[1:1:8] 
 
-
-
-/*[Select Parts]*/
+/*[Assembly Display]*/
+Show_Connected=true;
 Show_Baseplate = true;
 Show_Risers = true;
 Show_Backer = true;
@@ -68,9 +70,8 @@ Show_Drawers = true;
 Connector_Fit_Tests = false;
 
 
-/*[Debug]*/
-openGrid_Render = true;
-Show_Connected=false;
+/*[Desktop Debug]*/
+//Set to true when running on MakerWorld  https://makerworld.com/en/makerlab/parametricModelMaker
 MakerWorld_Render_Mode = false;
 Show_Plate = 0;
 Disable_Colors = false;
@@ -79,7 +80,7 @@ Disable_Colors = false;
 ///*[Advanced]*/
 clearance = 0.15;
 openGridSize = 28;
-
+openGrid_Render = true;
 Show_Top_Plate_all_options = false;
 
 ///*[Printable Bed Volume]*/
@@ -90,7 +91,7 @@ Custom_Bed_Depth = 256;
 
 curve_resolution = 100;
 
-
+Core_Section_Count = Core_Section_Count_DISPLAY_ONLY;
 
 ///*[Riser Slide]*/
 //Width (and rise of angle) of the slide recess
@@ -212,8 +213,8 @@ Drawer_Slide_From_Top = Slide_Vertical_Separation - Slide_Distance_From_Bottom -
 DrawerDovetailWidth = 10;
 DrawerDovetailHeight = 25;
 DrawerPullHoleCount = 
-    Drawer_Pull_Type == "Screw Holes - Single" ? 1 :
-    Drawer_Pull_Type == "Screw Holes - Double" ? 2 :
+    Drawer_Mounting_Method == "Screw Holes - Single" ? 1 :
+    Drawer_Mounting_Method == "Screw Holes - Double" ? 2 :
     0;
 DrawerHandle_Connection_Type = "Screw";
 
@@ -277,6 +278,7 @@ if(!MakerWorld_Render_Mode && Show_Plate == 8)
     mw_plate_8();
 if(!MakerWorld_Render_Mode && Show_Plate == 9)
     mw_plate_9();
+
 module mw_assembly_view() {
     if(Show_Backer)
         xcopies(spacing = Core_Section_Width, n=Core_Section_Count)
@@ -355,7 +357,7 @@ module mw_assembly_view() {
                         if(Show_Connected)
                         attach(FRONT, TOP)
                             DrawerFront(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2)
-                                if(Drawer_Pull_Type == "Handle - Printed")
+                                if(Drawer_Mounting_Method == "Handle - Printed")
                                 recolor(Disable_Colors ? undef : Drawer_Handle_Color)
                                 attach(BOT, BACK)
                                     DrawerHandle();
@@ -369,7 +371,7 @@ module mw_assembly_view() {
                         DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2);
                     else
                         DrawerFront(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2);
-            if(Drawer_Pull_Type == "Handle - Printed"){
+            if(Drawer_Mounting_Method == "Handle - Printed"){
                 fwd(Core_Section_Depth/2 + 25 + 125)
                     DrawerHandle();
                 fwd(Core_Section_Depth/2 + 25 + 125)
@@ -457,11 +459,11 @@ module mw_plate_5(){
     }
     else if(End_Style == "Squared"){
         xcopies(5)
-            TopPlateEndSquared(width = baseplateEndAngleDistance*2, depth = Base_Plate_Depth, radius = Rounded_Square_Rounding, thickness = Top_Plate_Thickness, half=$idx == 0 ? LEFT : RIGHT);
+            TopPlateEndSquared(width = baseplateEndAngleDistance*2, depth = Base_Plate_Depth, radius = 1, thickness = Top_Plate_Thickness, half=$idx == 0 ? LEFT : RIGHT);
     }
     else{
         xcopies(5)
-            TopPlateEndSquared(width = baseplateEndAngleDistance*2, depth = Base_Plate_Depth, radius = 1, thickness = Top_Plate_Thickness, half=$idx == 0 ? LEFT : RIGHT);
+            TopPlateEndSquared(width = baseplateEndAngleDistance*2, depth = Base_Plate_Depth, radius = Rounded_Square_Rounding, thickness = Top_Plate_Thickness, half=$idx == 0 ? LEFT : RIGHT);
     }
 
 
@@ -478,13 +480,26 @@ module mw_plate_7(){
 
 }
 
-//Plate 8 - Drawer Fronts
+//Plate 8 - Drawer Fronts Single
 module mw_plate_8(){
-    ydistribute(sizes=[40, 80, 40], spacing = 5){
-        DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2);
-        DrawerFront(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2);
-        if(Drawer_Pull_Type == "Handle - Printed"){
-            DrawerHandle();
+    ydistribute(sizes=[40, 40], spacing = 5){
+        DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, anchor=BOT);
+        //DrawerFront(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2);
+        if(Drawer_Mounting_Method == "Handle - Printed"){
+            DrawerHandle(anchor=BOT);
+            xcopies(spacing = 15)
+            back(10)T_Screw();
+        }
+    }
+}
+
+//Plate 9 - Drawer Fronts Single
+module mw_plate_9(){
+    ydistribute(sizes=[80, 40], spacing = 5){
+        //DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2);
+        DrawerFront(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2, anchor=BOT);
+        if(Drawer_Mounting_Method == "Handle - Printed"){
+            DrawerHandle(anchor=BOT);
             xcopies(spacing = 15)
             back(10)T_Screw();
         }
@@ -554,13 +569,13 @@ module DrawerFront(height_units, inside_width, anchor=CENTER, orient=UP, spin=0)
         attach(TOP, FRONT, overlap=0.01, align=BACK, inset=drawerFrontHeightReduction)
             cuboid([DrawerDovetailWidth+DrawerThickness*2-clearance*2, DrawerThickness+0.02, DrawerDovetailHeight*height_units - clearance], chamfer=DrawerThickness, edges=[FRONT+LEFT, FRONT+RIGHT]);
         //drawer pull screw hole(s)
-        if(Drawer_Pull_Type == "Screw Holes - Single" || Drawer_Pull_Type == "Screw Holes - Double")
+        if(Drawer_Mounting_Method == "Screw Holes - Single" || Drawer_Mounting_Method == "Screw Holes - Double")
         tag("remove")
             back(Drawer_Pull_Height_Adjustement)
             xcopies(spacing = Drawer_Pull_Double_Screw_Hole_Distance_from_Center, n=DrawerPullHoleCount)
             attach(TOP, BOT, inside = true, shiftout=0.01)
                 cyl(d=Drawer_Pull_Screw_Diameter, h = drawerFrontThickness + 0.02, $fn = 25);
-        if(Drawer_Pull_Type == "Handle - Printed"){
+        if(Drawer_Mounting_Method == "Handle - Printed"){
             if(DrawerHandle_Connection_Type == "Screw")
             tag("remove")
                 xcopies(spacing = handleDovetail_DistanceBetweenCenters)
@@ -639,14 +654,14 @@ module Drawer(height_units, inside_width, Drawer_Outside_Depth, anchor=CENTER, o
                         edges=[LEFT+BOT, RIGHT+BOT, TOP+LEFT, TOP+RIGHT]) 
                         ;
         //drawer pull screw hole(s)
-        if(Drawer_Pull_Type == "Screw Holes - Single" || Drawer_Pull_Type == "Screw Holes - Double")
+        if(Drawer_Mounting_Method == "Screw Holes - Single" || Drawer_Mounting_Method == "Screw Holes - Double")
         tag("remove")
             up(Drawer_Pull_Height_Adjustement)
             xcopies(spacing = Drawer_Pull_Double_Screw_Hole_Distance_from_Center, n=DrawerPullHoleCount)
             attach(FRONT, BOT, inside = true, shiftout=0.01)
                 cyl(d=Drawer_Pull_Screw_Diameter, h = DrawerThickness + 0.02, $fn = 25);
         //drawer handle dovetails
-        if(Drawer_Pull_Type == "Handle - Printed"){
+        if(Drawer_Mounting_Method == "Handle - Printed"){
             if(DrawerHandle_Connection_Type == "Screw")
             tag("remove")
                 xcopies(spacing = handleDovetail_DistanceBetweenCenters)
