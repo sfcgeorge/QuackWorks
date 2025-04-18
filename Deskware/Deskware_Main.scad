@@ -8,8 +8,10 @@ This code is Licensed Creative Commons 4.0 Attribution Non-Commercial Share-Alik
 Derived parts are licensed Creative Commons 4.0 Attribution (CC-BY)
 
 Change Log:
-- 2025- 
+- 2025-04-17 v1.0
     - Initial release
+- 2025-04-18 v1.01
+    - Remove drawer handle render when choosing hardware mount option
 
 Credit to 
     @David D on Printables for openGrid
@@ -347,6 +349,7 @@ module mw_assembly_view() {
                         if(Show_Connected)
                         attach(FRONT, TOP)
                             DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2)
+                                if(Drawer_Mounting_Method == "Handle - Printed")
                                 //drawer handle
                                 recolor(Disable_Colors ? undef : Drawer_Handle_Color)
                                 attach(BOT, BACK)
