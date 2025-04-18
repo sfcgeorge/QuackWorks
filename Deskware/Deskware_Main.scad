@@ -30,8 +30,7 @@ Core_Section_Width = 196; //[112:84:952]
 Core_Section_Depth = 196.5; //[112.5:84:840.5]
 //Total Height of the core section from the bottom of the riser to the base of the top plate.
 Total_Height = 107.5; //[67.5:40:387.5]
-//DISPLAY PURPOSES ONLY - May not render large displays on MakerWorld! For full display, use desktop OpenSCAD. The output will always contain the parts needed for 1 core. For extra cores, simply print 1 more of the following: 1 Riser, 1 Backer, 1 Baseplate, 1 Top plate.
-Core_Section_Count_DISPLAY_ONLY = 1; //[1:1:8]
+
 
 /*[End Style]*/
 //Style of outer edges of Deskware.
@@ -75,6 +74,8 @@ Connector_Fit_Tests = false;
 MakerWorld_Render_Mode = false;
 Show_Plate = 0;
 Disable_Colors = false;
+//DISPLAY PURPOSES ONLY - May not render large displays on MakerWorld (likely due to size! For full display, use desktop OpenSCAD. The output will always contain the parts needed for 1 core. For extra cores, simply print 1 more of the following: 1 Riser, 1 Backer, 1 Baseplate, 1 Top plate.
+Core_Section_Count_DISPLAY_ONLY = 1; //[1:1:8]
 
 /*[Hidden]*/
 ///*[Advanced]*/
