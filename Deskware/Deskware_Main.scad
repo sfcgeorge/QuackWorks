@@ -15,6 +15,8 @@ Change Log:
 - 2025-04-18 v1.1
     - SVG Generator for Top Plate
     - Revealed customizations for top plate inserts
+- 2025-04-20 v1.1.1
+    - Fix for MakerWorld plating of squared ends
 
 Credit to 
     @David D on Printables for openGrid
@@ -478,7 +480,7 @@ module mw_plate_3(){
     else if(End_Style == "Squared"){
         xcopies(spacing = -5)
             zrot($idx == 0 ? 0 : 180)
-                baseplateEndSquared(depth = Base_Plate_Depth, height = Base_Plate_Thickness, radius = Rounded_Square_Rounding, anchor=BOT+RIGHT, orient=RIGHT);
+                baseplateEndSquared(depth = Base_Plate_Depth, height = Base_Plate_Thickness, radius = topPlateSquareVersionRadius, anchor=BOT+RIGHT, orient=RIGHT);
     }
 
     else{
