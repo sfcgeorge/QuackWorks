@@ -1,3 +1,5 @@
+# QuackWorks
+
 QuackWorks is an OpenSCAD project centered around parametric functional prints. 
 
 There are currently two publicly released collections: 
@@ -5,10 +7,12 @@ There are currently two publicly released collections:
 2. BJD's Multiconnect Part Generators (https://makerworld.com/en/models/582260)
 Web version is available here: 
 
-Example in OpenSCAD
+## Example in OpenSCAD
+
 ![image](https://github.com/user-attachments/assets/1fb201eb-66d4-4f9b-b52b-4cf9fbe7a652)
 
-Multiconnect Development Standards
+## Multiconnect Development Standards
+
 - Backer Standards
     - Back types as a single module accepting height and width parameters
     - All customizable parameters for a back type must be enclosed in their own parameter section
@@ -20,6 +24,12 @@ Multiconnect Development Standards
     - Compiles without error
     - Test items under 5mm in height, depth, and width and verify back generates properly
     - Test for very large items
+
+## Contributing
+
+We use [BOSL2](https://github.com/BelfrySCAD/BOSL2) as a dependency and needs to be install accordingly.
+
+## License
 
 Shield: [![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]
 
