@@ -28,6 +28,7 @@ Web version is available here:
 ## Contributing
 
 We use [BOSL2](https://github.com/BelfrySCAD/BOSL2) as a dependency and needs to be install accordingly.
+If you have [nix](https://nixos.org/) installed with flakes activated, then everything will be setup for you with `nix develop`.
 
 ## License
 
