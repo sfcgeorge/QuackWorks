@@ -12,11 +12,15 @@ Change Log:
     - Initial release
 - 2025-04-18 v1.01
     - Remove drawer handle render when choosing hardware mount option
-- 2025-04-18 v1.1
+- 2025-04-18 v1.1 - SVG Export
     - SVG Generator for Top Plate
     - Revealed customizations for top plate inserts
 - 2025-04-20 v1.1.1
     - Fix for MakerWorld plating of squared ends
+- 2025-04-25 v1.2 - Curve Sections
+    - Added curved section pieces customizable by degrees of arc and radius
+
+     
 
 Credit to 
     @David D on Printables for openGrid
@@ -60,6 +64,11 @@ Drawer_Pull_Height_Adjustement = 0;
 Top_Plate_Recess = 1; //0.1
 //The width (mm) of the top lip of the top plate. A thicker width equates to a larger border around the top.
 Top_Plate_Lip_Width = 0.5;
+
+/*[Curve Section]*/
+Enable_Curve_Mode = false;
+Degrees_of_Arc = 45;
+Core_Radius = 50;
 
 /*[Colors]*/
 Primary_Color = "#dadada"; // color
@@ -180,6 +189,10 @@ Grid_Min_Depth_Clearance = 18;
 Grid_Min_FrontBack_Clearance = 2;
 Tile_Thickness = 11.5;
 Baseplate_Bottom_Chamfer = 5;
+Top_Plate_Baseplate_Depth_Difference = Top_Plate_Depth - Base_Plate_Depth;
+echo(str("Difference between top plate depth and base plate depth: ", Top_Plate_Baseplate_Depth_Difference));
+Top_Plate_Riser_Depth_Difference = Top_Plate_Depth - Riser_Depth;
+echo(str("Difference between top plate depth and riser depth: ", Top_Plate_Riser_Depth_Difference));
 
 //oG Height Calculations
 Grid_Dist_From_Bot = 2; //size of base on bottom of BACKER before starting the grid
@@ -292,6 +305,9 @@ if(!MakerWorld_Render_Mode && Show_Plate == 0){
     if(Show_Top_Plate_SVG) 
     //    up(110)
         TopPlateSVGBuilder();
+    else if (Enable_Curve_Mode){
+        mw_plate_10();
+    }
     else 
         mw_assembly_view();
 }
@@ -320,6 +336,9 @@ if(!MakerWorld_Render_Mode && Show_Plate == 9)
 module mw_assembly_view() {
     if(Show_Top_Plate_SVG){
         TopPlateSVGBuilder();
+    }
+    else if (Enable_Curve_Mode){
+        mw_plate_10();
     }
     else{
         if(Show_Backer)
@@ -553,9 +572,32 @@ module mw_plate_9(){
         }
     }
 }
+//Plate 10 - Arc Series
+module mw_plate_10(){
+    //Curved Series
+    arc_series_gap = 50;
+    fwd(4+9)
+    riserBuilderPath(Riser_Depth, Riser_Height, arc=Degrees_of_Arc, radius = Core_Radius, $fn=150, anchor=BOT);
+    up(Riser_Height + clearance + arc_series_gap)
+        basePlateBuilderPath(Base_Plate_Depth, Base_Plate_Width, arc=Degrees_of_Arc, radius = Core_Radius, anchor=BOT);
+    up(Riser_Height + Base_Plate_Thickness + clearance + arc_series_gap*2)
+        fwd(Top_Plate_Baseplate_Depth_Difference)
+            topPlateBuilderPath(Top_Plate_Depth, Core_Section_Width, arc=Degrees_of_Arc, radius = Core_Radius, totalHeight = Top_Plate_Thickness + topLipHeight, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topLipHeight, $fn=150, anchor=BOT)  ;
+
+}
 //END MAKERWORLD PLATING
 
 
+//top plate alternative
+//up(99)
+    //#topPlateBuilderPath(Top_Plate_Depth, Core_Section_Width, totalHeight = Top_Plate_Thickness + topLipHeight, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topLipHeight, $fn=150);
+//#basePlateBuilderPath(Base_Plate_Depth, Base_Plate_Width);
+//top plate straight
+//!topPlateBuilderPath(depth = Top_Plate_Depth, width = Core_Section_Width);
+
+
+
+//BEGIN DRAWER PARTS
 module DrawerHandle(handle_OutsideWidth = 100, handle_InsideDepth = 15, handle_Thickness = 10, spin = 0, orient = UP, anchor = CENTER){
     attachable(anchor, spin, orient, size=[handle_OutsideWidth, handle_InsideDepth + handle_Thickness, handle_Thickness]){
 
@@ -572,29 +614,11 @@ module DrawerHandle(handle_OutsideWidth = 100, handle_InsideDepth = 15, handle_T
                     tag("thread")
                     attach(BACK, BOT, inside=true, shiftout=0.01)
                         DrawerHandleScrewFemale();
-                    //handle dovetails
-                    if(DrawerHandle_Connection_Type == "Dovetail")//bad method - do not use
-                    attach(BACK, BOT, align = BOT)
-                        DrawerHandleDovetailMale();
         }
         children();
     }
 }
 
-module DrawerHandleThread(){
-    trapezoidal_threaded_rod(d=Outer_Diameter_Sm, l=6, pitch=Pitch_Sm, flank_angle = Flank_Angle_Sm, thread_depth = Thread_Depth_Sm, $fn=50, internal=true, bevel2 = true, blunt_start=false, anchor=TOP, $slop=Slop);
-}
-
-module DrawerHandleDovetailMale(anchor=CENTER, orient=UP, spin=0){
-    //deprecated
-    dovetail("male", slide = handleDovetail_Slide, width = handleDovetail_width+handleDovetail_Slop, height =handleDovetail_height, slope = 8, taper = -handleDovetail_taper, chamfer = handleDovetail_chamfer, anchor=anchor, orient=orient, spin=spin)
-        children();
-}
-
-module DrawerHandleScrewFemale(anchor=TOP, orient=UP, spin=0){
-    trapezoidal_threaded_rod(d=Outer_Diameter_Sm, l=6, pitch=Pitch_Sm, flank_angle = Flank_Angle_Sm, thread_depth = Thread_Depth_Sm, $fn=50, internal=true, bevel2 = true, teardrop = true, blunt_start=false, $slop=0.075, anchor=anchor, orient=orient, spin=spin)
-        children();
-}
 
 module DrawerFront(height_units, inside_width, anchor=CENTER, orient=UP, spin=0){
     drawerFrontChamfer = 1;
@@ -630,22 +654,9 @@ module DrawerFront(height_units, inside_width, anchor=CENTER, orient=UP, spin=0)
                 xcopies(spacing = handleDovetail_DistanceBetweenCenters)
                     attach(BOT, TOP, inside=true, shiftout=0.01)
                         cyl(d=Outer_Diameter_Sm+0.25, h=drawerFrontThickness + DrawerThickness + 0.02, $fn=25);
-            if(DrawerHandle_Connection_Type == "Dovetail")//bad method - do not use
-            tag("remove")
-                attach(BOT)
-                fwd(handleDovetail_Slide/2+handleDovetail_Center)
-                xcopies(spacing = handleDovetail_DistanceBetweenCenters)
-                    DrawerHandleDovetailSlot();
         }
         children();
     }
-}
-
-module DrawerHandleDovetailSlot(){
-    //deprecated
-    dovetail("female", slide = handleDovetail_Slide, width = handleDovetail_width, height =handleDovetail_height, slope = 8, taper = -handleDovetail_taper, chamfer = handleDovetail_chamfer)
-        attach(BACK, BOT)
-            cube([handleDovetail_InsertHoleWidth,handleDovetail_height+0.02,handleDovetail_Slide+clearance]);
 }
 
 module Drawer(height_units, inside_width, Drawer_Outside_Depth, anchor=CENTER, orient=UP, spin=0){
@@ -719,45 +730,11 @@ module Drawer(height_units, inside_width, Drawer_Outside_Depth, anchor=CENTER, o
                         cyl(d=Outer_Diameter_Sm+0.25, h=DrawerThickness-2.5, $fn=25)
                             attach(BOT, TOP, overlap=0.01)
                                 cyl(d=15, h=DrawerThickness, $fn=25);
-        if(DrawerHandle_Connection_Type == "Dovetail")//bad method - do not use
-        tag("remove")
-            down(handleDovetail_Slide/2+handleDovetail_Center)
-            fwd(drawerFrontThickness)
-            attach(FRONT)
-                xcopies(spacing = handleDovetail_DistanceBetweenCenters)
-                    DrawerHandleDovetailSlot();
         }
         children();
     }
 }
-
-module T_Screw(){
-    color(Disable_Colors ? undef : Primary_Color)
-    up(2)yrot(90)left_half(x=2)right_half(x=-2)cuboid([4,14,2.5], chamfer=0.75, edges=[LEFT+FRONT, RIGHT+FRONT, RIGHT+BACK, LEFT+BACK], anchor=BOT){
-        attach(TOP, BOT) trapezoidal_threaded_rod(d=Outer_Diameter_Sm, l=10, pitch=Pitch_Sm, flank_angle = Flank_Angle_Sm, thread_depth = Thread_Depth_Sm, $fn=50, bevel2 = true, blunt_start=false);
-    }
-}
-
-module TopPlateCore(width, depth, thickness, spin = 0, orient = UP, anchor=CENTER){
-
-    color(Disable_Colors ? undef : Top_Plate_Color)
-    diff()
-    cuboid([width-clearance*2, depth+Top_Bot_Plates_Interface_Chamfer*2 - Top_Plate_Clearance*2, thickness+topLipHeight], spin=spin, orient=orient, anchor=anchor){
-        //bot chamfer
-        edge_profile([BOT+FRONT, BOT+BACK])
-            mask2d_chamfer(x=Top_Bot_Plates_Interface_Chamfer*2);
-        //top chamfer
-        edge_profile([TOP+FRONT, TOP+BACK])
-            mask2d_chamfer(x=topChamfer);
-        //top lip cutout
-        attach(TOP, TOP, inside=true, shiftout=0.01)
-            cuboid([width+0.02, depth+Top_Bot_Plates_Interface_Chamfer*2 - Top_Plate_Clearance*2 - topChamfer*2-topLipWidth*2, topLipHeight]);
-        //top plate tabs
-        attach(BOT, BOT, inside=true, shiftout=0.01, align=[LEFT, RIGHT], inset=TabDistanceFromOutsideEdge-clearance)
-            TopPlateTab(height = TabProtrusionHeight, deleteTool = true);
-        children();
-    }
-}
+//END DRAWER PARTS
 
 module TopPlateEndSquared(width, depth, thickness, radius = 50, topRecess = 1, half = LEFT){
     //topPlateAdjustedDepth = depth + Top_Bot_Plates_Interface_Chamfer*2 - Top_Plate_Clearance*2;
@@ -766,7 +743,7 @@ module TopPlateEndSquared(width, depth, thickness, radius = 50, topRecess = 1, h
     color(Disable_Colors ? undef : Top_Plate_Color)
     diff(){
         half_of(half, s = width*2 + 5)
-            topPlateBuilder(totalHeight = thicknessAdjusted, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topRecess)
+            topPlateBuilderShape(totalHeight = thicknessAdjusted, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topRecess)
                 rect([width,depth], rounding = [radius,radius,radius,radius]);
             tag("remove")
                up(TabProtrusionHeight/2-0.01)
@@ -783,7 +760,7 @@ module TopPlateEndRoundNew(depth, thickness, topRecess = 1, half = LEFT){
     color(Disable_Colors ? undef : Top_Plate_Color)
     diff(){
         half_of(half, s = depth*2 + 5)
-            topPlateBuilder(totalHeight = thicknessAdjusted, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topRecess)
+            topPlateBuilderShape(totalHeight = thicknessAdjusted, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topRecess)
                 ellipse(d=depth);
         tag("remove")
             up(TabProtrusionHeight/2-0.01)
@@ -820,7 +797,148 @@ module TopPlateSVGBuilder(){
     
 }
 
-module topPlateBuilder(totalHeight = 9.5, bottomChamfer = 1, topChamfer = 1, topInset = 0.5, half = LEFT, topRecess = 1, $fn = 150){
+//BEGIN EXTRUDED SERIES
+module topPlateBuilderPath(depth, width, arc = 0, radius = 30, totalHeight = 9.5, bottomChamfer = 6, topChamfer = 1, topInset = 0.5, topRecess = 1, $fn = 150, anchor=CENTER,spin=0,orient=UP){
+    middleSectionHeight = totalHeight - bottomChamfer - topChamfer; 
+    
+    //straight piece
+    if(arc == 0)
+    zrot(90)xrot(90) 
+        linear_sweep(topPlatePath, height = width, center=true, anchor=anchor,spin=spin,orient=orient){
+            attach(["start", "end"], BOT, inside=true)
+                up(TopPlateTabWidth/2 + TabDistanceFromOutsideEdge)
+                xrot(-90) zrot(90) down(0.01)
+                TopPlateTab(height = TabProtrusionHeight, deleteTool = true);
+            children();
+        }
+    //arc
+    else
+    //fwd(radius + Riser_Depth/2)
+    diff()
+    zrot(90-arc/2)
+        path_sweep(topPlatePath, arc(r = Riser_Depth/2 + radius, angle=arc), anchor=anchor,spin=spin,orient=orient) {
+            //top plate tabs
+            //#attach(BOT, BOT, inside=false, shiftout=0.01, align=[LEFT, RIGHT], inset=TabDistanceFromOutsideEdge-clearance)
+            attach(["start", "end"], BOT, inside=true)
+                up(TopPlateTabWidth/2 + TabDistanceFromOutsideEdge)
+                xrot(-90) zrot(90) down(0.01)
+                TopPlateTab(height = TabProtrusionHeight, deleteTool = true);
+            children();
+        }
+
+    topPlatePath = [
+        [-depth/2 + bottomChamfer,0], //starting bottom front
+        [-depth/2, bottomChamfer], 
+        [-depth/2, bottomChamfer + middleSectionHeight],
+        [-depth/2 + topChamfer, bottomChamfer + middleSectionHeight + topChamfer], //top of lip outside
+        [-depth/2 + topChamfer + topInset, bottomChamfer + middleSectionHeight + topChamfer], //top of lip inside
+        [-depth/2 + topChamfer + topInset, bottomChamfer + middleSectionHeight + topChamfer-topRecess], //bottom of recess
+        [depth/2 - topChamfer - topInset, bottomChamfer + middleSectionHeight + topChamfer-topRecess], //bottom of recess
+        [depth/2 - topChamfer - topInset, bottomChamfer + middleSectionHeight + topChamfer], //top of lip inside
+        [depth/2 - topChamfer, bottomChamfer + middleSectionHeight + topChamfer], //top of lip outside
+        [depth/2, bottomChamfer + middleSectionHeight],
+        [depth/2, bottomChamfer], 
+        [depth/2 - bottomChamfer,0],
+    ];
+}
+
+//extrudes a base plate along a path
+module basePlateBuilderPath(depth, width, height = 19, arc = 0, radius = 30, totalHeight = 9.5, bottomChamfer = 6, topChamfer = 1, topInset = 0.5, topRecess = 1, $fn = 150, anchor=CENTER,spin=0,orient=UP){
+    
+    //straight piece
+    if(arc == 0)
+        zrot(90)xrot(90) 
+            linear_sweep(basePlatePath, height = width, center=true, anchor=anchor,spin=spin,orient=orient) {        
+                children();
+            }
+    //arc
+    else{
+        diff()
+        zrot(90+arc/2)
+            path_sweep(basePlatePath, arc(r = Riser_Depth/2 + radius, angle=-arc), anchor=anchor,spin=spin,orient=orient) {
+                //tabs
+                attach(["start", "end"], BOT, inside=false)
+                    down(TopPlateTabWidth/2 + TabDistanceFromOutsideEdge)
+                    xrot(-90) zrot(90)
+                    TopPlateTab(height = height + TabProtrusionHeight, deleteTool = false);
+                //HOK Connectors
+                attach(["start", "end"], BOT, inside=true)
+                    xcopies(spacing = HOK_Connector_Spacing_Depth)
+                    up(HOK_Connector_Inset-clearance)
+                        xrot(-90) zrot(90) down(0.01)
+                            HOKConnectorDeleteTool(spin=90);
+                //Top plate support
+                attach(["start", "end"], BOT, inside=false)
+                    down(18/2)
+                    xrot(-90) zrot(90)
+                    cuboid([18,28*4,height], chamfer=height-Tile_Thickness, edges=[TOP], except=LEFT){
+                        //dovetail
+                        tag("remove")
+                            attach(LEFT, BOT, inside=true, shiftout = 0.01, align=TOP) 
+                                xcopies(spacing = Dovetail_Spacing)
+                                Dovetail_Female();
+                    }
+                children();
+            }
+    }
+
+    basePlatePath = [
+        [-depth/2 + Baseplate_Bottom_Chamfer, 0], //bottom front, bottom of chamfer
+        [-depth/2, Baseplate_Bottom_Chamfer], //bottom front, top of chamfer
+        [-depth/2, height + Top_Bot_Plates_Interface_Chamfer], //top of front (including lip)
+        [-depth/2 + Top_Bot_Plates_Interface_Chamfer, height], //top of front (behind lip)
+        [-depth/2 + Top_Bot_Plates_Interface_Chamfer + Minimum_Flat_Resting_Surface, height], //top front shelf
+        [-depth/2 + Top_Bot_Plates_Interface_Chamfer + Minimum_Flat_Resting_Surface + (height - Tile_Thickness), height - (height - Tile_Thickness)], //front chamfer down to tiles
+        [depth/2 - Top_Bot_Plates_Interface_Chamfer - Minimum_Flat_Resting_Surface - (height - Tile_Thickness), height - (height - Tile_Thickness)], //back chamfer down to tiles
+        [depth/2 - Top_Bot_Plates_Interface_Chamfer - Minimum_Flat_Resting_Surface, height], //top back shelf
+        [depth/2 - Top_Bot_Plates_Interface_Chamfer, height], //top of back (behind lip)
+        [depth/2, height + Top_Bot_Plates_Interface_Chamfer], //top of back (including lip)
+        //[depth/2, Baseplate_Bottom_Chamfer], //bottom back, top of chamfer
+        [depth/2, 0], //bottom back, bottom of chamfer
+    ];
+}
+
+//extrudes a riser along a path
+//warning - bad math to remove the middle section of the arc - could use improvements
+module riserBuilderPath(depth, height, arc = 0, radius = 30, anchor=CENTER,spin=0,orient=UP){
+        //zrot(180-arc/2)
+        diff(){
+            zrot(180-arc/2)
+            path_sweep(riserPath, riserExtrusionPath, anchor=anchor,spin=spin,orient=orient) {
+                //HOK Connectors
+                attach(["start", "end"], BOT, inside=true)
+                    zcopies(spacing = HOK_Connector_Inset*2 - clearance)
+                    xcopies(spacing = HOK_Connector_Spacing_Depth)
+                    up(Riser_Width/2-clearance)
+                    xrot(90) zrot(90) down(Riser_Height/2 + 0.01)
+                    HOKConnectorDeleteTool(spin=90);
+                children();
+            }
+            if(arc >= 15)
+            tag("remove")
+                down(0.01)
+                back(arc < 25 ? 30 + 25 - arc : 30)
+                zrot(180-arc/2)
+                path_sweep(riserDeleteSize, riserDeletePath, anchor=anchor,spin=spin,orient=orient);
+        }
+
+    riserPath = rect([depth, height]);
+    riserDeleteSize = rect([depth, height+0.02]);
+    riserExtrusionPath = turtle([
+        "move", Riser_Width/2,
+        "arcleft", Riser_Depth/2 + radius, arc,
+        "move", Riser_Width/2,
+    ]);
+    riserDeletePath = turtle([
+        "arcleft", (Riser_Depth/2 + radius) - (arc < 45 ? (45 - arc) *1.6 : 0), arc, //if arc is less than 45, subtract from radius here the amount less than 45
+    ]);
+}
+
+//END EXTRUDED SERIES
+
+
+
+module topPlateBuilderShape(totalHeight = 9.5, bottomChamfer = 6, topChamfer = 1, topInset = 0.5, half = LEFT, topRecess = 1, $fn = 150){
     //takes any 2D shape and builds a top plate to match
     //for end pieces, this shape is expected to be split down the middle to produce symmetrical sides
     //the children() is the 2D shape received when this module is called
@@ -1059,6 +1177,27 @@ module BasePlateEndRounded(width, depth, height = 19, half = LEFT, style="Oct"){
     }
 }
 
+//BEGIN ORIGINAL CORE PARTS
+module TopPlateCore(width, depth, thickness, spin = 0, orient = UP, anchor=CENTER){
+
+    color(Disable_Colors ? undef : Top_Plate_Color)
+    diff()
+    cuboid([width-clearance*2, depth+Top_Bot_Plates_Interface_Chamfer*2 - Top_Plate_Clearance*2, thickness+topLipHeight], spin=spin, orient=orient, anchor=anchor){
+        //bot chamfer
+        edge_profile([BOT+FRONT, BOT+BACK])
+            mask2d_chamfer(x=Top_Bot_Plates_Interface_Chamfer*2);
+        //top chamfer
+        edge_profile([TOP+FRONT, TOP+BACK])
+            mask2d_chamfer(x=topChamfer);
+        //top lip cutout
+        attach(TOP, TOP, inside=true, shiftout=0.01)
+            cuboid([width+0.02, depth+Top_Bot_Plates_Interface_Chamfer*2 - Top_Plate_Clearance*2 - topChamfer*2-topLipWidth*2, topLipHeight]);
+        //top plate tabs
+        attach(BOT, BOT, inside=true, shiftout=0.01, align=[LEFT, RIGHT], inset=TabDistanceFromOutsideEdge-clearance)
+            TopPlateTab(height = TabProtrusionHeight, deleteTool = true);
+        children();
+    }
+}
 module BasePlateCore(width, depth, height = 19, spin = 0, orient = UP, anchor=CENTER){
 
 
@@ -1122,16 +1261,6 @@ module BasePlateCore(width, depth, height = 19, spin = 0, orient = UP, anchor=CE
                             HOKConnectorDeleteTool(spin=90);
         }
     }
-}
-
-module TopPlateTab(height = 19, deleteTool = false, anchor=CENTER, spin=0, orient=UP){
-    TopPlateTabWidth = 3;
-    TopPlateTabDepth = 20;
-    //TopPlateTabHeight = 4;
-    TopPlateTabChamfer = 0.5;
-
-    cuboid([ deleteTool ? TopPlateTabWidth + clearance*2 : TopPlateTabWidth, deleteTool ? TopPlateTabDepth + clearance*2 : TopPlateTabDepth, deleteTool ? height + clearance : height], chamfer=TopPlateTabChamfer, except=BOT)
-        children();
 }
 
 module Backer(anchor=BOT, spin=0, orient=UP){
@@ -1199,7 +1328,18 @@ module Riser(anchor=BOT, spin=0, orient=UP){
         }
     }
 }
+//END ORIGINAL CORE PARTS
 
+//BEGIN ADDON PARTS AND MODIFIERS
+module TopPlateTab(height = 19, deleteTool = false, anchor=CENTER, spin=0, orient=UP){
+    TopPlateTabWidth = 3;
+    TopPlateTabDepth = 20;
+    //TopPlateTabHeight = 4;
+    TopPlateTabChamfer = 0.5;
+
+    cuboid([ deleteTool ? TopPlateTabWidth + clearance*2 : TopPlateTabWidth, deleteTool ? TopPlateTabDepth + clearance*2 : TopPlateTabDepth, deleteTool ? height + clearance : height], chamfer=TopPlateTabChamfer, except=BOT)
+        children();
+}
 
 module Dovetail_Male(anchor=CENTER, spin = 0, orient = UP){
     attachable(anchor, spin, orient, size=[Dovetail_Width,Dovetail_Height*2,Dovetail_Depth-0.6]){
@@ -1292,6 +1432,23 @@ module HOKConnectorDeleteTool(anchor=CENTER, spin=0, orient=UP){
 
 }
 
+module DrawerHandleThread(){
+    trapezoidal_threaded_rod(d=Outer_Diameter_Sm, l=6, pitch=Pitch_Sm, flank_angle = Flank_Angle_Sm, thread_depth = Thread_Depth_Sm, $fn=50, internal=true, bevel2 = true, blunt_start=false, anchor=TOP, $slop=Slop);
+}
+
+module DrawerHandleScrewFemale(anchor=TOP, orient=UP, spin=0){
+    trapezoidal_threaded_rod(d=Outer_Diameter_Sm, l=6, pitch=Pitch_Sm, flank_angle = Flank_Angle_Sm, thread_depth = Thread_Depth_Sm, $fn=50, internal=true, bevel2 = true, teardrop = true, blunt_start=false, $slop=0.075, anchor=anchor, orient=orient, spin=spin)
+        children();
+}
+
+module T_Screw(){
+    color(Disable_Colors ? undef : Primary_Color)
+    up(2)yrot(90)left_half(x=2)right_half(x=-2)cuboid([4,14,2.5], chamfer=0.75, edges=[LEFT+FRONT, RIGHT+FRONT, RIGHT+BACK, LEFT+BACK], anchor=BOT){
+        attach(TOP, BOT) trapezoidal_threaded_rod(d=Outer_Diameter_Sm, l=10, pitch=Pitch_Sm, flank_angle = Flank_Angle_Sm, thread_depth = Thread_Depth_Sm, $fn=50, bevel2 = true, blunt_start=false);
+    }
+}
+
+//END ADDON PARTS AND MODIFIERS
 
 //BEGIN openGrid Import - Replace with import
 module openGridLite(Board_Width, Board_Height, tileSize = 28, Screw_Mounting = "None", Bevels = "None", anchor = CENTER, spin = 0, orient = UP, Connector_Holes = false) {
