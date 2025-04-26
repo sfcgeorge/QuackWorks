@@ -919,6 +919,12 @@ module riserBuilderPath(depth, height, arc = 0, radius = 30, anchor=CENTER,spin=
                     ycopies(spacing = Slide_Vertical_Separation, sp=[0,Slide_Distance_From_Bottom], n = number_of_slides)
                         xrot(-90)zrot(-90)down(Riser_Height/2 + 0.01)
                         Drawer_Slide(deleteTool = true);
+                //backer tab slots
+                //right(Riser_Width/2 - Backer_To_Riser_Tab_Inset - TopPlateTabWidth/2 - clearance)
+                attach([LEFT, RIGHT], BOT, inside=true, shiftout=0.01)
+                    yrot($idx == 0 ? 45 : -45)
+                        left((Riser_Width/2 - Backer_To_Riser_Tab_Inset - TopPlateTabWidth/2 - clearance) * ($idx == 0 ? 1 : -1))
+                            TopPlateTab(height = Backer_To_Riser_Tab_Depth + clearance, deleteTool = true);
                 children();
                 
             }
@@ -1329,6 +1335,7 @@ module Riser(anchor=BOT, spin=0, orient=UP){
                 zrot(90)
                     HOKConnectorDeleteTool();
             xcopies(spacing = TopPlateTabWidth + Backer_To_Riser_Tab_Inset*2)
+            //backer tab holes
             attach(BACK, BOT, inside=true, shiftout=0.01)
                     TopPlateTab(height = Backer_To_Riser_Tab_Depth + clearance, deleteTool = true);
             children();
