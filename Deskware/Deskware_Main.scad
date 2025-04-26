@@ -901,6 +901,8 @@ module basePlateBuilderPath(depth, width, height = 19, arc = 0, radius = 30, tot
 //extrudes a riser along a path
 //warning - bad math to remove the middle section of the arc - could use improvements
 module riserBuilderPath(depth, height, arc = 0, radius = 30, anchor=CENTER,spin=0,orient=UP){
+        number_of_slides = quantdn((Riser_Height - Slide_Distance_From_Bottom - Slide_Height - Slide_Minimum_Distance_From_Top)/Slide_Vertical_Separation+1, 1);
+
         //zrot(180-arc/2)
         diff(){
             zrot(180-arc/2)
@@ -912,7 +914,13 @@ module riserBuilderPath(depth, height, arc = 0, radius = 30, anchor=CENTER,spin=
                     up(Riser_Width/2-clearance)
                     xrot(90) zrot(90) down(Riser_Height/2 + 0.01)
                     HOKConnectorDeleteTool(spin=90);
+                //drawer slides
+                attach(["start", "end"], BOT, inside=true, shiftout=-Slide_Width/2 + 0.01)
+                    ycopies(spacing = Slide_Vertical_Separation, sp=[0,Slide_Distance_From_Bottom], n = number_of_slides)
+                        xrot(-90)zrot(-90)down(Riser_Height/2 + 0.01)
+                        Drawer_Slide(deleteTool = true);
                 children();
+                
             }
             if(arc >= 15)
             tag("remove")
@@ -933,7 +941,6 @@ module riserBuilderPath(depth, height, arc = 0, radius = 30, anchor=CENTER,spin=
         "arcleft", (Riser_Depth/2 + radius) - (arc < 45 ? (45 - arc) *1.6 : 0), arc, //if arc is less than 45, subtract from radius here the amount less than 45
     ]);
 }
-
 //END EXTRUDED SERIES
 
 
