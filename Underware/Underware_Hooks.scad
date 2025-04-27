@@ -49,7 +49,9 @@ Height = 15.0; //.1
 edgeRounding = 0.5; // [0:0.1:2]
 
 hookHeight = 10;
-hookRound = 3;
+hookRound = 1;
+nbSecondaryHooks = 0;
+secondaryHookHeight = 5;
 
 
 
@@ -127,7 +129,8 @@ totalHeight = internalHeight+baseThickness;
 totalDepth = internalDepth + wallThickness;
 totalWidth = internalWidth + wallThickness*2;
 totalCenterX = internalWidth/2;
- 
+
+nbHooks=1+nbSecondaryHooks;
 
 //calculate total working space, respecting minimum mounting value.
 //The mounting points should be 'inside' the total width. Therefore, we are rounding down to the next mounting points on both sides
@@ -167,21 +170,26 @@ union(){
         );
 }
 
-
 //Create Hooks
 module hooks() {
     mirrorHook()
     rightHook();
 }
 
+
 module rightHook(){
     cuboid([wallThickness/2, internalDepth + wallThickness, totalHeight], anchor=FRONT+LEFT+BOT);
+    for ( i = [1:1:nbSecondaryHooks]) 
+        translate([(totalWidth/(2*nbHooks))*(i-1),0,0]) hookPart(totalWidth/(2*nbHooks),secondaryHookHeight);
+    translate([(totalWidth/(2*nbHooks))*(nbSecondaryHooks),0,0]) hookPart(totalWidth/(2*nbHooks),hookHeight,hookRound);
+}
+module hookPart(width,height,rounding=0){
     translate([0,wallThickness,0])
     difference(){
-        translate([0,wallThickness+internalDepth-hookHeight,0])
-        cuboid([totalWidth/2, hookHeight, totalHeight], anchor=FRONT+LEFT+BOT, rounding=hookRound, edges = [RIGHT+FRONT,RIGHT+BACK]);
-        translate([0,0,-wallThickness])
-        cuboid([totalWidth/2-wallThickness, internalDepth, totalHeight+2*wallThickness], anchor=FRONT+LEFT+BOT, rounding=(hookRound-wallThickness), edges = [RIGHT+BACK]);
+        translate([0,wallThickness+internalDepth-height,0])
+        cuboid([width, height, totalHeight], anchor=FRONT+LEFT+BOT, rounding=rounding, edges = [RIGHT+FRONT,RIGHT+BACK]);
+        translate([-wallThickness,0,-wallThickness])
+        cuboid([width, internalDepth, totalHeight+2*wallThickness], anchor=FRONT+LEFT+BOT, rounding=max(0,(rounding-wallThickness)), edges = [RIGHT+BACK]);
     }
 }
 
