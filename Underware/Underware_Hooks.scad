@@ -40,9 +40,9 @@ Minimum_Safe_Mount_Clearance_From_Edge = 10;
 //Depth (by mm): internal dimension along the Z axis of print orientation. Measured from the top to the base of the internal floor, equivalent to the depth of the item you wish to hold when mounted horizontally.
 Depth = 25.0; //.1
 //Width (by mm): internal dimension along the X axis of print orientation. Measured from left to right, equivalent to the width of the item you wish to hold when mounted horizontally.
-Width = 75.0; //.1
+Width = 25.0; //.1
 //Height (by mm): internal dimension along the Y axis of print orientation. Measured from the front to the back, equivalent to the thickness of the item you wish to hold when mounted horizontally.
-Height = 15.0; //.1
+Height = 20.0; //.1
 
 /*[Style Customizations]*/
 //Edge rounding (by mm)
@@ -52,6 +52,10 @@ hookHeight = 10;
 hookRound = 1;
 nbSecondaryHooks = 0;
 secondaryHookHeight = 5;
+
+onSided = true;
+supportPosition = "Center"; //  ["Center", "Outside", "Inside"]
+onSidedWidth = 40;
 
 
 
@@ -172,16 +176,25 @@ union(){
 
 //Create Hooks
 module hooks() {
-    mirrorHook()
-    rightHook();
+    if(onSided){
+        translate([
+        supportPosition == "Outside" ? (totalWidth/2)-wallThickness/2
+        :supportPosition == "Inside" ? -totalWidth/2
+        :0,0,0])
+        rightHook(onSidedWidth);
+    } else {
+        mirrorHook()
+        rightHook(totalWidth/2);
+    }
 }
 
 
-module rightHook(){
-    cuboid([wallThickness/2, internalDepth + wallThickness, totalHeight], anchor=FRONT+LEFT+BOT);
+module rightHook(width){
+    translate([-wallThickness/2,0,0])
+    cuboid([wallThickness, internalDepth + 2*wallThickness, totalHeight], anchor=FRONT+LEFT+BOT);
     for ( i = [1:1:nbSecondaryHooks]) 
-        translate([(totalWidth/(2*nbHooks))*(i-1),0,0]) hookPart(totalWidth/(2*nbHooks),secondaryHookHeight);
-    translate([(totalWidth/(2*nbHooks))*(nbSecondaryHooks),0,0]) hookPart(totalWidth/(2*nbHooks),hookHeight,hookRound);
+        translate([(width/nbHooks)*(i-1),0,0]) hookPart(width/nbHooks,secondaryHookHeight);
+    translate([(width/nbHooks)*(nbSecondaryHooks),0,0]) hookPart(width/nbHooks,hookHeight,hookRound);
 }
 module hookPart(width,height,rounding=0){
     translate([0,wallThickness,0])
