@@ -54,7 +54,7 @@ nbSecondaryHooks = 0;
 secondaryHookHeight = 5;
 
 onSided = true;
-supportPosition = "Center"; //  ["Center", "Outside", "Inside"]
+supportPosition = "Inside"; //  ["Center", "Outside", "Inside"]
 onSidedWidth = 40;
 
 
@@ -179,7 +179,7 @@ module hooks() {
     if(onSided){
         translate([
         supportPosition == "Outside" ? (totalWidth/2)-wallThickness/2
-        :supportPosition == "Inside" ? -totalWidth/2
+        :supportPosition == "Inside" ? -((totalWidth/2)-wallThickness/2)
         :0,0,0])
         rightHook(onSidedWidth);
     } else {
