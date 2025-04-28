@@ -86,7 +86,7 @@ Groove_Depth = 10;
 Individual_Post_Thickness = 4;
 Number_of_Grooves = 6;
 Groove_Width = 10;
-Chamfer = 1;
+Chamfer = 1; //0.1
 
 debug_3d = false;
 /*
@@ -104,14 +104,14 @@ module test_shape() {
         down(Center_Post_Length/2)
         union()
         //base
-        cuboid([Center_Post_Thickness + Groove_Width*Number_of_Grooves+Individual_Post_Thickness*Number_of_Grooves,Hook_Depth,Base_Thickness], chamfer=1, edges=[BOT,TOP]){
+        cuboid([Center_Post_Thickness + Groove_Width*Number_of_Grooves+Individual_Post_Thickness*Number_of_Grooves,Hook_Depth,Base_Thickness], chamfer=Chamfer, edges=[BOT,TOP, LEFT, RIGHT]){
             //center post
             attach(TOP, BOT, overlap=Chamfer) cuboid([Center_Post_Thickness,Hook_Depth,Center_Post_Length+Chamfer])
                 attach(TOP, FRONT) make_backer_openEnded(Length=max(Hook_Depth, Grid_Size), Width=25);
             attach(TOP, BOT, overlap=Chamfer) xflip_copy()
                 xcopies(sp=[Center_Post_Thickness/2+Groove_Width+Individual_Post_Thickness/2,0,0], n = Number_of_Grooves/2, spacing = Groove_Width+Individual_Post_Thickness) 
                     //individual post
-                    cuboid([Individual_Post_Thickness, Hook_Depth,Groove_Depth+Chamfer], chamfer=Chamfer, edges=[LEFT+FRONT, LEFT+BACK, RIGHT+FRONT, RIGHT+BACK]);
+                    cuboid([Individual_Post_Thickness, Hook_Depth,Groove_Depth+Chamfer], chamfer=Chamfer, except_edges= $idx == 1 ? [BOT] : [BOT]);
         } 
         children();
     }
