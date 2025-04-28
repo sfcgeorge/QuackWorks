@@ -17,6 +17,8 @@ Change Log:
     - Chamfer customization for each corner
     - Connector hole customization for each side
     - Fix to allow screw head inset of zero and screw head chamfer matching screw diameter
+- 2025-04-27
+    - Fix chamfers and connector hole options to initial orientation of MW
 
 Credit to 
     @David D on Printables for openGrid https://www.printables.com/@DavidD
@@ -231,14 +233,14 @@ module openGrid(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, 
                 tag("remove")
                 up(Full_or_Lite == "Full" ? Tile_Thickness/2 : Tile_Thickness-connector_cutout_height/2-lite_cutout_distance_from_top){
                     //bottom connector holes
-                    if(Connector_Holes_Bottom)
+                    if(Connector_Holes_Right)
                     left(-tileSize*Board_Width/2-0.005)
                         zrot(180)
                         ycopies(spacing=tileSize, l=Board_Height > 2 ? Board_Height*tileSize-tileSize*2 : Board_Height*tileSize - tileSize - 1)
                             connector_cutout_delete_tool(anchor=LEFT);
                     //xflip_copy(offset = -tileSize*Board_Width/2-0.005)
                     //top connector holes
-                    if(Connector_Holes_Top)
+                    if(Connector_Holes_Left)
                     right(-tileSize*Board_Width/2-0.005)
                         ycopies(spacing=tileSize, l=Board_Height > 2 ? Board_Height*tileSize-tileSize*2 : Board_Height*tileSize - tileSize - 1)
                             connector_cutout_delete_tool(anchor=LEFT);
@@ -248,14 +250,14 @@ module openGrid(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, 
                 tag("remove")
                 up(Full_or_Lite == "Full" ? Tile_Thickness/2 : Tile_Thickness-connector_cutout_height/2-lite_cutout_distance_from_top){
                     //right connector holes
-                    if(Connector_Holes_Right)
+                    if(Connector_Holes_Top)
                     fwd(-tileSize*Board_Height/2-0.005)
                         xcopies(spacing=tileSize, l=Board_Width > 2 ? Board_Width*tileSize-tileSize*2 : Board_Width*tileSize-tileSize-1)
                             zrot(-90)
                                 connector_cutout_delete_tool(anchor=LEFT);
                     //yflip_copy(offset = -tileSize*Board_Height/2-0.005)
                     //left connector holes
-                    if(Connector_Holes_Left)
+                    if(Connector_Holes_Bottom)
                     back(-tileSize*Board_Height/2-0.005)
                         xcopies(spacing=tileSize, l=Board_Width > 2 ? Board_Width*tileSize-tileSize*2 : Board_Width*tileSize-tileSize-1)
                             zrot(90)
