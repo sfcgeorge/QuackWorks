@@ -169,10 +169,10 @@ module openGrid(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, 
     connector_cutout_height = 2.4;
 
     cornerChamfers = concat(
-        Chamfer_Bottom_Right ? [[tileSize*Board_Width/2,tileSize*Board_Height/2,0]]: [],
-        Chamfer_Top_Right ? [[-tileSize*Board_Width/2,tileSize*Board_Height/2,0]] : [],
-        Chamfer_Bottom_Left ? [[tileSize*Board_Width/2,-tileSize*Board_Height/2,0]] : [],
-        Chamfer_Top_Left ? [[-tileSize*Board_Width/2,-tileSize*Board_Height/2,0]] : []
+        Chamfer_Bottom_Right ? [[tileSize*Board_Width/2,-tileSize*Board_Height/2,0]]: [],
+        Chamfer_Top_Right ? [[tileSize*Board_Width/2,tileSize*Board_Height/2,0]] : [],
+        Chamfer_Bottom_Left ? [[-tileSize*Board_Width/2,-tileSize*Board_Height/2,0]] : [],
+        Chamfer_Top_Left ? [[-tileSize*Board_Width/2,tileSize*Board_Height/2,0]] : []
     );
 
     attachable(anchor, spin, orient, size=[Board_Width*tileSize,Board_Height*tileSize,Tile_Thickness]){
