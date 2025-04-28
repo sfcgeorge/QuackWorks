@@ -10,6 +10,28 @@ Credit to
 Licensed Creative Commons 4.0 Attribution Non-Commercial Share-Alike (CC-BY-NC-SA)
 */
 
+Number_of_Grooves = 6; //[2:2:20]
+//Depth (mm) of the inside of each groove
+Groove_Depth = 10;
+//Width (mm) of the inside of each groove
+Groove_Width = 10;
+//Length (mm) of the center post. Deeper grooves may require a longer center post.
+Center_Post_Length = 20;
+
+/*[Advanced Options]*/
+//Depth (mm) of the entire hook. 25mm minimum recommended for the multiconnect. 
+Hook_Depth = 25;
+//Thickness (mm) of the center post. 
+Center_Post_Thickness = 4;
+//Thickness (mm) of the base of the hook.
+Base_Thickness = 4;
+//Thickness (mm) of the individual posts between the grooves.
+Individual_Post_Thickness = 4;
+//Chamfer (mm) of the edges of the hook.
+Chamfer = 1; //0.1
+
+/*[Hidden]*/
+debug_3d = true;
 
 /*[Standard Parameters]*/
 //Profile
@@ -77,18 +99,7 @@ false;
 onRampEveryNHoles = OnRamp_Every_n_Holes * Grid_Size;
 onRampOffset = OnRamp_Start_Offset * Grid_Size;
 
-/*[Customizations]*/
-Hook_Depth = 25;
-Center_Post_Thickness = 5;
-Center_Post_Length = 20;
-Base_Thickness = 5;
-Groove_Depth = 10;
-Individual_Post_Thickness = 4;
-Number_of_Grooves = 6;
-Groove_Width = 10;
-Chamfer = 1; //0.1
 
-debug_3d = false;
 /*
 
 START PARTS
