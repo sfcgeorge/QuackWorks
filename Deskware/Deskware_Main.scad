@@ -23,6 +23,7 @@ Change Log:
     - Added HOK Connectors to bottom of riser for stacking risers
     - Small performance improvements to improve render time
     - Resolved top plate support snapping to grid sizes for odd-numbered grid depths
+    - Curved sections properly plated for MakerWorld printing
      
 
 Credit to 
@@ -305,9 +306,9 @@ if(!MakerWorld_Render_Mode && Show_Plate == 0){
     if(Show_Top_Plate_SVG) 
     //    up(110)
         TopPlateSVGBuilder();
-    else if (Enable_Curve_Mode){
-        mw_plate_10();
-    }
+    //else if (Enable_Curve_Mode){
+    //    mw_plate_10();
+   // }
     else 
         mw_assembly_view();
 }
@@ -329,7 +330,12 @@ if(!MakerWorld_Render_Mode && Show_Plate == 8)
     mw_plate_8();
 if(!MakerWorld_Render_Mode && Show_Plate == 9)
     mw_plate_9();
-
+if(!MakerWorld_Render_Mode && Show_Plate == 10)
+    mw_plate_10();
+if(!MakerWorld_Render_Mode && Show_Plate == 11)
+    mw_plate_11();
+if(!MakerWorld_Render_Mode && Show_Plate == 12)
+    mw_plate_12();
 
 
 
@@ -338,7 +344,17 @@ module mw_assembly_view() {
         TopPlateSVGBuilder();
     }
     else if (Enable_Curve_Mode){
-        mw_plate_10();
+        //Curved Series
+        arc_series_gap = Show_Connected ? clearance : 50;
+        if(Enable_Curve_Mode){
+            fwd(4+9)
+            riserBuilderPath(Riser_Depth, Riser_Height, arc=Degrees_of_Arc, radius = Core_Radius, $fn=150, anchor=BOT);
+            up(Riser_Height + clearance + arc_series_gap)
+                basePlateBuilderPath(Base_Plate_Depth, Base_Plate_Width, arc=Degrees_of_Arc, radius = Core_Radius, anchor=BOT);
+            up(Riser_Height + Base_Plate_Thickness + clearance + arc_series_gap*2)
+                fwd(Top_Plate_Baseplate_Depth_Difference)
+                    topPlateBuilderPath(Top_Plate_Depth, Core_Section_Width, arc=Degrees_of_Arc, radius = Core_Radius, totalHeight = Top_Plate_Thickness + topLipHeight, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topLipHeight, $fn=150, anchor=BOT)  ;
+        }
     }
     else{
         if(Show_Backer)
@@ -474,9 +490,10 @@ module mw_assembly_view() {
 
 //Plate 1 - Core Baseplate
 module mw_plate_1(){
-    basePlateBuilderPath(Base_Plate_Depth, Base_Plate_Width, anchor=BOT);
-    //
-    //BasePlateCore(width = Base_Plate_Width, depth = Base_Plate_Depth,  height = Base_Plate_Thickness);
+    if(!Enable_Curve_Mode)
+        basePlateBuilderPath(Base_Plate_Depth, Base_Plate_Width, anchor=BOT);
+        //deprecated for the faster-rendering option above
+        //BasePlateCore(width = Base_Plate_Width, depth = Base_Plate_Depth,  height = Base_Plate_Thickness);
 }
 
 
@@ -485,112 +502,140 @@ module mw_plate_2(){
     widthOfAllRisers = (2) * (Riser_Width+5); //removed dynamic riser adds based on core count (to keep render times down)
     widthOfAllBackers = 1 * (Backer_Height + 5); //removed dynamic riser adds based on core count (to keep render times down)
 
-    left(widthOfAllRisers/2)
-    xcopies(spacing = Riser_Width+5, n = 2)
-        Riser(orient=DOWN, anchor=TOP) ;
-    right(widthOfAllBackers/2)
-        xcopies(spacing = Backer_Height + 5, n=1)
-            zrot(90)
-                Backer(orient=BACK, anchor=BACK);
+    if(!Enable_Curve_Mode){
+        left(widthOfAllRisers/2)
+        xcopies(spacing = Riser_Width+5, n = 2)
+            Riser(orient=DOWN, anchor=TOP) ;
+        right(widthOfAllBackers/2)
+            xcopies(spacing = Backer_Height + 5, n=1)
+                zrot(90)
+                    Backer(orient=BACK, anchor=BACK);
+    }
 }
 
 //Plate 3 - Baseplate Ends
 module mw_plate_3(){
-    if(End_Style == "Rounded Square"){
-                xcopies(spacing = -5)
-                    zrot($idx == 0 ? 0 : 180)
-                        baseplateEndSquared(depth = Base_Plate_Depth, height = Base_Plate_Thickness, radius = Rounded_Square_Rounding, anchor=BOT+RIGHT, orient=RIGHT);
-    }
-    else if(End_Style == "Squared"){
-        xcopies(spacing = -5)
-            zrot($idx == 0 ? 0 : 180)
-                baseplateEndSquared(depth = Base_Plate_Depth, height = Base_Plate_Thickness, radius = topPlateSquareVersionRadius, anchor=BOT+RIGHT, orient=RIGHT);
-    }
+    if(!Enable_Curve_Mode){
+        if(End_Style == "Rounded Square"){
+                    xcopies(spacing = -5)
+                        zrot($idx == 0 ? 0 : 180)
+                            baseplateEndSquared(depth = Base_Plate_Depth, height = Base_Plate_Thickness, radius = Rounded_Square_Rounding, anchor=BOT+RIGHT, orient=RIGHT);
+        }
+        else if(End_Style == "Squared"){
+            xcopies(spacing = -5)
+                zrot($idx == 0 ? 0 : 180)
+                    baseplateEndSquared(depth = Base_Plate_Depth, height = Base_Plate_Thickness, radius = topPlateSquareVersionRadius, anchor=BOT+RIGHT, orient=RIGHT);
+        }
 
-    else{
-            xcopies(spacing = 5)
-                BasePlateEndRounded(width = Base_Plate_Width, depth = Base_Plate_Depth, height = Base_Plate_Thickness, half=$idx == 0 ? LEFT : RIGHT, style=End_Style);
-    }
+        else{
+                xcopies(spacing = 5)
+                    BasePlateEndRounded(width = Base_Plate_Width, depth = Base_Plate_Depth, height = Base_Plate_Thickness, half=$idx == 0 ? LEFT : RIGHT, style=End_Style);
+        }
 
-    move([0, Base_Plate_Depth/2 + 15,0])
-        xcopies(n = 4, spacing = 15)
-            Dovetail_Male(anchor=UP, orient=DOWN);
+        move([0, Base_Plate_Depth/2 + 15,0])
+            xcopies(n = 4, spacing = 15)
+                Dovetail_Male(anchor=UP, orient=DOWN);
+    }
 }
 
 //Plate 4 - Core Top plate
 module mw_plate_4(){
-    topPlateBuilderPath(depth = Top_Plate_Depth, width = Core_Section_Width, totalHeight = Top_Plate_Thickness + topLipHeight, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topLipHeight, anchor=BOT);
-    //below deprecated for the faster-rendering option above
-    //TopPlateCore(width = Base_Plate_Width, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, anchor=BOT);
+    if(!Enable_Curve_Mode)
+        topPlateBuilderPath(depth = Top_Plate_Depth, width = Core_Section_Width, totalHeight = Top_Plate_Thickness + topLipHeight, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topLipHeight, anchor=BOT);
+        //below deprecated for the faster-rendering option above
+        //TopPlateCore(width = Base_Plate_Width, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, anchor=BOT);
 
 }
 
 //Plate 5 - Ends Top plate
 module mw_plate_5(){
-    if(End_Style == "Rounded"){
-        xcopies(spacing = 5)
-            TopPlateEndRoundNew(depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, topRecess = topLipHeight, half=$idx == 0 ? LEFT : RIGHT);
+    if(!Enable_Curve_Mode){
+        if(End_Style == "Rounded"){
+            xcopies(spacing = 5)
+                TopPlateEndRoundNew(depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, topRecess = topLipHeight, half=$idx == 0 ? LEFT : RIGHT);
+        }
+        else if(End_Style == "Squared"){
+            xcopies(5)
+                TopPlateEndSquared(width = baseplateEndAngleDistance*2, depth = Top_Plate_Depth, radius = topPlateSquareVersionRadius, thickness = Top_Plate_Thickness, topRecess = topLipHeight, half=$idx == 0 ? LEFT : RIGHT);
+        }
+        else{
+            xcopies(5)
+                TopPlateEndSquared(width = baseplateEndAngleDistance*2, depth = Top_Plate_Depth, radius = Rounded_Square_Rounding, thickness = Top_Plate_Thickness, topRecess = topLipHeight, half=$idx == 0 ? LEFT : RIGHT);
+        }
     }
-    else if(End_Style == "Squared"){
-        xcopies(5)
-            TopPlateEndSquared(width = baseplateEndAngleDistance*2, depth = Top_Plate_Depth, radius = topPlateSquareVersionRadius, thickness = Top_Plate_Thickness, topRecess = topLipHeight, half=$idx == 0 ? LEFT : RIGHT);
-    }
-    else{
-        xcopies(5)
-            TopPlateEndSquared(width = baseplateEndAngleDistance*2, depth = Top_Plate_Depth, radius = Rounded_Square_Rounding, thickness = Top_Plate_Thickness, topRecess = topLipHeight, half=$idx == 0 ? LEFT : RIGHT);
-    }
-
 
 }
 
 //Plate 6 - Drawer 1 Unit High
 module mw_plate_6(){
-    Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth, anchor=BOT);
+    if(!Enable_Curve_Mode)
+        Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth, anchor=BOT);
 }
 
 //Plate 7 - Drawer 2 Units High
 module mw_plate_7(){
-    Drawer(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth, anchor=BOT);
+    if(!Enable_Curve_Mode)
+        Drawer(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth, anchor=BOT);
 
 }
 
 //Plate 8 - Drawer Fronts Single
 module mw_plate_8(){
-    ydistribute(sizes=[40, 40], spacing = 5){
-        DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, anchor=BOT);
-        //DrawerFront(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2);
-        if(Drawer_Mounting_Method == "Handle - Printed"){
-            DrawerHandle(anchor=BOT);
-            xcopies(spacing = 15)
-            back(10)T_Screw();
+    if(!Enable_Curve_Mode){
+        ydistribute(sizes=[40, 40], spacing = 5){
+            DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, anchor=BOT);
+            //DrawerFront(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2);
+            if(Drawer_Mounting_Method == "Handle - Printed"){
+                DrawerHandle(anchor=BOT);
+                xcopies(spacing = 15)
+                back(10)T_Screw();
+            }
         }
     }
 }
 
 //Plate 9 - Drawer Fronts Single
 module mw_plate_9(){
-    ydistribute(sizes=[80, 40], spacing = 5){
-        //DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2);
-        DrawerFront(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2, anchor=BOT);
-        if(Drawer_Mounting_Method == "Handle - Printed"){
-            DrawerHandle(anchor=BOT);
-            xcopies(spacing = 15)
-            back(10)T_Screw();
+    if(!Enable_Curve_Mode){
+        ydistribute(sizes=[80, 40], spacing = 5){
+            //DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2);
+            DrawerFront(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2, anchor=BOT);
+            if(Drawer_Mounting_Method == "Handle - Printed"){
+                DrawerHandle(anchor=BOT);
+                xcopies(spacing = 15)
+                back(10)T_Screw();
+            }
         }
     }
 }
-//Plate 10 - Arc Series
+//Plate 10 - Arc Series - Baseplate
 module mw_plate_10(){
     //Curved Series
     arc_series_gap = 50;
-    fwd(4+9)
-    riserBuilderPath(Riser_Depth, Riser_Height, arc=Degrees_of_Arc, radius = Core_Radius, $fn=150, anchor=BOT);
-    up(Riser_Height + clearance + arc_series_gap)
+    if(Enable_Curve_Mode){
         basePlateBuilderPath(Base_Plate_Depth, Base_Plate_Width, arc=Degrees_of_Arc, radius = Core_Radius, anchor=BOT);
-    up(Riser_Height + Base_Plate_Thickness + clearance + arc_series_gap*2)
-        fwd(Top_Plate_Baseplate_Depth_Difference)
-            topPlateBuilderPath(Top_Plate_Depth, Core_Section_Width, arc=Degrees_of_Arc, radius = Core_Radius, totalHeight = Top_Plate_Thickness + topLipHeight, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topLipHeight, $fn=150, anchor=BOT)  ;
 
+                topPlateBuilderPath(Top_Plate_Depth, Core_Section_Width, arc=Degrees_of_Arc, radius = Core_Radius, totalHeight = Top_Plate_Thickness + topLipHeight, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topLipHeight, $fn=150, anchor=BOT)  ;
+    }
+}
+//Plate 11 - Arc Series - Top plate
+module mw_plate_11(){
+    //Curved Series
+    arc_series_gap = 50;
+    if(Enable_Curve_Mode){
+            fwd(Top_Plate_Baseplate_Depth_Difference)
+                topPlateBuilderPath(Top_Plate_Depth, Core_Section_Width, arc=Degrees_of_Arc, radius = Core_Radius, totalHeight = Top_Plate_Thickness + topLipHeight, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topLipHeight, $fn=150, anchor=BOT)  ;
+    }
+}
+//Plate 11 - Arc Series - Top plate
+module mw_plate_12(){
+    //Curved Series
+    arc_series_gap = 50;
+    if(Enable_Curve_Mode){
+        up(Riser_Height)xrot(180) 
+        fwd(4+9) 
+        riserBuilderPath(Riser_Depth, Riser_Height, arc=Degrees_of_Arc, radius = Core_Radius, $fn=150, anchor=BOT);
+    }
 }
 //END MAKERWORLD PLATING
 
