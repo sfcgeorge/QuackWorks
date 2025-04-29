@@ -19,7 +19,10 @@ Change Log:
     - Fix for MakerWorld plating of squared ends
 - 2025-04-25 v1.2 - Curve Sections
     - Added curved section pieces customizable by degrees of arc and radius
-
+- 2025-04-28 v1.2.1
+    - Added HOK Connectors to bottom of riser for stacking risers
+    - Small performance improvements to improve render time
+    - Resolved top plate support snapping to grid sizes for odd-numbered grid depths
      
 
 Credit to 
@@ -162,9 +165,6 @@ topChamfer = 2;
 topLipWidth = Top_Plate_Lip_Width;
 topLipHeight = Top_Plate_Recess; 
 topPlateSquareVersionRadius = 1;
-
-
-
 
 Core_Section_Height = Total_Height - Top_Plate_Thickness - Base_Plate_Thickness;
 
@@ -355,7 +355,8 @@ module mw_assembly_view() {
             up(Show_Connected ? Riser_Height + clearance : Riser_Height + 50){
                 if(Show_Core)
                 xcopies(spacing = Core_Section_Width, n=Core_Section_Count)
-                    BasePlateCore(width = Base_Plate_Width, depth = Base_Plate_Depth,  height = Base_Plate_Thickness);
+                    basePlateBuilderPath(Base_Plate_Depth, Base_Plate_Width, anchor=BOT);
+                    //BasePlateCore(width = Base_Plate_Width, depth = Base_Plate_Depth,  height = Base_Plate_Thickness);
                 if(End_Style == "Rounded Square" && Show_Ends){
                     xcopies(spacing = Core_Section_Width * Core_Section_Count + (Show_Connected ? 0: 50))
                         zrot($idx == 0 ? 0 : 180)
@@ -380,7 +381,9 @@ module mw_assembly_view() {
             {
                 if(Show_Core)
                 xcopies(n=Core_Section_Count, spacing = Core_Section_Width)
-                    TopPlateCore(width = Base_Plate_Width, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, anchor=BOT);
+                    topPlateBuilderPath(depth = Top_Plate_Depth, width = Core_Section_Width, totalHeight = Top_Plate_Thickness + topLipHeight, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topLipHeight, anchor=BOT);
+                    //Deprecated the below for the faster-rendering option above
+                    //TopPlateCore(width = Base_Plate_Width, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, anchor=BOT);
                 if(End_Style == "Rounded" && Show_Ends){
                     xcopies(spacing = Core_Section_Width * Core_Section_Count + (Show_Connected ? clearance*2: 50))
                         TopPlateEndRoundNew(depth = Top_Plate_Depth, thickness = Top_Plate_Thickness, topRecess = topLipHeight, half=$idx == 0 ? LEFT : RIGHT);
@@ -471,7 +474,9 @@ module mw_assembly_view() {
 
 //Plate 1 - Core Baseplate
 module mw_plate_1(){
-    BasePlateCore(width = Base_Plate_Width, depth = Base_Plate_Depth,  height = Base_Plate_Thickness);
+    basePlateBuilderPath(Base_Plate_Depth, Base_Plate_Width, anchor=BOT);
+    //
+    //BasePlateCore(width = Base_Plate_Width, depth = Base_Plate_Depth,  height = Base_Plate_Thickness);
 }
 
 
@@ -514,7 +519,9 @@ module mw_plate_3(){
 
 //Plate 4 - Core Top plate
 module mw_plate_4(){
-    TopPlateCore(width = Base_Plate_Width, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, anchor=BOT);
+    topPlateBuilderPath(depth = Top_Plate_Depth, width = Core_Section_Width, totalHeight = Top_Plate_Thickness + topLipHeight, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topLipHeight, anchor=BOT);
+    //below deprecated for the faster-rendering option above
+    //TopPlateCore(width = Base_Plate_Width, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, anchor=BOT);
 
 }
 
@@ -591,9 +598,8 @@ module mw_plate_10(){
 //top plate alternative
 //up(99)
     //#topPlateBuilderPath(Top_Plate_Depth, Core_Section_Width, totalHeight = Top_Plate_Thickness + topLipHeight, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topLipHeight, $fn=150);
-//#basePlateBuilderPath(Base_Plate_Depth, Base_Plate_Width);
-//top plate straight
-//!topPlateBuilderPath(depth = Top_Plate_Depth, width = Core_Section_Width);
+//#up(Show_Connected ? Riser_Height + clearance : Riser_Height + 100)
+//    basePlateBuilderPath(Base_Plate_Depth, Base_Plate_Width, anchor=BOT);
 
 
 
@@ -803,8 +809,10 @@ module topPlateBuilderPath(depth, width, arc = 0, radius = 30, totalHeight = 9.5
     
     //straight piece
     if(arc == 0)
-    zrot(90)xrot(90) 
-        linear_sweep(topPlatePath, height = width, center=true, anchor=anchor,spin=spin,orient=orient){
+    color(Disable_Colors ? undef : Top_Plate_Color)
+    diff()
+    zrot(90)
+        path_sweep(topPlatePath, [[0,-width/2 + clearance],[0,width/2 - clearance]], anchor=anchor,spin=spin,orient=orient){
             attach(["start", "end"], BOT, inside=true)
                 up(TopPlateTabWidth/2 + TabDistanceFromOutsideEdge)
                 xrot(-90) zrot(90) down(0.01)
@@ -847,8 +855,56 @@ module basePlateBuilderPath(depth, width, height = 19, arc = 0, radius = 30, tot
     
     //straight piece
     if(arc == 0)
-        zrot(90)xrot(90) 
-            linear_sweep(basePlatePath, height = width, center=true, anchor=anchor,spin=spin,orient=orient) {        
+        color(Disable_Colors ? undef : Primary_Color)
+        diff("HOKConnectors Dovetails", "k1")
+        diff("r1", "keep HOKConnectors Dovetails")
+        //diff()
+        zrot(90) 
+            right(0.5)
+            path_sweep(basePlatePath, [[0,width/2 - clearance], [0,-width/2 + clearance]], anchor=anchor,spin=spin,orient=orient) {        
+                //tabs
+                attach(["start", "end"], BOT, inside=false)
+                    down(TopPlateTabWidth/2 + TabDistanceFromOutsideEdge)
+                    xrot(-90) zrot(90)
+                    TopPlateTab(height = height + TabProtrusionHeight, deleteTool = false);
+                //HOK Connectors sides
+                tag("HOKConnectors")
+                
+                attach(["start", "end"], BOT, inside=true)
+                    xcopies(spacing = HOK_Connector_Spacing_Depth)
+                    up(HOK_Connector_Inset-clearance)
+                        xrot(-90) zrot(90) down(0.01)
+                            HOKConnectorDeleteTool(spin=90);
+                //HOK Connectors back
+                tag("HOKConnectors")
+                down(11)
+                attach(RIGHT, BOT, inside=true)
+                    xcopies(spacing = Default_HOK_Connector_Spacing_Back)
+                    up(HOK_Connector_Inset)
+                        xrot(-90) zrot(90) down(0.01)
+                            HOKConnectorDeleteTool(spin=90);
+                //Top plate support
+                tag("keep")
+                attach(["start", "end"], BOT, inside=false)
+                    back(6.8)
+                    down(28*(Additional_Top_Plate_Support + 0.5)/2)
+                    xrot(-90) zrot(90)
+                    cuboid([28*(Additional_Top_Plate_Support + 0.5),28*((Available_Grid_Depth_Units % 2 == 0 ? 4 : 3)),height - 6.8], chamfer=height-Tile_Thickness, edges=[TOP], except=LEFT){
+                        //dovetail
+                        tag("Dovetails")
+                            attach(LEFT, BOT, inside=true, shiftout = 0.01, align=TOP) 
+                                xcopies(spacing = Dovetail_Spacing)
+                                Dovetail_Female();
+                    }
+                //cutout for opengrid and opengrid. 
+                tag("r1")
+                left(0.5)
+                attach(BOT, BOT, inside=true, shiftout=0.01)
+                    cuboid([Grid_Depth_mm, Grid_Width_mm, Tile_Thickness+0.02]){
+                        tag("keep")
+                            openGrid(Board_Height = openGrid_Render ? Available_Grid_Width_Units : 1, Board_Width = openGrid_Render ? Available_Grid_Depth_Units : 1, Tile_Thickness = Tile_Thickness);
+                    }
+
                 children();
             }
     //arc
@@ -1242,7 +1298,7 @@ module BasePlateCore(width, depth, height = 19, spin = 0, orient = UP, anchor=CE
             tag_this("keep")
             down(Top_Bot_Plates_Interface_Chamfer)
                 attach(TOP, TOP, inside=true, align=[LEFT, RIGHT])
-                    cuboid([28*(Additional_Top_Plate_Support + 0.5),28*4,height - 6.8], chamfer=height-Tile_Thickness, edges=[TOP], except=$idx == 0 ? LEFT : RIGHT){
+                    cuboid([28*(Additional_Top_Plate_Support + 0.5),28*((Available_Grid_Depth_Units % 2 == 0 ? 4 : 3)),height - 6.8], chamfer=height-Tile_Thickness, edges=[TOP], except=$idx == 0 ? LEFT : RIGHT){
                         //dovetail
                         tag("Dovetails")
                             attach($idx == 0 ? LEFT : RIGHT, BOT, inside=true, shiftout = 0.01, align=TOP) 
@@ -1330,7 +1386,7 @@ module Riser(anchor=BOT, spin=0, orient=UP){
                 ycopies(spacing = Slide_Vertical_Separation, sp=[0,Slide_Distance_From_Bottom], n = number_of_slides)
                     Drawer_Slide(deleteTool = true);
             //HOK Connector cutouts
-            attach(TOP, BOT, inside=true, shiftout=0.01) 
+            attach([TOP, BOT], BOT, inside=true, shiftout=0.01) 
                 grid_copies(spacing=[HOK_Connector_Inset*2-clearance,HOK_Connector_Spacing_Depth])
                 zrot(90)
                     HOKConnectorDeleteTool();
