@@ -11,6 +11,8 @@ Change Log:
 Credit to 
     First and foremost - Katie and her community at Hands on Katie on Youtube, Patreon, and Discord
     Zack Freedman for his work on the original Gridfinity
+    David D for openGrid
+    metasyntactic for the opengrid-snap code
 */
 
 include <BOSL2/std.scad>
@@ -22,7 +24,8 @@ Top_or_Bottom = "Both"; //[Top, Bottom, Both]
 
 /*[Base Options]*/
 //Not yet implemented
-Selected_Base = "Gridfinity"; //[Gridfinity, Flat, None]
+Selected_Base = "Gridfinity"; //[Gridfinity, openGrid, Flat, None]
+openGrid_Full_or_Lite = "Lite"; //[Full, Lite]
 //Thickness of the flat baseplate (by mm)
 Flat_Base_Thickness = 1.4; //0.1
 //Emboss the material thickness on the bottom of the baseplate.
@@ -44,9 +47,7 @@ Retention_Spike = false;
 //Adjust the size of the spike. Spike auto-calculates to 1/3 the thickness of the material.
 Spike_Scale = 1;
 
-/*[Straight Channel]*/
-//Length of the channel (by mm)
-Channel_Length = 42; 
+
 
 /*[Vertical Trim Channel]*/
 Show_Vertical_Trim = false;
@@ -65,9 +66,11 @@ Wood_Screw_Head_Diameter = 7;
 Wood_Screw_Head_Height = 1.75;
 
 /*[Advanced]*/
-//Size of the grid (by mm). 42mm by default for gridfinity. Other sized not tested. 
-grid_size = 42;
+//Size of the grid (by mm) if not Gridfinity or openGrid. Other sized not tested. 
+custom_grid_size = 42;
 embed_specs = true;
+
+
 
 //Additional channel length beyond center for partial channels. This allows slop in cutting dividers. 
 Partial_Channel_Buffer = 3;
@@ -75,6 +78,21 @@ Part_Separation = 5;
 Enable_Fillets = true;
 
 /*[Hidden]*/
+grid_size = Selected_Base == "Gridfinity" ? 42 : //grid size for gridfinity baseplate
+    Selected_Base == "openGrid" ? 25 : //grid size for openGrid baseplate
+    Selected_Base == "Flat" ? custom_grid_size : //grid size for flat baseplate
+    0; //no grid size for no baseplate
+calculated_base_height = 
+    Selected_Base == "Gridfinity" ? 4.75+0.6 : //0.6 is the additional height for the gridfinity baseplate by default. Update this if parameterized. 
+    Selected_Base == "Flat" ? Flat_Base_Thickness:
+    Selected_Base == "openGrid" && openGrid_Full_or_Lite == "Full" ? 6.8:
+    Selected_Base == "openGrid" && openGrid_Full_or_Lite == "Lite" ? 3.4:
+    0;
+
+///*[Straight Channel]*/
+//Length of the channel (by mm)
+Channel_Length = grid_size; 
+
 outside_radius = 7.5; //radius of the outside corner of the baseplate
 inside_radius = 0.8; //radius of the inside corner of the baseplate
 grid_x = 1;
@@ -83,12 +101,10 @@ retention_spike_size = 0.8;
 part_placement = grid_size/2+Part_Separation;
 grid_clearance = Selected_Base == "Gridfinity" ? 0.5 : 1; //adjusted grid size for spacing between grids
 
-calculated_base_height = Selected_Base == "Gridfinity" ? 4.75+0.6 : //0.6 is the additional height for the gridfinity baseplate by default. Update this if parameterized. 
-    Selected_Base == "Flat" ? Flat_Base_Thickness:
-    0;
+
 
 text_depth = 0.2;
-text_size = 7;
+text_size = 6;
 font = "Monsterrat:style=Bold";
 specs_text = str("th", Material_Thickness);
 
@@ -107,7 +123,7 @@ Shelf_Exterior_Drop = 10;
 Adhesive_Backer_Thickness = 2;
 Adhesive_Backer_Width = 20;
 
-
+//!openGridSnap(lite=true, directional=true); 
 
 if(Select_Part == "Drawer Wall Mounts"){
     //drawer wall hook
@@ -126,7 +142,7 @@ if(Select_Part == "Drawer Wall Mounts"){
     }
 
     //drawer wall adhesive
-    back(grid_size+Part_Separation)
+    back(42+Part_Separation)
     diff(){
         //Channel Walls
         cuboid([Wall_Thickness*2+Material_Thickness, Channel_Length, Channel_Depth+Wall_Thickness-Adhesive_Backer_Thickness], anchor=FRONT+BOT, orient=FRONT){ //Gridfinity Base
@@ -142,7 +158,7 @@ if(Select_Part == "Drawer Wall Mounts"){
     Screw_Backer_Thickness = 2;
     Screw_Backer_Buffer_Width = 4;
     //drawer wall screw
-    back(grid_size*2+Part_Separation)
+    back(42*2+Part_Separation)
     diff(){
         //Channel Walls
         cuboid([Wall_Thickness*2+Material_Thickness, Channel_Length, Channel_Depth+Wall_Thickness-Adhesive_Backer_Thickness], anchor=FRONT+BOT, orient=FRONT){ //Gridfinity Base
@@ -276,7 +292,16 @@ BEGIN NEOGRID MODULES
 */
 
 
-
+module neoGridBase(Channel_Length, grid_size){
+        //Gridfinity Base
+        if(Selected_Base == "Gridfinity")
+            gridfinity_bin_bottom_grid( x = 1, y = quantup(Channel_Length, grid_size)/grid_size, anchor=BOT);
+        //Flat Base
+        if(Selected_Base == "Flat")
+            cuboid( [grid_size, Channel_Length, Flat_Base_Thickness], chamfer=0.5, except=BOT, anchor=BOT);
+        if(Selected_Base == "openGrid")
+            openGridSnap(lite= (openGrid_Full_or_Lite == "Full" ? false : true), directional=false, anchor=BOT, spin=0, orient=UP);
+}
 
 module channelDeleteTool(size, chamfer_edges = [BOT], spike_count = 1, anchor = CENTER, spin = 0, orient = UP){
     tag_scope()
@@ -313,12 +338,7 @@ module NeoGrid_Straight_Thru_Top(Material_Thickness, Channel_Depth = 20, Wall_Th
 module NeoGrid_Straight_Thru_Base(Material_Thickness, Channel_Depth = 20, Wall_Thickness = 4, Channel_Length = 42, grid_size = 42){
     //Straight Channel
     diff("remove text"){
-        //Gridfinity Base
-        if(Selected_Base == "Gridfinity")
-            gridfinity_bin_bottom_grid( x = 1, y = quantup(Channel_Length, grid_size)/grid_size, anchor=BOT);
-        //Flat Base
-        if(Selected_Base == "Flat")
-            cuboid( [grid_size, Channel_Length, Flat_Base_Thickness], chamfer=0.5, except=BOT, anchor=BOT);
+        neoGridBase(Channel_Length = Channel_Length, grid_size = grid_size);
         //Channel Walls
         up(calculated_base_height-0.01)
             cuboid([ Wall_Thickness*2+Material_Thickness, Channel_Length-grid_clearance,  Channel_Depth], anchor=BOT){ //Gridfinity Base
@@ -360,12 +380,7 @@ module NeoGrid_X_Intersection_Top(Material_Thickness, Channel_Depth = 20, Wall_T
 module NeoGrid_X_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_Thickness = 4, grid_size = 42){
     //X Intersection Base
     diff("channel chamf text"){ //small trick here. External chamfers auto-apply the "remove" tag. This is a workaround to keep the chamfers on the channel walls by renaming the remove tag.
-        //Gridfinity Base 1x1 for all intersections.
-        if(Selected_Base == "Gridfinity")
-            gridfinity_bin_bottom_grid(x=1,y=1, anchor=BOT);
-        //Flat Base
-        if(Selected_Base == "Flat")
-            cuboid( [grid_size, grid_size, Flat_Base_Thickness], chamfer=0.5, except=BOT, anchor=BOT);
+        neoGridBase(Channel_Length = Channel_Length, grid_size = grid_size);
         //Channel Wall Y
         up(calculated_base_height-0.01)
             cuboid([Wall_Thickness*2+Material_Thickness, grid_size-grid_clearance, Channel_Depth], anchor=BOT){
@@ -427,12 +442,7 @@ module NeoGrid_T_Intersection_Top(Material_Thickness, Channel_Depth = 20, Wall_T
 module NeoGrid_T_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_Thickness = 4, grid_size = 42){
     //X Intersection Base
     diff("channel chamf text"){ //small trick here. External chamfers auto-apply the "remove" tag. This is a workaround to keep the chamfers on the channel walls by renaming the remove tag.
-        //Gridfinity Base 1x1 for all intersections.
-        if(Selected_Base == "Gridfinity")
-            gridfinity_bin_bottom_grid(x=1,y=1, anchor=BOT);
-        //Flat Base
-        if(Selected_Base == "Flat")
-            cuboid( [grid_size, grid_size, Flat_Base_Thickness], chamfer=0.5, except=BOT, anchor=BOT);
+        neoGridBase(Channel_Length = Channel_Length, grid_size = grid_size);
         //Channel Wall partial 
         up(calculated_base_height-0.01)//attach to the top of the gridfinity base
             fwd(grid_size/4-grid_clearance/2)
@@ -486,12 +496,7 @@ module NeoGrid_Straight_End_Top(Material_Thickness, Channel_Depth = 20, Wall_Thi
 module NeoGrid_Straight_End_Base(Material_Thickness, Channel_Depth = 20, Wall_Thickness = 4, grid_size = 42){
     //Straight Channel
     diff("remove text"){
-        //Gridfinity Base
-        if(Selected_Base == "Gridfinity")
-            gridfinity_bin_bottom_grid( x = 1, y = quantup(Channel_Length, grid_size)/grid_size, anchor=BOT);
-        //Flat Base
-        if(Selected_Base == "Flat")
-            cuboid( [grid_size, grid_size, Flat_Base_Thickness], chamfer=0.5, except=BOT, anchor=BOT);
+        neoGridBase(Channel_Length = Channel_Length, grid_size = grid_size);
         //Channel Walls
         up(calculated_base_height-0.01)
             cuboid([grid_size - grid_clearance, Wall_Thickness*2+Material_Thickness, Channel_Depth], anchor=BOT){
@@ -545,12 +550,7 @@ module NeoGrid_L_Intersection_Top(Material_Thickness, Channel_Depth = 20, Wall_T
 module NeoGrid_L_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_Thickness = 4, grid_size = 42){
     //X Intersection Base
     diff("channel text"){ //small trick here. External chamfers auto-apply the "remove" tag. This is a workaround to keep the chamfers on the channel walls by renaming the remove tag.
-        //Gridfinity Base 1x1 for all intersections.
-        if(Selected_Base == "Gridfinity")
-            gridfinity_bin_bottom_grid(x=1,y=1, anchor=BOT);
-        //Flat Base
-        if(Selected_Base == "Flat")
-            cuboid( [grid_size, grid_size, Flat_Base_Thickness], chamfer=0.5, except=BOT, anchor=BOT);
+        neoGridBase(Channel_Length = Channel_Length, grid_size = grid_size);
         //Channel Wall X axis
         up(calculated_base_height-0.01) //attach to the top of the gridfinity base
             fwd(grid_size/4-grid_clearance/4-Material_Thickness/4-Wall_Thickness/2)
@@ -690,3 +690,112 @@ module gridfinity_base() {
         }
     }
 }
+
+module openGridSnap(lite=false, directional=false, orient, anchor, spin){
+	module openGridSnapNub(w, nub_h, nub_w, nub_d, b_y, top_wedge_h, bot_wedge_h, r_x, r_r, r_s){
+		move([w/2, 0, 0]) 
+		intersection(){
+			difference(){
+				//bounding box
+				zmove(nub_h) cuboid([nub_d,nub_w,2-nub_h], anchor=CENTER+LEFT+BOTTOM) ;
+				//top part
+				zmove(2) rotate([0,180,90]) wedge([nub_w,nub_d,top_wedge_h], anchor=CENTER+BOTTOM+BACK);
+				//bottom part
+				zmove(nub_h) rotate([0,0,90]) ymove(b_y) wedge([nub_w,0.4,bot_wedge_h], anchor=CENTER+BOTTOM+BACK);
+			};
+			//rounding
+			xmove(r_x) yscale(r_s) cyl($fn=600, r=r_r, h=2, anchor=BOTTOM);
+		};
+	}
+
+	w=24.80;
+	fulldiff=3.4;
+	h=lite ? 3.4 : fulldiff*2;
+	attachable(orient=orient, anchor=anchor, spin=spin, size=[w,w,h]){
+		zmove(-h/2) difference(){
+			core=3 + (lite ? 0 : fulldiff);
+			top_h=0.4; 
+			top_nub_h=1.1;
+
+			union() {
+				//top
+				zmove(h-top_h) cuboid([w,w,top_h], rounding=3.262743, edges="Z", $fn=2, anchor=BOTTOM);
+				// core
+				cuboid([w,w,core], rounding=4.81837, edges="Z", $fn=2, anchor=BOTTOM);
+				//top nub
+				offs=2.02;
+				intersection(){
+					zmove(core-top_nub_h) cuboid([w,w,top_nub_h], rounding=3.262743, edges="Z", $fn=2, anchor=BOTTOM);
+					zrot_copies(n=4) move([w/2-offs,w/2-offs,core]) rotate([180, 0, 135]) wedge(size=[6.817,top_nub_h,top_nub_h], anchor=CENTER+BOTTOM);
+				};
+				//bottom nub
+				zmove(lite ? 0 : fulldiff) zrot_copies(n=4)
+					if (!directional || ($idx==1 || $idx==3))
+					openGridSnapNub(
+						w=w,
+						nub_h=0.2,
+						nub_w=11,
+						nub_d=0.4,
+						top_wedge_h=0.6,
+						bot_wedge_h=0.6,
+						r_x=-12.36,
+						r_s=1.36,
+						r_r=13.025,
+						b_y=-0
+					);
+				//directional nubs 
+				 if (directional) {
+					//front directional nub
+					zmove(lite ? 0 : fulldiff) openGridSnapNub(
+						w=w,
+						nub_h=0,
+						nub_w=14,
+						nub_d=0.8,
+						top_wedge_h=1.0,
+						bot_wedge_h=0.4,
+						r_x=-11.75,
+						r_s=1.26,
+						r_r=13.025,
+						b_y=-0.4
+					);
+					 
+					//rear directional nub
+					zrot(180) zmove(lite ? 0 : fulldiff) openGridSnapNub(
+						w=w,
+						nub_h=0.65,
+						nub_w=10.8,
+						nub_d=0.4,
+						top_wedge_h=0.6,
+						bot_wedge_h=0.6,
+						r_x=-12.41,
+						r_s=1.37,
+						r_r=13.025,
+						b_y=0
+					);
+				};
+			};
+			//bottom click holes
+			zrot_copies(n=4)
+				move([w/2-1, 0, 0])
+				if (!directional || $idx==1 || $idx==3)
+					cuboid([0.6,12.4,2.8 + (lite ? 0 : fulldiff)], rounding=0.3, $fn=100, edges="Z", anchor=BOTTOM);
+			//bottom click holes for rear directional
+			if (directional) {
+				zrot(180) move([w/2-1, 0, 0.599]) cuboid([0.6, 12.4, 2.2 + (lite ? 0 : fulldiff) ], rounding=0.3, $fn=100, edges="Z", anchor=BOTTOM);
+				zrot(180) move([w/2-1.2, 0, 0]) prismoid(size1=[0.6, 12.4], size2=[0.6, 12.4], h=0.6, shift=[0.2,0], rounding=0.3, $fn=100);
+				zrot(180) move([w/2-0.1, 0, 0]) rotate([0,0,0]) prismoid(size1=[0.2, 20], size2=[0, 20], shift=[0.1,0], h=0.6, anchor=BOTTOM);
+			};
+
+			//bottom wall click holes
+			zrot_copies(n=4)
+				move([w/2, 0, 2.2 + (lite ? 0 : fulldiff)])
+				if (!directional || ($idx>0))
+					cuboid([1.4,12,0.4], anchor=BOTTOM);
+
+			//directional indicator
+			if (directional) move([9.5,0,0]) cylinder(r1=2, r2=1.5, h=0.4, $fn=2);
+		};
+		children();
+	};
+};
+
