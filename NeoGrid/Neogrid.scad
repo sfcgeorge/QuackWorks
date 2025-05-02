@@ -26,10 +26,13 @@ Top_or_Bottom = "Both"; //[Top, Bottom, Both]
 //Not yet implemented
 Selected_Base = "Gridfinity"; //[Gridfinity, openGrid, Flat, None]
 openGrid_Full_or_Lite = "Lite"; //[Full, Lite]
+//openGrid Directional Snaps are for vertical mounting and additional strength against downward forces. See arrow on bottom of snap for direction of up.
+openGrid_Directional_Snap = false;
+//Orientation of openGrid Directional Snap. See arrow on bottom for orientation of up. Rotate by selecting 1 - 4.
+openGrid_Directional_Snap_Orientation = 1; //[1:1:4]
 //Thickness of the flat baseplate (by mm)
 Flat_Base_Thickness = 1.4; //0.1
-//Emboss the material thickness on the bottom of the baseplate.
-Print_Specs = true;
+
 
 /*[Material Size]*/
 //Material Thickness (by mm)
@@ -37,26 +40,19 @@ Material_Thickness = 3.5; //.01
 //Depth of the channel for the material to sit in.
 Channel_Depth = 20; 
 
-/*[Channel Customizations]*/
-//Thickness of the walls of the channel (by mm)
-Wall_Thickness = 4;
-
-/*[Material Holding Options]*/
+/*[Experimental - Material Holding Options]*/
 //Print a retention spike inside the channels to firmly hold softer material like MDF.
 Retention_Spike = false;
 //Adjust the size of the spike. Spike auto-calculates to 1/3 the thickness of the material.
 Spike_Scale = 1;
 
-
-
-/*[Vertical Trim Channel]*/
-Show_Vertical_Trim = false;
+/*[Vertical Trim Channel Only]*/
 //Length of the channel (by mm)
 Total_Trim_Width = 42; 
 Middle_Seam_Width = 5;
 Total_Trim_Height = 20;
 
-/*[Screw Mounting]*/
+/*[Drawer Wall Screw Mounting]*/
 Screw_Mounting = true;
 //Wood screw diameter (in mm)
 Wood_Screw_Thread_Diameter = 3.5;
@@ -66,18 +62,30 @@ Wood_Screw_Head_Diameter = 7;
 Wood_Screw_Head_Height = 1.75;
 
 /*[Advanced]*/
-//Size of the grid (by mm) if not Gridfinity or openGrid. Other sized not tested. 
+//Thickness of the walls of the channel (by mm)
+Wall_Thickness = 4;
+//Size of the grid (by mm) if not Gridfinity or openGrid. Other sizes not tested. 
 custom_grid_size = 42;
-embed_specs = true;
+//Emboss the material thickness on the bottom of the baseplate.
+Print_Specs = true;
+Top_Chamfers = true;
+Custom_Base_Chamfer = false;
+Custom_Base_Chamfer_Size = 4;
 
 
+Base_Chamfer = 
+    Selected_Base == "Gridfinity" && !Custom_Base_Chamfer ? 5 : //default gridfinity baseplate chamfer size
+    Selected_Base == "Flat" && !Custom_Base_Chamfer ? 4 : //default flat baseplate chamfer size
+    Selected_Base == "openGrid" && !Custom_Base_Chamfer ? 3 : //default openGrid full baseplate chamfer size
+    Custom_Base_Chamfer_Size;
 
+/*[Hidden]*/
 //Additional channel length beyond center for partial channels. This allows slop in cutting dividers. 
 Partial_Channel_Buffer = 3;
 Part_Separation = 5;
-Enable_Fillets = true;
 
-/*[Hidden]*/
+
+
 grid_size = Selected_Base == "Gridfinity" ? 42 : //grid size for gridfinity baseplate
     Selected_Base == "openGrid" ? 25 : //grid size for openGrid baseplate
     Selected_Base == "Flat" ? custom_grid_size : //grid size for flat baseplate
@@ -97,12 +105,12 @@ outside_radius = 7.5; //radius of the outside corner of the baseplate
 inside_radius = 0.8; //radius of the inside corner of the baseplate
 grid_x = 1;
 grid_y = 1;
-retention_spike_size = 0.8;
+retention_spike_size = 0.6;
 part_placement = grid_size/2+Part_Separation;
 grid_clearance = Selected_Base == "Gridfinity" ? 0.5 : 1; //adjusted grid size for spacing between grids
 
 
-
+//Text parameters
 text_depth = 0.2;
 text_size = 6;
 font = "Monsterrat:style=Bold";
@@ -300,7 +308,15 @@ module neoGridBase(Channel_Length, grid_size){
         if(Selected_Base == "Flat")
             cuboid( [grid_size, Channel_Length, Flat_Base_Thickness], chamfer=0.5, except=BOT, anchor=BOT);
         if(Selected_Base == "openGrid")
-            openGridSnap(lite= (openGrid_Full_or_Lite == "Full" ? false : true), directional=false, anchor=BOT, spin=0, orient=UP);
+            zrot(90*openGrid_Directional_Snap_Orientation)
+            openGridSnap(lite= (openGrid_Full_or_Lite == "Full" ? false : true), directional=openGrid_Directional_Snap, anchor=BOT, spin=0, orient=UP);
+}
+
+module baseText(){
+    zrot(90*(openGrid_Directional_Snap_Orientation-1))
+        tag("text")
+            mirror([1,0,0])
+                text3d(specs_text, size=text_size, font=font, h=text_depth, anchor=CENTER, atype="ycenter");
 }
 
 module channelDeleteTool(size, chamfer_edges = [BOT], spike_count = 1, anchor = CENTER, spin = 0, orient = UP){
@@ -308,7 +324,7 @@ module channelDeleteTool(size, chamfer_edges = [BOT], spike_count = 1, anchor = 
     diff("spike"){
         cuboid(size, anchor=anchor, spin=spin, orient=orient){ //passthru attachables
                 //material insertion chamfer 
-                if(Enable_Fillets) edge_profile_asym(chamfer_edges, corner_type="chamfer")
+                if(Top_Chamfers) edge_profile_asym(chamfer_edges, corner_type="chamfer")
                     xflip() mask2d_chamfer(Wall_Thickness/3);
         if(Retention_Spike)
             //Retention Spike
@@ -343,19 +359,19 @@ module NeoGrid_Straight_Thru_Base(Material_Thickness, Channel_Depth = 20, Wall_T
         up(calculated_base_height-0.01)
             cuboid([ Wall_Thickness*2+Material_Thickness, Channel_Length-grid_clearance,  Channel_Depth], anchor=BOT){ //Gridfinity Base
                 //bottom chamfer
-
                 tag("keep") //must label keep due to chamfering out an addition and not a diff. 
                     edge_profile([BOT+LEFT, BOT+RIGHT])
-                        xflip()mask2d_chamfer(5);
+                        xflip()mask2d_chamfer(Base_Chamfer);
                 //top chamfer
-                    if(Enable_Fillets)
+                    if(Top_Chamfers)
                     edge_profile([TOP+LEFT, TOP+RIGHT])
                         mask2d_chamfer(Wall_Thickness/3);
             //Removal tool for channel
             attach(TOP, BOT, inside=true, shiftout=0.01)
                 channelDeleteTool([Material_Thickness, Channel_Length+0.02,Channel_Depth+0.02]);
             }
-        if(embed_specs) tag("text")mirror([1,0,0])text3d(specs_text, size=text_size, font=font, h=text_depth, anchor=CENTER, atype="ycenter");
+        if(Print_Specs)             
+            baseText();
     }
 }
 
@@ -367,7 +383,7 @@ module NeoGrid_X_Intersection_Top(Material_Thickness, Channel_Depth = 20, Wall_T
         zrot_copies([0,90]) 
             cuboid([Wall_Thickness*2+Material_Thickness, grid_size, Channel_Depth], anchor=BOT){ //Gridfinity Base
                 //top chamfer
-                    if(Enable_Fillets) edge_profile([BOT+LEFT, BOT+RIGHT])
+                    if(Top_Chamfers) edge_profile([BOT+LEFT, BOT+RIGHT])
                         mask2d_chamfer(Wall_Thickness/3);
             //Removal tool for channel
             zrot_copies([0,90]) 
@@ -387,9 +403,9 @@ module NeoGrid_X_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
                 //bottom outward chamfer
                     edge_profile([BOT+LEFT, BOT+RIGHT])
                         xflip() //xflip to put the chamfer out rather than in
-                            mask2d_chamfer(5); 
+                            mask2d_chamfer(Base_Chamfer); 
                 //top inward chamfer
-                    if(Enable_Fillets) tag("chamf") edge_profile([TOP+LEFT, TOP+RIGHT])
+                    if(Top_Chamfers) tag("chamf") edge_profile([TOP+LEFT, TOP+RIGHT])
                         mask2d_chamfer(Wall_Thickness/3); //chamfer portion of the wall thickness
             }
         //Channel Wall X
@@ -401,7 +417,7 @@ module NeoGrid_X_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
                     xflip() //xflip to put the chamfer out rather than in
                         mask2d_chamfer(5); 
             //top chamfer
-                if(Enable_Fillets) tag("chamf") edge_profile_asym([TOP+LEFT, TOP+RIGHT])
+                if(Top_Chamfers) tag("chamf") edge_profile_asym([TOP+LEFT, TOP+RIGHT])
                     mask2d_chamfer(Wall_Thickness/3); //chamfer portion of the wall thickness
         }
         //clear the channels in both directions
@@ -409,7 +425,8 @@ module NeoGrid_X_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
             channelDeleteTool([Material_Thickness, grid_size+0.01, Channel_Depth+0.04], spike_count=2, chamfer_edges=[TOP], anchor=BOT);
         tag("channel")zrot(90) up(calculated_base_height-0.02)
             channelDeleteTool([Material_Thickness, grid_size+0.01, Channel_Depth+0.04], spike_count=2, chamfer_edges=[TOP], anchor=BOT);
-        if(embed_specs) tag("text")mirror([1,0,0])text3d(specs_text, size=text_size, font=font, h=text_depth, anchor=CENTER, atype="ycenter");
+        if(Print_Specs) 
+            baseText();
         }//end gridfinity base
 }
 
@@ -419,7 +436,7 @@ module NeoGrid_T_Intersection_Top(Material_Thickness, Channel_Depth = 20, Wall_T
         //Full Width Channel
         cuboid([Wall_Thickness*2+Material_Thickness, grid_size, Channel_Depth], anchor=BOT){
             //top chamfer
-            if(Enable_Fillets) edge_profile([BOT+LEFT, BOT+RIGHT])
+            if(Top_Chamfers) edge_profile([BOT+LEFT, BOT+RIGHT])
                 mask2d_chamfer(Wall_Thickness/3);
             //Removal tool - Full Width
             attach(TOP, BOT, inside=true, shiftout=0.01)
@@ -430,7 +447,7 @@ module NeoGrid_T_Intersection_Top(Material_Thickness, Channel_Depth = 20, Wall_T
         fwd(Material_Thickness/2+Wall_Thickness-0.01)
         cuboid([Wall_Thickness*2+Material_Thickness, grid_size/2+Material_Thickness/2+Wall_Thickness, Channel_Depth], anchor=BOT+FRONT){ //Gridfinity Base
             //top chamfer
-            if(Enable_Fillets) edge_profile([BOT+LEFT, BOT+RIGHT])
+            if(Top_Chamfers) edge_profile([BOT+LEFT, BOT+RIGHT])
                 mask2d_chamfer(Wall_Thickness/3);
             //Removal tool - Partial
             attach(TOP, BOT, shiftout=0.01, inside=true, align=BACK)
@@ -450,9 +467,9 @@ module NeoGrid_T_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
                 //bottom outward chamfer
                     edge_profile([BOT+LEFT, BOT+RIGHT])
                         xflip() //xflip to put the chamfer out rather than in
-                            mask2d_chamfer(5); 
+                            mask2d_chamfer(Base_Chamfer); 
                 //top inward chamfer
-                    if(Enable_Fillets) tag("chamf")edge_profile([TOP+LEFT, TOP+RIGHT])
+                    if(Top_Chamfers) tag("chamf")edge_profile([TOP+LEFT, TOP+RIGHT])
                         mask2d_chamfer(Wall_Thickness/3); //chamfer portion of the wall thickness
             }
         //Channel Wall full width
@@ -462,9 +479,9 @@ module NeoGrid_T_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
             //bottom chamfer
                 edge_profile([BOT+LEFT, BOT+RIGHT])
                     xflip() //xflip to put the chamfer out rather than in
-                        mask2d_chamfer(5); 
+                        mask2d_chamfer(Base_Chamfer); 
             //top chamfer
-                if(Enable_Fillets) tag("chamf")edge_profile([TOP+LEFT, TOP+RIGHT])
+                if(Top_Chamfers) tag("chamf")edge_profile([TOP+LEFT, TOP+RIGHT])
                     mask2d_chamfer(Wall_Thickness/3); //chamfer portion of the wall thickness
         }
         //clear the channels in both directions
@@ -474,8 +491,9 @@ module NeoGrid_T_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
         //channel clear full length
         tag("channel")zrot(90)up(calculated_base_height-0.02)
             channelDeleteTool([Material_Thickness, grid_size+0.02, Channel_Depth+0.02], spike_count=2, chamfer_edges=[TOP], anchor=BOT);
-        if(embed_specs) tag("text")mirror([1,0,0])text3d(specs_text, size=text_size, font=font, h=text_depth, anchor=CENTER, atype="ycenter");
-        }//end gridfinity base
+        if(Print_Specs) 
+            baseText();;
+    }//end gridfinity base
 }
 
 //End Channels
@@ -484,7 +502,7 @@ module NeoGrid_Straight_End_Top(Material_Thickness, Channel_Depth = 20, Wall_Thi
         //Channel Walls
             cuboid([ grid_size, Wall_Thickness*2+Material_Thickness, Channel_Depth], anchor=BOT){
             //top chamfer
-                if(Enable_Fillets) edge_profile([BOT+FRONT, BOT+BACK, BOT+RIGHT])
+                if(Top_Chamfers) edge_profile([BOT+FRONT, BOT+BACK, BOT+RIGHT])
                     mask2d_chamfer(Wall_Thickness/3);
         //Removal tool for channel
         attach(TOP, BOT, inside=true, shiftout=0.01, align=LEFT, spin=90)
@@ -503,15 +521,16 @@ module NeoGrid_Straight_End_Base(Material_Thickness, Channel_Depth = 20, Wall_Th
                 //bottom chamfer
                 tag("keep") //must label keep due to chamfering out an addition and not a diff. 
                     edge_profile_asym([BOT+FRONT, BOT+BACK])
-                        xflip()mask2d_chamfer(5);
+                        xflip()mask2d_chamfer(Base_Chamfer);
                 //top chamfer
-                    if(Enable_Fillets) edge_profile([TOP+FRONT, TOP+BACK])
+                    if(Top_Chamfers) edge_profile([TOP+FRONT, TOP+BACK])
                         mask2d_chamfer(Wall_Thickness/3);
                 //Removal tool for channel
                 attach(TOP, BOT, inside=true, shiftout=0.01, spin=90, align=LEFT)
                     channelDeleteTool([ Material_Thickness, grid_size-Partial_Channel_Buffer+0.02, Channel_Depth+0.02]);
             }
-        if(embed_specs) tag("text")mirror([1,0,0])text3d(specs_text, size=text_size, font=font, h=text_depth, anchor=CENTER, atype="ycenter");
+        if(Print_Specs)
+            baseText();
 
     }
 }
@@ -558,7 +577,7 @@ module NeoGrid_L_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
                 //bottom outward chamfer
                     edge_profile([BOT+LEFT, BOT+RIGHT])
                         xflip() //xflip to put the chamfer out rather than in
-                            mask2d_chamfer(5); 
+                            mask2d_chamfer(Base_Chamfer); 
                 //top inward chamfer
                     edge_profile([TOP+LEFT, TOP+RIGHT])
                         mask2d_chamfer(Wall_Thickness/3); //chamfer portion of the wall thickness
@@ -570,7 +589,7 @@ module NeoGrid_L_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
             //bottom chamfer
                 edge_profile_asym([BOT+FRONT, BOT+BACK, BOT+RIGHT], corner_type="sharp")
                     xflip() //xflip to put the chamfer out rather than in
-                        mask2d_chamfer(5); 
+                        mask2d_chamfer(Base_Chamfer); 
             //top chamfer
                 edge_profile([TOP+LEFT, TOP+RIGHT])
                     mask2d_chamfer(Wall_Thickness/3); //chamfer portion of the wall thickness
@@ -580,7 +599,8 @@ module NeoGrid_L_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
             channelDeleteTool([Material_Thickness, grid_size/2+Material_Thickness/2-grid_clearance/2+0.03, Channel_Depth+0.04], chamfer_edges=TOP, anchor=BOT);
         tag("channel")up(calculated_base_height-0.02) zrot(90) back(grid_size/4-grid_clearance/4-Material_Thickness/4)
             channelDeleteTool([Material_Thickness, grid_size/2+Material_Thickness/2-grid_clearance/2+0.03, Channel_Depth+0.04], chamfer_edges=TOP, anchor=BOT);
-        if(embed_specs) tag("text")mirror([1,0,0])text3d(specs_text, size=text_size, font=font, h=text_depth, anchor=CENTER, atype="ycenter");
+        if(Print_Specs)
+            baseText();
 
         }//end gridfinity base
 }
@@ -693,7 +713,7 @@ module gridfinity_base() {
 
 module openGridSnap(lite=false, directional=false, orient, anchor, spin){
 	module openGridSnapNub(w, nub_h, nub_w, nub_d, b_y, top_wedge_h, bot_wedge_h, r_x, r_r, r_s){
-		move([w/2, 0, 0]) 
+		move([w/2-0.01, 0, 0]) 
 		intersection(){
 			difference(){
 				//bounding box
