@@ -29,6 +29,8 @@ Change Log:
     - Added dropdown for openGrid vs Multiboard mounting surfaces
     - Created threaded snap matching threaded snap profile of Underware (but also a teardrop for vertical printing)
     - Added 'backer only' option
+    - Added 'Force Back Thickness' option to override the default back thickness of 6.5mm or 3.6mm depending on mounting style
+    - Allowed mm adjustements to the tength of a mm
 
 Notes:
 - Slot test fit - For a slot test fit, set the following parameters
@@ -48,11 +50,11 @@ Mounting_Surface = "Multiboard"; //[Multiboard, openGrid]
 
 /* [Internal Dimensions] */
 //Depth (by mm): internal dimension along the Z axis of print orientation. Measured from the top to the base of the internal floor, equivalent to the depth of the item you wish to hold when mounted horizontally.
-Internal_Depth = 50.0;
+Internal_Depth = 50.0; //.1
 //Width (by mm): internal dimension along the X axis of print orientation. Measured from left to right, equivalent to the width of the item you wish to hold when mounted horizontally.
-Internal_Width = 60.0; 
+Internal_Width = 60.0; //.1
 //Height (by mm): internal dimension along the Y axis of print orientation. Measured from the front to the back, equivalent to the thickness of the item you wish to hold when mounted horizontally.
-Internal_Height = 15.0;
+Internal_Height = 15.0; //.1
 
 /*[Style Customizations]*/
 //Edge rounding (by mm)
@@ -117,6 +119,10 @@ baseThickness = 3; //.1
 
 /*[Advanced]*/
 Backer_Only_Mode = false;
+Backer_Negatives_Only = false; //If true, the backer will be negative space. If false, the backer will be positive space.
+//Set to 0 to use the default thickness of the back. Set to a number to force the back to be that thickness.
+Force_Back_Thickness = 0; //0.1
+
 
 /*[Slot Customization]*/
 //Offset the multiconnect on-ramps to be between grid slots rather than on the slot
@@ -168,9 +174,9 @@ Inner_Hole_Diameter_Sm = 3.3;
 Slop = 0.075;
 
 //Calculated
-totalDepth = Internal_Depth+baseThickness;
-totalHeight = Internal_Height + wallThickness;
-totalWidth = Internal_Width + wallThickness*2;
+totalDepth = Backer_Only_Mode ? Internal_Depth : Internal_Depth+baseThickness;
+totalHeight = Backer_Only_Mode ? Internal_Height : Internal_Height + wallThickness;
+totalWidth = Backer_Only_Mode ? Internal_Width : Internal_Width + wallThickness*2;
 totalCenterX = Internal_Width/2;
 
 //move to center
@@ -181,9 +187,9 @@ translate(v = [-Internal_Width/2,0,0])
     //slotted back
     if(Mounting_Style == "Multiconnect")
         translate([0,0.02,totalDepth/2-baseThickness]) 
-        rotate([0,Slot_From_Top ? 180 : 0,0])
-        translate([-totalWidth/2,0,-totalDepth/2])//center
-        multiconnectBack(backWidth = totalWidth, backHeight = totalDepth, distanceBetweenSlots = distanceBetweenSlots, slotStopFromBack = Multiconnect_Stop_Distance_From_Back);
+            rotate([0,Slot_From_Top ? 180 : 0,0])
+                translate([-totalWidth/2,0,-totalDepth/2])//center
+                    multiconnectBack(backWidth = totalWidth, backHeight = totalDepth, distanceBetweenSlots = distanceBetweenSlots, slotStopFromBack = Multiconnect_Stop_Distance_From_Back);
     else
         translate([0,0.02,-baseThickness])
             threadedSnapBack(backWidth = totalWidth, backHeight= totalDepth, distanceBetweenSlots = distanceBetweenSlots, anchor=BOT+BACK);
@@ -252,7 +258,9 @@ module basket() {
 //Threaded back
 module threadedSnapBack(backWidth, backHeight, distanceBetweenSlots, anchor=BOT, orient=UP, spin=0){
     diff()
-    cuboid(size = [backWidth, 3.59, backHeight], rounding=edgeRounding, except_edges=BACK, anchor=anchor, orient=orient, spin=spin){ 
+    tag(Backer_Negatives_Only ? "remove" : "")
+    cuboid(size = [backWidth, Force_Back_Thickness == 0 ? 3.59 : Force_Back_Thickness, backHeight], rounding=edgeRounding, except_edges=BACK, anchor=anchor, orient=orient, spin=spin){ 
+        tag(Backer_Negatives_Only ? "keep" : "remove")
         attach(FRONT, BOT, inside=true, shiftout=0.01)
             grid_copies(size = [backWidth - Outer_Diameter_Sm*2, backHeight - Outer_Diameter_Sm*2], spacing = distanceBetweenSlots)
                 trapezoidal_threaded_rod(d=Outer_Diameter_Sm, l=3.6, pitch=Pitch_Sm, flank_angle = Flank_Angle_Sm, thread_depth = Thread_Depth_Sm, $fn=50, internal=true, bevel2 = true, blunt_start=false, teardrop=true, anchor=TOP, $slop=Slop);
@@ -264,16 +272,22 @@ module multiconnectBack(backWidth, backHeight, distanceBetweenSlots, slotStopFro
 {
     //slot count calculates how many slots can fit on the back. Based on internal width for buffer. 
     //slot width needs to be at least the distance between slot for at least 1 slot to generate
-    let (backWidth = max(backWidth,distanceBetweenSlots), backHeight = max(backHeight, 25),slotCount = floor(backWidth/distanceBetweenSlots), backThickness = 6.5){
-        difference() {
-            translate(v = [0,-backThickness,0]) 
-            cuboid(size = [backWidth,backThickness,backHeight], rounding=edgeRounding, except_edges=BACK, anchor=FRONT+LEFT+BOT);
+    let (backWidth = max(backWidth,distanceBetweenSlots), backHeight = max(backHeight, 25),slotCount = floor(backWidth/distanceBetweenSlots), backThickness = Force_Back_Thickness == 0 ? 6.5 : Force_Back_Thickness){
+        diff() {
+            tag(Backer_Negatives_Only ? "remove" : "")
+                translate(v = [0,-backThickness,0]) 
+                    cuboid(size = [backWidth,backThickness,backHeight], rounding=edgeRounding, except_edges=BACK, anchor=FRONT+LEFT+BOT);
             //Loop through slots and center on the item
             //Note: I kept doing math until it looked right. It's possible this can be simplified.
             for (slotNum = [0:1:slotCount-1]) {
-                translate(v = [distanceBetweenSlots/2+(backWidth/distanceBetweenSlots-slotCount)*distanceBetweenSlots/2+slotNum*distanceBetweenSlots,-2.35+slotDepthMicroadjustment,backHeight-Multiconnect_Stop_Distance_From_Back]) {
-                    slotTool(backHeight);
-                }
+                force_tag(Backer_Negatives_Only ? "keep" : "remove")    
+                    translate(v = [distanceBetweenSlots/2+(backWidth/distanceBetweenSlots-slotCount)*distanceBetweenSlots/2+slotNum*distanceBetweenSlots,-2.35+slotDepthMicroadjustment + (Force_Back_Thickness == 0 ? 0 : 6.5 - Force_Back_Thickness),backHeight-Multiconnect_Stop_Distance_From_Back]){
+                        if(Backer_Negatives_Only)
+                            back_half(y=-4.15, s=backHeight * 2 + 20)
+                                slotTool(backHeight);
+                        else 
+                            slotTool(backHeight);
+                    }
             }
         }
     }
