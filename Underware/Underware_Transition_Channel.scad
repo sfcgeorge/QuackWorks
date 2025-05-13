@@ -22,15 +22,15 @@ Base_Top_or_Both = "Both"; // [Base, Top, Both]
 
 /*[Channel Size]*/
 //Width (X axis) of channel in units. Default unit is 25mm
-Channel_Width_in_Units_1 = 3;  // Ensure this is an integer
+Channel_Width_in_Units_1 = 2;  // Ensure this is an integer
 //Width (X axis) of channel in units. Default unit is 25mm
 Channel_Width_in_Units_2 = 1;  // Ensure this is an integer
 //Height (Z axis) inside the channel (in mm)
-Channel_Internal_Height_1 = 34; //[12:6:72]
+Channel_Internal_Height_1 = 18; //[12:6:72]
 //Height (Z axis) inside the channel (in mm)
 Channel_Internal_Height_2 = 12; //[12:6:72]
 //Length (Y axis) of channel in units. Default unit is 25mm
-Channel_Length_Units = 4; 
+Channel_Length_Units = 3; 
 //The lateral distance of the rising portion of the channel
 Rise_Distance = 25; //[12.5:12.5:100]
 //The offset from center of the rising portion of the channel (0 == centered)
