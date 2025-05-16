@@ -24,6 +24,8 @@ Change Log:
     - Small performance improvements to improve render time
     - Resolved top plate support snapping to grid sizes for odd-numbered grid depths
     - Curved sections properly plated for MakerWorld printing
+- 2025-05-15 v1.2.2
+    - Fix for end plates when depth exceeds core width
      
 
 Credit to 
@@ -793,7 +795,7 @@ module TopPlateEndSquared(width, depth, thickness, radius = 50, topRecess = 1, h
     
     color(Disable_Colors ? undef : Top_Plate_Color)
     diff(){
-        half_of(half, s = width*2 + 5)
+        half_of(half, s = depth*2 + 5)
             topPlateBuilderShape(totalHeight = thicknessAdjusted, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topRecess)
                 rect([width,depth], rounding = [radius,radius,radius,radius]);
             tag("remove")
