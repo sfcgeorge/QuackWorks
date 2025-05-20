@@ -26,6 +26,9 @@ Change Log:
     - Curved sections properly plated for MakerWorld printing
 - 2025-05-15 v1.2.2
     - Fix for end plates when depth exceeds core width
+- 2025-05-19 v1.3 - Top Plate Customizer v1
+    - Top Plate Customizer recesses for Gridfinity and OpenGrid (to be printed separately and place in)
+    - Top Plate Customizer for wireless chargers 
      
 
 Credit to 
@@ -70,6 +73,20 @@ Drawer_Pull_Height_Adjustement = 0;
 Top_Plate_Recess = 1; //0.1
 //The width (mm) of the top lip of the top plate. A thicker width equates to a larger border around the top.
 Top_Plate_Lip_Width = 0.5;
+
+/*[Top Plate Customizer]*/
+Enable_Top_Plate_Customizer = false;
+Top_Plate_Customization = "Gridfinity Top"; //[Gridfinity Top, openGrid Lite Top, openGrid Full Top, Wireless Charger]
+//Specify a specific grid width. Leave Zero (0) for standard.
+Custom_Grid_Width = 0;
+//Specify a specific grid width. Leave Zero (0) for standard.
+Custom_Grid_Depth = 0;
+//Total Diameter (mm) of the wireless charger to embed.
+Wireless_Charger_Diameter = 50;
+//Total Thickness (mm) of the wireless charger to embed. If thicker than the top plate, you will need to prop it up from the baseplate underneath. Reach out if you need a generator for that. 
+Wireless_Charger_Thickness = 8;
+Wireless_Charger_Cord_Width = 6;
+Wireless_Charger_Cord_Length_Outward = 14;
 
 /*[Curve Section]*/
 Enable_Curve_Mode = false;
@@ -207,22 +224,26 @@ Grid_Height_is_Odd = Available_Grid_Height % 2 == 0 ? false : true;
 enableHOKBlocks = Backer_Height - Grid_Height_mm - Grid_Dist_From_Bot < safeHOKClearance ? true : false;
 
 //oG Width Calculations
-Available_Grid_Width_Units = quantdn((Base_Plate_Width - Grid_Min_Side_Clearance*2) / openGridSize, 1);
-Grid_Width_is_Odd = Available_Grid_Width_Units % 2 == 0 ? false : true; 
-Grid_Width_mm = Available_Grid_Width_Units * openGridSize;
+Available_openGrid_Width_Units = quantdn((Base_Plate_Width - Grid_Min_Side_Clearance*2) / openGridSize, 1);
+Grid_Width_is_Odd = Available_openGrid_Width_Units % 2 == 0 ? false : true; 
+Grid_Width_mm = Available_openGrid_Width_Units * openGridSize;
+
+Available_Gridfinity_Width_Units = quantdn((Base_Plate_Width - Grid_Min_Side_Clearance*2) / 42, 1);
+
 
 //oG Depth Calculations
-Available_Grid_Depth_Units = quantdn((Base_Plate_Depth - Grid_Min_Depth_Clearance*2) / openGridSize, 1);
-Grid_Depth_is_Odd = Available_Grid_Depth_Units % 2 == 0 ? false : true; 
-Grid_Depth_mm = Available_Grid_Depth_Units * openGridSize;
+Available_openGrid_Depth_Units = quantdn((Base_Plate_Depth - Grid_Min_Depth_Clearance*2) / openGridSize, 1);
+Grid_Depth_is_Odd = Available_openGrid_Depth_Units % 2 == 0 ? false : true; 
+Grid_Depth_mm = Available_openGrid_Depth_Units * openGridSize;
 
+Available_Gridfinity_Depth_Units = quantdn((Base_Plate_Depth - Grid_Min_Depth_Clearance*2) / 42, 1);
 
 echo(str(Grid_Width_is_Odd));
 
 //HOK Parameters
 HOK_Connector_Spacing_Depth = Grid_Depth_is_Odd ? openGridSize*2 : openGridSize*3;
 
-Default_HOK_Connector_Spacing_Back = min(openGridSize*(Available_Grid_Width_Units - 1), Grid_Width_is_Odd ? openGridSize*4 : openGridSize*3); //Spacing between multiple HOK connecters (center to center). Either the outer grids or 
+Default_HOK_Connector_Spacing_Back = min(openGridSize*(Available_openGrid_Width_Units - 1), Grid_Width_is_Odd ? openGridSize*4 : openGridSize*3); //Spacing between multiple HOK connecters (center to center). Either the outer grids or 
 //Distance from part edge to center of HOK Connector
 HOK_Connector_Inset = 4.5;
 HOK_Connector_Thickness = 3.00;
@@ -314,6 +335,8 @@ if(!MakerWorld_Render_Mode && Show_Plate == 0){
     else 
         mw_assembly_view();
 }
+
+//OpenScad Desktop plate-specific render options
 if(!MakerWorld_Render_Mode && Show_Plate == 1)
     mw_plate_1();
 if(!MakerWorld_Render_Mode && Show_Plate == 2)
@@ -338,6 +361,8 @@ if(!MakerWorld_Render_Mode && Show_Plate == 11)
     mw_plate_11();
 if(!MakerWorld_Render_Mode && Show_Plate == 12)
     mw_plate_12();
+if(!MakerWorld_Render_Mode && Show_Plate == 13)
+    mw_plate_13();
 
 
 
@@ -357,6 +382,9 @@ module mw_assembly_view() {
                 fwd(Top_Plate_Baseplate_Depth_Difference)
                     topPlateBuilderPath(Top_Plate_Depth, Core_Section_Width, arc=Degrees_of_Arc, radius = Core_Radius, totalHeight = Top_Plate_Thickness + topLipHeight, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topLipHeight, $fn=150, anchor=BOT)  ;
         }
+    }
+    else if (Enable_Top_Plate_Customizer){
+        customizableTopPlateCore(depth = Top_Plate_Depth, width = Core_Section_Width, anchor=BOT);
     }
     else{
         if(Show_Backer)
@@ -486,13 +514,16 @@ module mw_assembly_view() {
     }
 }
 
+//are we rendering a special part or the regular entire deskware standard
+function special_render_mode() = Enable_Curve_Mode || Enable_Top_Plate_Customizer;
 
+echo(str("special render mode? ", special_render_mode()));
 
 //BEGIN MAKERWORLD PLATING
 
 //Plate 1 - Core Baseplate
 module mw_plate_1(){
-    if(!Enable_Curve_Mode)
+    if(!special_render_mode())
         basePlateBuilderPath(Base_Plate_Depth, Base_Plate_Width, anchor=BOT);
         //deprecated for the faster-rendering option above
         //BasePlateCore(width = Base_Plate_Width, depth = Base_Plate_Depth,  height = Base_Plate_Thickness);
@@ -504,7 +535,7 @@ module mw_plate_2(){
     widthOfAllRisers = (2) * (Riser_Width+5); //removed dynamic riser adds based on core count (to keep render times down)
     widthOfAllBackers = 1 * (Backer_Height + 5); //removed dynamic riser adds based on core count (to keep render times down)
 
-    if(!Enable_Curve_Mode){
+    if(!special_render_mode()){
         left(widthOfAllRisers/2)
         xcopies(spacing = Riser_Width+5, n = 2)
             Riser(orient=DOWN, anchor=TOP) ;
@@ -517,7 +548,7 @@ module mw_plate_2(){
 
 //Plate 3 - Baseplate Ends
 module mw_plate_3(){
-    if(!Enable_Curve_Mode){
+    if(!special_render_mode()){
         if(End_Style == "Rounded Square"){
                     xcopies(spacing = -5)
                         zrot($idx == 0 ? 0 : 180)
@@ -542,7 +573,7 @@ module mw_plate_3(){
 
 //Plate 4 - Core Top plate
 module mw_plate_4(){
-    if(!Enable_Curve_Mode)
+    if(!special_render_mode())
         topPlateBuilderPath(depth = Top_Plate_Depth, width = Core_Section_Width, totalHeight = Top_Plate_Thickness + topLipHeight, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topLipHeight, anchor=BOT);
         //below deprecated for the faster-rendering option above
         //TopPlateCore(width = Base_Plate_Width, depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, anchor=BOT);
@@ -551,7 +582,7 @@ module mw_plate_4(){
 
 //Plate 5 - Ends Top plate
 module mw_plate_5(){
-    if(!Enable_Curve_Mode){
+    if(!special_render_mode()){
         if(End_Style == "Rounded"){
             xcopies(spacing = 5)
                 TopPlateEndRoundNew(depth = Base_Plate_Depth, thickness = Top_Plate_Thickness, topRecess = topLipHeight, half=$idx == 0 ? LEFT : RIGHT);
@@ -570,20 +601,20 @@ module mw_plate_5(){
 
 //Plate 6 - Drawer 1 Unit High
 module mw_plate_6(){
-    if(!Enable_Curve_Mode)
+    if(!special_render_mode())
         Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth, anchor=BOT);
 }
 
 //Plate 7 - Drawer 2 Units High
 module mw_plate_7(){
-    if(!Enable_Curve_Mode)
+    if(!special_render_mode())
         Drawer(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth, anchor=BOT);
 
 }
 
 //Plate 8 - Drawer Fronts Single
 module mw_plate_8(){
-    if(!Enable_Curve_Mode){
+    if(!special_render_mode()){
         ydistribute(sizes=[40, 40], spacing = 5){
             DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, anchor=BOT);
             //DrawerFront(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2);
@@ -598,7 +629,7 @@ module mw_plate_8(){
 
 //Plate 9 - Drawer Fronts Single
 module mw_plate_9(){
-    if(!Enable_Curve_Mode){
+    if(!special_render_mode()){
         ydistribute(sizes=[80, 40], spacing = 5){
             //DrawerFront(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2);
             DrawerFront(height_units = 2, inside_width = Drawer_Outside_Width - DrawerThickness*2, anchor=BOT);
@@ -639,16 +670,36 @@ module mw_plate_12(){
         riserBuilderPath(Riser_Depth, Riser_Height, arc=Degrees_of_Arc, radius = Core_Radius, $fn=150, anchor=BOT);
     }
 }
+
+//Plate 13 - Core Top plate
+module mw_plate_13(){
+    if(Enable_Top_Plate_Customizer)
+        customizableTopPlateCore(depth = Top_Plate_Depth, width = Core_Section_Width, anchor=BOT);
+}
 //END MAKERWORLD PLATING
 
+//BEGIN CUSTOMIZATION SERIES
+module customizableTopPlateCore(width, depth, spin = 0, orient = UP, anchor=CENTER){
+    topPlateBuilderPath(depth = depth, width = width, totalHeight = Top_Plate_Thickness + topLipHeight, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topLipHeight, anchor=BOT)
+        down(topLipHeight)
+            attach(TOP, TOP, inside=true, shiftout=0.01){
+                if(Top_Plate_Customization == "Gridfinity Top")
+                    cuboid([Custom_Grid_Depth == 0 ? Available_Gridfinity_Depth_Units * 42 : Custom_Grid_Depth * 42 , Custom_Grid_Width == 0 ? Available_Gridfinity_Width_Units * 42 : Custom_Grid_Width * 42, 5]);
+                if(Top_Plate_Customization == "openGrid Lite Top")
+                    cuboid([Custom_Grid_Depth == 0 ? Available_openGrid_Depth_Units * 28 : Custom_Grid_Depth * 28 , Custom_Grid_Width == 0 ? Available_openGrid_Width_Units * 28 : Custom_Grid_Width * 28, 4]);
+                if(Top_Plate_Customization == "openGrid Full Top")
+                    cuboid([Custom_Grid_Depth == 0 ? Available_openGrid_Depth_Units * 28 : Custom_Grid_Depth * 28 , Custom_Grid_Width == 0 ? Available_openGrid_Width_Units * 28 : Custom_Grid_Width * 28, 6.8]);
+                if(Top_Plate_Customization == "Wireless Charger")
+                    cyl(d=Wireless_Charger_Diameter, h=Wireless_Charger_Thickness)
+                        attach(RIGHT, BOT, overlap = 3)//cylinder out for cord
+                            cyl(d = Wireless_Charger_Cord_Width, h = Wireless_Charger_Cord_Length_Outward + 3)
+                                attach(FRONT, TOP, overlap = Wireless_Charger_Cord_Width/2)
+                                    cuboid([Wireless_Charger_Cord_Width, Wireless_Charger_Cord_Length_Outward+3, Top_Plate_Thickness]);
+            }
 
-//top plate alternative
-//up(99)
-    //#topPlateBuilderPath(Top_Plate_Depth, Core_Section_Width, totalHeight = Top_Plate_Thickness + topLipHeight, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topLipHeight, $fn=150);
-//#up(Show_Connected ? Riser_Height + clearance : Riser_Height + 100)
-//    basePlateBuilderPath(Base_Plate_Depth, Base_Plate_Width, anchor=BOT);
+}
 
-
+//END CUSTOMIZATION SERIES
 
 //BEGIN DRAWER PARTS
 module DrawerHandle(handle_OutsideWidth = 100, handle_InsideDepth = 15, handle_Thickness = 10, spin = 0, orient = UP, anchor = CENTER){
@@ -936,7 +987,7 @@ module basePlateBuilderPath(depth, width, height = 19, arc = 0, radius = 30, tot
                     back(6.8)
                     down(28*(Additional_Top_Plate_Support + 0.5)/2)
                     xrot(-90) zrot(90)
-                    cuboid([28*(Additional_Top_Plate_Support + 0.5),28*((Available_Grid_Depth_Units % 2 == 0 ? 4 : 3)),height - 6.8], chamfer=height-Tile_Thickness, edges=[TOP], except=LEFT){
+                    cuboid([28*(Additional_Top_Plate_Support + 0.5),28*((Available_openGrid_Depth_Units % 2 == 0 ? 4 : 3)),height - 6.8], chamfer=height-Tile_Thickness, edges=[TOP], except=LEFT){
                         //dovetail
                         tag("Dovetails")
                             attach(LEFT, BOT, inside=true, shiftout = 0.01, align=TOP) 
@@ -949,7 +1000,7 @@ module basePlateBuilderPath(depth, width, height = 19, arc = 0, radius = 30, tot
                 attach(BOT, BOT, inside=true, shiftout=0.01)
                     cuboid([Grid_Depth_mm, Grid_Width_mm, Tile_Thickness+0.02]){
                         tag("keep")
-                            openGrid(Board_Height = openGrid_Render ? Available_Grid_Width_Units : 1, Board_Width = openGrid_Render ? Available_Grid_Depth_Units : 1, Tile_Thickness = Tile_Thickness);
+                            openGrid(Board_Height = openGrid_Render ? Available_openGrid_Width_Units : 1, Board_Width = openGrid_Render ? Available_openGrid_Depth_Units : 1, Tile_Thickness = Tile_Thickness);
                     }
 
                 children();
@@ -1335,7 +1386,7 @@ module BasePlateCore(width, depth, height = 19, spin = 0, orient = UP, anchor=CE
             attach(BOT, BOT, inside=true, shiftout=0.01)
                 cuboid([Grid_Width_mm, Grid_Depth_mm, Tile_Thickness+0.01]){
                     tag("keep")
-                        openGrid(Board_Width = openGrid_Render ? Available_Grid_Width_Units : 1, Board_Height = openGrid_Render ? Available_Grid_Depth_Units : 1, Tile_Thickness = Tile_Thickness);
+                        openGrid(Board_Width = openGrid_Render ? Available_openGrid_Width_Units : 1, Board_Height = openGrid_Render ? Available_openGrid_Depth_Units : 1, Tile_Thickness = Tile_Thickness);
                 }
             //top plate tabs
             tag("keep")
@@ -1345,7 +1396,7 @@ module BasePlateCore(width, depth, height = 19, spin = 0, orient = UP, anchor=CE
             tag_this("keep")
             down(Top_Bot_Plates_Interface_Chamfer)
                 attach(TOP, TOP, inside=true, align=[LEFT, RIGHT])
-                    cuboid([28*(Additional_Top_Plate_Support + 0.5),28*((Available_Grid_Depth_Units % 2 == 0 ? 4 : 3)),height - 6.8], chamfer=height-Tile_Thickness, edges=[TOP], except=$idx == 0 ? LEFT : RIGHT){
+                    cuboid([28*(Additional_Top_Plate_Support + 0.5),28*((Available_openGrid_Depth_Units % 2 == 0 ? 4 : 3)),height - 6.8], chamfer=height-Tile_Thickness, edges=[TOP], except=$idx == 0 ? LEFT : RIGHT){
                         //dovetail
                         tag("Dovetails")
                             attach($idx == 0 ? LEFT : RIGHT, BOT, inside=true, shiftout = 0.01, align=TOP) 
@@ -1390,12 +1441,12 @@ module Backer(anchor=BOT, spin=0, orient=UP){
                 //if(Available_Grid_Height>0)
                 up(Grid_Dist_From_Bot)
                     attach(BACK, BOT, inside=true, align=BOT, shiftout=0.01) 
-                        cuboid([Available_Grid_Width_Units*openGridSize-0.02, Available_Grid_Height > 0 ? Available_Grid_Height*openGridSize -0.02 : Backer_Height - minimumTopSpacing - Grid_Dist_From_Bot, Backer_Thickness+0.02]);
+                        cuboid([Available_openGrid_Width_Units*openGridSize-0.02, Available_Grid_Height > 0 ? Available_Grid_Height*openGridSize -0.02 : Backer_Height - minimumTopSpacing - Grid_Dist_From_Bot, Backer_Thickness+0.02]);
                 //opengrid
                 tag("keep")
                 up(Grid_Dist_From_Bot)
                 attach(BACK, BOT, inside=true, align=BOT) 
-                    openGrid(openGrid_Render ? Available_Grid_Width_Units : 1, openGrid_Render ? Available_Grid_Height : 1)
+                    openGrid(openGrid_Render ? Available_openGrid_Width_Units : 1, openGrid_Render ? Available_Grid_Height : 1)
                         //HOK Tab Blocks
                         if(enableHOKBlocks)
                         xcopies(spacing = Default_HOK_Connector_Spacing_Back)
