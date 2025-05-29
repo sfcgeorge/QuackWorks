@@ -1,13 +1,17 @@
 /*Created by Andy Levesque
 
-Licensed Creative Commons 4.0 Attribution Non-Commercial Sharable with Attribution
+This code is licensed Creative Commons 4.0 Attribution Non-Commercial Sharable with Attribution
 
 Documentation available at https://handsonkatie.com/underware-2-0-the-made-to-measure-collection/
+References to Multipoint are for the Multiboard ecosystem by Jonathan at Keep Making. The Multipoint mount system is licensed under https://www.multiboard.io/license.
+
 
 Credit to 
     @David D on Printables for Multiconnect
     Jonathan at Keep Making for Multiboard
     @fawix on GitHub for her contributions on parameter descriptors
+    @SnazzyGreenWarrior on GitHub for their contributions on the Multipoint-compatible mount
+
 
 Change Log:
 - 2024-12-06 
@@ -24,13 +28,15 @@ Change Log:
     - Updated (in mm) to (by mm) for clarity
 -2024-12-13
     -Ability to override slot distance from edge
--2024-05-02
+-2025-05-02
     - Added dropdown for Multiconnect vs. Threaded Snap connections
     - Added dropdown for openGrid vs Multiboard mounting surfaces
     - Created threaded snap matching threaded snap profile of Underware (but also a teardrop for vertical printing)
     - Added 'backer only' option
     - Added 'Force Back Thickness' option to override the default back thickness of 6.5mm or 3.6mm depending on mounting style
     - Allowed mm adjustements to the tength of a mm
+-2025-05-28
+    - Added Clamshell move v0.1 (no independent customizations)
 
 Notes:
 - Slot test fit - For a slot test fit, set the following parameters
@@ -110,6 +116,15 @@ leftUpperCapture = 0;
 //Distance inward (Y axis) from the sides (by mm) that captures the left sides of the item
 leftLateralCapture = 3;
 
+/*[BETA - Clamshell mode]*/
+//NOT COMPATIBLE WITH THREADED SNAPS YET. Clamshell mode is when you want to enclose the item with two separate holders. This calculates the distance between the two holders while also aligning with the mounting points.
+ClamShell_Mode = false;
+//total width of the item to be mounted
+total_item_width = 150;
+//Extra room between the two holders (total between the two sides). Recommended to be at least 0.3mm. 
+item_slop = 0.3;
+//Minimum distance the center of a mount point can be from the edge of the item holder (by mm). Decreasing less than 10 may cause the slot to clip out the edge (which is usually fine).
+Minimum_Safe_Mount_Clearance_From_Edge = 13;
 
 /* [Additional Customization] */
 //Thickness of item holder walls (by mm)
@@ -159,6 +174,8 @@ onRampEveryXSlots =
     onRampHalfOffset ? On_Ramp_Every_X_Slots : 
     On_Ramp_Every_X_Slots == 1 ? 2 : On_Ramp_Every_X_Slots;
 
+debugItemRepresentation = false;
+
 ///*[Small Screw Profile]*/
 //Distance (in mm) between threads
 Pitch_Sm = 3;
@@ -173,11 +190,25 @@ Inner_Hole_Diameter_Sm = 3.3;
 //Slop in thread. Increase to make threading easier. Decrease to make threading harder.
 Slop = 0.075;
 
+if(debugItemRepresentation){
+    %up(item_slop) cuboid([total_item_width, Internal_Height,  Internal_Width], anchor=FRONT+RIGHT, orient=RIGHT);
+}
+
 //Calculated
 totalDepth = Backer_Only_Mode ? Internal_Depth : Internal_Depth+baseThickness;
 totalHeight = Backer_Only_Mode ? Internal_Height : Internal_Height + wallThickness;
 totalWidth = Backer_Only_Mode ? Internal_Width : Internal_Width + wallThickness*2;
 totalCenterX = Internal_Width/2;
+
+
+//calculate total working space, respecting minimum mounting value.
+//The mounting points should be 'inside' the total width. Therefore, we are rounding down to the next mounting points on both sides
+mount_point_distance = quantdn(total_item_width+baseThickness*2+item_slop*2-(Minimum_Safe_Mount_Clearance_From_Edge)*2, distanceBetweenSlots);
+echo(str("Mount Point Distance: ", mount_point_distance));
+//new_mount_point_inward_adjustement = (total_item_width - mount_point_distance+item_slop*2 )/2;
+new_mount_point_inward_adjustement = (total_item_width - mount_point_distance + item_slop*2 + baseThickness*2)/2;
+echo(str("New Mount Point Inward Adjustment: ", new_mount_point_inward_adjustement));
+echo(str("Grid spaces apart: ",  mount_point_distance/distanceBetweenSlots));
 
 //move to center
 union(){
@@ -189,7 +220,35 @@ translate(v = [-Internal_Width/2,0,0])
         translate([0,0.02,totalDepth/2-baseThickness]) 
             rotate([0,Slot_From_Top ? 180 : 0,0])
                 translate([-totalWidth/2,0,-totalDepth/2])//center
-                    multiconnectBack(backWidth = totalWidth, backHeight = totalDepth, distanceBetweenSlots = distanceBetweenSlots, slotStopFromBack = Multiconnect_Stop_Distance_From_Back);
+                    multiconnectBack(
+                        backWidth = totalWidth, 
+                        backHeight = totalDepth, 
+                        distanceBetweenSlots = distanceBetweenSlots, 
+                        slotStopFromBack = ClamShell_Mode ? new_mount_point_inward_adjustement : Multiconnect_Stop_Distance_From_Back,
+                    );
+    else
+        translate([0,0.02,-baseThickness])
+            threadedSnapBack(backWidth = totalWidth, backHeight= totalDepth, distanceBetweenSlots = distanceBetweenSlots, anchor=BOT+BACK);
+}
+
+
+if(ClamShell_Mode)
+up(total_item_width+item_slop*2) rot([0,180,0])
+union(){
+translate(v = [-Internal_Width/2,0,0]) 
+    if(!Backer_Only_Mode)
+        basket();
+    //slotted back
+    if(Mounting_Style == "Multiconnect")
+        translate([0,0.02,totalDepth/2-baseThickness]) 
+            rotate([0,Slot_From_Top ? 180 : 0,0])
+                translate([-totalWidth/2,0,-totalDepth/2])//center
+                    multiconnectBack(
+                        backWidth = totalWidth, 
+                        backHeight = totalDepth, 
+                        distanceBetweenSlots = distanceBetweenSlots, 
+                        slotStopFromBack = ClamShell_Mode ? new_mount_point_inward_adjustement : Multiconnect_Stop_Distance_From_Back,
+                    );
     else
         translate([0,0.02,-baseThickness])
             threadedSnapBack(backWidth = totalWidth, backHeight= totalDepth, distanceBetweenSlots = distanceBetweenSlots, anchor=BOT+BACK);
@@ -281,7 +340,7 @@ module multiconnectBack(backWidth, backHeight, distanceBetweenSlots, slotStopFro
             //Note: I kept doing math until it looked right. It's possible this can be simplified.
             for (slotNum = [0:1:slotCount-1]) {
                 force_tag(Backer_Negatives_Only ? "keep" : "remove")    
-                    translate(v = [distanceBetweenSlots/2+(backWidth/distanceBetweenSlots-slotCount)*distanceBetweenSlots/2+slotNum*distanceBetweenSlots,-2.35+slotDepthMicroadjustment + (Force_Back_Thickness == 0 ? 0 : 6.5 - Force_Back_Thickness),backHeight-Multiconnect_Stop_Distance_From_Back]){
+                    translate(v = [distanceBetweenSlots/2+(backWidth/distanceBetweenSlots-slotCount)*distanceBetweenSlots/2+slotNum*distanceBetweenSlots,-2.35+slotDepthMicroadjustment + (Force_Back_Thickness == 0 ? 0 : 6.5 - Force_Back_Thickness),backHeight-slotStopFromBack]){
                         if(Backer_Negatives_Only)
                             back_half(y=-4.15, s=backHeight * 2 + 20)
                                 slotTool(backHeight);
