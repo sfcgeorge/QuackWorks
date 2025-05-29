@@ -12,6 +12,8 @@ Change Log:
     - New mitered corners option. Thanks @porteregr on GitHub!
 - 2025-04-09
     - Additional Holding Strength now available! For larger channels, I recommend 0.6.
+- 2025-05-28
+    - Fix for floating parts when holding strength is used on wider channels
 
 Credit to 
     First and foremost - Katie and her community at Hands on Katie on Youtube, Patreon, and Discord
@@ -257,7 +259,7 @@ function topDeleteProfile(widthMM, heightMM = 12) =
     union(
         left((widthMM-25)/2,topDeleteProfileHalf(heightMM)), 
         right((widthMM-25)/2,mirror([1,0],topDeleteProfileHalf(heightMM))), //fill middle if widening from standard 25mm
-        back(4.474 + (heightMM-12)/2,rect([widthMM-25+0.02,8.988 + heightMM - 12])) 
+        back(4.474 + (heightMM-12 - Additional_Holding_Strength)/2,rect([widthMM-25+0.02,8.988 + heightMM - 12 + Additional_Holding_Strength])) 
     );
 
 function baseProfileHalf() = 

@@ -187,7 +187,7 @@ function topDeleteProfile(widthMM, heightMM = 12) =
     union(
         left((widthMM-25)/2,topDeleteProfileHalf(heightMM)), 
         right((widthMM-25)/2,mirror([1,0],topDeleteProfileHalf(heightMM))), //fill middle if widening from standard 25mm
-        back(4.474 + (heightMM-12)/2,rect([widthMM-25+0.02,8.988 + heightMM - 12])) 
+        back(4.474 + (heightMM-12 - Additional_Holding_Strength)/2,rect([widthMM-25+0.02,8.988 + heightMM - 12 + Additional_Holding_Strength])) 
     );
 
 function baseProfileHalf() = 
