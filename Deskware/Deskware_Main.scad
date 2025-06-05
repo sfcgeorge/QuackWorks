@@ -916,10 +916,11 @@ module topPlateBuilderPath(depth, width, arc = 0, radius = 30, totalHeight = 9.5
         //straight piece
         if(arc == 0)
             color(Disable_Colors ? undef : Top_Plate_Color)
-            diff()
+            diff("tabs")
             down(totalHeight/2)
             zrot(90)
                 path_sweep(topPlatePath, [[0,-width/2 + clearance],[0,width/2 - clearance]]){
+                    tag("tabs")
                     attach(["start", "end"], BOT, inside=true)
                         up(TopPlateTabWidth/2 + TabDistanceFromOutsideEdge)
                         xrot(-90) zrot(90) down(0.01)
@@ -930,12 +931,13 @@ module topPlateBuilderPath(depth, width, arc = 0, radius = 30, totalHeight = 9.5
         //arc
         else
             //fwd(radius + Riser_Depth/2)
-            diff()
+            diff("tabs")
             down(totalHeight/2)
             zrot(90-arc/2)
                 path_sweep(topPlatePath, arc(r = Riser_Depth/2 + radius, angle=arc), anchor=anchor,spin=spin,orient=orient) {
                     //top plate tabs
                     //#attach(BOT, BOT, inside=false, shiftout=0.01, align=[LEFT, RIGHT], inset=TabDistanceFromOutsideEdge-clearance)
+                    tag("tabs")
                     attach(["start", "end"], BOT, inside=true)
                         up(TopPlateTabWidth/2 + TabDistanceFromOutsideEdge)
                         xrot(-90) zrot(90) down(0.01)
