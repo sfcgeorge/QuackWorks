@@ -380,7 +380,7 @@ module mw_assembly_view() {
                 basePlateBuilderPath(Base_Plate_Depth, Base_Plate_Width, arc=Degrees_of_Arc, radius = Core_Radius, anchor=BOT);
             up(Riser_Height + Base_Plate_Thickness + clearance + arc_series_gap*2)
                 fwd(Top_Plate_Baseplate_Depth_Difference)
-                    topPlateBuilderPath(Top_Plate_Depth, Core_Section_Width, arc=Degrees_of_Arc, radius = Core_Radius, totalHeight = Top_Plate_Thickness + topLipHeight, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topLipHeight, $fn=150, anchor=BOT)  ;
+                    topPlateBuilderPath(Top_Plate_Depth, Core_Section_Width, arc=Degrees_of_Arc, radius = Core_Radius, totalHeight = Top_Plate_Thickness + topLipHeight, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topLipHeight, $fn=150, anchor=BOT);
         }
     }
     else if (Enable_Top_Plate_Customizer){
@@ -931,6 +931,7 @@ module topPlateBuilderPath(depth, width, arc = 0, radius = 30, totalHeight = 9.5
         else
             //fwd(radius + Riser_Depth/2)
             diff()
+            down(totalHeight/2)
             zrot(90-arc/2)
                 path_sweep(topPlatePath, arc(r = Riser_Depth/2 + radius, angle=arc), anchor=anchor,spin=spin,orient=orient) {
                     //top plate tabs
@@ -940,7 +941,7 @@ module topPlateBuilderPath(depth, width, arc = 0, radius = 30, totalHeight = 9.5
                         xrot(-90) zrot(90) down(0.01)
                         TopPlateTab(height = TabProtrusionHeight, deleteTool = true);
                     echo(str("Top Plate arc != 0"));
-                    children();
+                    //children();
                 }
 
         
