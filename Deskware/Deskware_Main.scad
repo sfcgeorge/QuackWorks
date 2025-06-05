@@ -384,7 +384,9 @@ module mw_assembly_view() {
         }
     }
     else if (Enable_Top_Plate_Customizer){
-        customizableTopPlateCore(depth = Top_Plate_Depth, width = Core_Section_Width, anchor=BOT);
+        echo(str("Top Plate Customizer Enabled"));
+        customizableTopPlateCore(depth = Top_Plate_Depth, width = Core_Section_Width, anchor=BOT) show_anchors();
+        
     }
     else{
         if(Show_Backer)
@@ -671,7 +673,7 @@ module mw_plate_12(){
     }
 }
 
-//Plate 13 - Core Top plate
+//Plate 13 - Top Plate Customizer
 module mw_plate_13(){
     if(Enable_Top_Plate_Customizer)
         customizableTopPlateCore(depth = Top_Plate_Depth, width = Core_Section_Width, anchor=BOT);
@@ -680,7 +682,8 @@ module mw_plate_13(){
 
 //BEGIN CUSTOMIZATION SERIES
 module customizableTopPlateCore(width, depth, spin = 0, orient = UP, anchor=CENTER){
-    topPlateBuilderPath(depth = depth, width = width, totalHeight = Top_Plate_Thickness + topLipHeight, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topLipHeight, anchor=BOT)
+    diff()
+    topPlateBuilderPath(depth = depth, width = width, totalHeight = Top_Plate_Thickness + topLipHeight, bottomChamfer = Top_Bot_Plates_Interface_Chamfer*2, topChamfer = topChamfer, topInset = topLipWidth, topRecess = topLipHeight, anchor=BOT){
         down(topLipHeight)
             attach(TOP, TOP, inside=true, shiftout=0.01){
                 if(Top_Plate_Customization == "Gridfinity Top")
@@ -696,6 +699,8 @@ module customizableTopPlateCore(width, depth, spin = 0, orient = UP, anchor=CENT
                                 attach(FRONT, TOP, overlap = Wireless_Charger_Cord_Width/2)
                                     cuboid([Wireless_Charger_Cord_Width, Wireless_Charger_Cord_Length_Outward+3, Top_Plate_Thickness]);
             }
+    //show_anchors();
+    }
 
 }
 
@@ -903,49 +908,59 @@ module TopPlateSVGBuilder(){
 
 //BEGIN EXTRUDED SERIES
 module topPlateBuilderPath(depth, width, arc = 0, radius = 30, totalHeight = 9.5, bottomChamfer = 6, topChamfer = 1, topInset = 0.5, topRecess = 1, $fn = 150, anchor=CENTER,spin=0,orient=UP){
-    middleSectionHeight = totalHeight - bottomChamfer - topChamfer; 
     
-    //straight piece
-    if(arc == 0)
-    color(Disable_Colors ? undef : Top_Plate_Color)
-    diff()
-    zrot(90)
-        path_sweep(topPlatePath, [[0,-width/2 + clearance],[0,width/2 - clearance]], anchor=anchor,spin=spin,orient=orient){
-            attach(["start", "end"], BOT, inside=true)
-                up(TopPlateTabWidth/2 + TabDistanceFromOutsideEdge)
-                xrot(-90) zrot(90) down(0.01)
-                TopPlateTab(height = TabProtrusionHeight, deleteTool = true);
-            children();
-        }
-    //arc
-    else
-    //fwd(radius + Riser_Depth/2)
-    diff()
-    zrot(90-arc/2)
-        path_sweep(topPlatePath, arc(r = Riser_Depth/2 + radius, angle=arc), anchor=anchor,spin=spin,orient=orient) {
-            //top plate tabs
-            //#attach(BOT, BOT, inside=false, shiftout=0.01, align=[LEFT, RIGHT], inset=TabDistanceFromOutsideEdge-clearance)
-            attach(["start", "end"], BOT, inside=true)
-                up(TopPlateTabWidth/2 + TabDistanceFromOutsideEdge)
-                xrot(-90) zrot(90) down(0.01)
-                TopPlateTab(height = TabProtrusionHeight, deleteTool = true);
-            children();
-        }
+    middleSectionHeight = totalHeight - bottomChamfer - topChamfer; 
+    echo(str("topPlateBuilderPath middleSectionHeight: ", middleSectionHeight));
+
+    attachable(anchor, spin, orient, size = [width-clearance*2, depth, totalHeight]){
+        //straight piece
+        if(arc == 0)
+            color(Disable_Colors ? undef : Top_Plate_Color)
+            diff()
+            down(totalHeight/2)
+            zrot(90)
+                path_sweep(topPlatePath, [[0,-width/2 + clearance],[0,width/2 - clearance]]){
+                    attach(["start", "end"], BOT, inside=true)
+                        up(TopPlateTabWidth/2 + TabDistanceFromOutsideEdge)
+                        xrot(-90) zrot(90) down(0.01)
+                        TopPlateTab(height = TabProtrusionHeight, deleteTool = true);
+                    echo(str("Top Plate arc = 0"));
+                    //children();
+                }
+        //arc
+        else
+            //fwd(radius + Riser_Depth/2)
+            diff()
+            zrot(90-arc/2)
+                path_sweep(topPlatePath, arc(r = Riser_Depth/2 + radius, angle=arc), anchor=anchor,spin=spin,orient=orient) {
+                    //top plate tabs
+                    //#attach(BOT, BOT, inside=false, shiftout=0.01, align=[LEFT, RIGHT], inset=TabDistanceFromOutsideEdge-clearance)
+                    attach(["start", "end"], BOT, inside=true)
+                        up(TopPlateTabWidth/2 + TabDistanceFromOutsideEdge)
+                        xrot(-90) zrot(90) down(0.01)
+                        TopPlateTab(height = TabProtrusionHeight, deleteTool = true);
+                    echo(str("Top Plate arc != 0"));
+                    children();
+                }
+
+        
+    children();
+    }
 
     topPlatePath = [
-        [-depth/2 + bottomChamfer,0], //starting bottom front
-        [-depth/2, bottomChamfer], 
-        [-depth/2, bottomChamfer + middleSectionHeight],
-        [-depth/2 + topChamfer, bottomChamfer + middleSectionHeight + topChamfer], //top of lip outside
-        [-depth/2 + topChamfer + topInset, bottomChamfer + middleSectionHeight + topChamfer], //top of lip inside
-        [-depth/2 + topChamfer + topInset, bottomChamfer + middleSectionHeight + topChamfer-topRecess], //bottom of recess
-        [depth/2 - topChamfer - topInset, bottomChamfer + middleSectionHeight + topChamfer-topRecess], //bottom of recess
-        [depth/2 - topChamfer - topInset, bottomChamfer + middleSectionHeight + topChamfer], //top of lip inside
-        [depth/2 - topChamfer, bottomChamfer + middleSectionHeight + topChamfer], //top of lip outside
-        [depth/2, bottomChamfer + middleSectionHeight],
-        [depth/2, bottomChamfer], 
-        [depth/2 - bottomChamfer,0],
-    ];
+            [-depth/2 + bottomChamfer,0], //starting bottom front
+            [-depth/2, bottomChamfer], 
+            [-depth/2, bottomChamfer + middleSectionHeight],
+            [-depth/2 + topChamfer, bottomChamfer + middleSectionHeight + topChamfer], //top of lip outside
+            [-depth/2 + topChamfer + topInset, bottomChamfer + middleSectionHeight + topChamfer], //top of lip inside
+            [-depth/2 + topChamfer + topInset, bottomChamfer + middleSectionHeight + topChamfer-topRecess], //bottom of recess
+            [depth/2 - topChamfer - topInset, bottomChamfer + middleSectionHeight + topChamfer-topRecess], //bottom of recess
+            [depth/2 - topChamfer - topInset, bottomChamfer + middleSectionHeight + topChamfer], //top of lip inside
+            [depth/2 - topChamfer, bottomChamfer + middleSectionHeight + topChamfer], //top of lip outside
+            [depth/2, bottomChamfer + middleSectionHeight],
+            [depth/2, bottomChamfer], 
+            [depth/2 - bottomChamfer,0],
+        ];
 }
 
 //extrudes a base plate along a path
