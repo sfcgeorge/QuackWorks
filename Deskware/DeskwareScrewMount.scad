@@ -1,5 +1,5 @@
 /* 
-HOK Connector
+Deskware Screw Mount
 Design by Hands on Katie
 OpenSCAD by BlackjackDuck (Andy)
 
@@ -15,18 +15,44 @@ Credit to
 */
 
 include <BOSL2/std.scad>
+//use <HOK Connector.scad>
 
 
-Side_1_Depth = 15;
-//Side_2_Depth = 15; //not implemented yet
-Pre_Tab_Width = 15;
-Total_Thickness = 2.75;
-Half = false;
+
+//Distance (mm) from center-to-center of screw holes
+Screw_Distance_Apart = 20;
+
+/*[Screw Mounting Sizes]*/
+Screw_Diameter = 4.1;
+Screw_Head_Diameter = 7.2;
+Screw_Head_Inset = 1;
+
+/*[Advanced]*/
+Plate_Thickness = 2.75;
+Plate_Depth = 20;
+Plate_Width = Screw_Distance_Apart + 20;
 
 /*[Hidden]*/
 $fn = 25;
 
-HOKConnector(side1depth = Side_1_Depth, preTabWidth = Pre_Tab_Width, totalThickness = Total_Thickness, half = Half);
+diff()
+cuboid([Plate_Width, Plate_Depth, Plate_Thickness], rounding = 2.2, except_edges = [TOP, BOT], anchor=BOT){
+    attach(TOP, LEFT, overlap = 0.01)
+        HOKConnector(half = true, spin=90);
+    face_profile(TOP, r=2)
+        mask2d_chamfer(2);
+    attach(TOP, TOP, inside=true, shiftout = 0.01)
+        xcopies(spacing = Screw_Distance_Apart)
+            screw_hole();
+}
+
+module screw_hole(spin = 0, orient = UP, anchor = CENTER){
+    cyl(d=Screw_Head_Diameter, h=Screw_Head_Inset, anchor=anchor, spin=spin, orient=orient){
+        attach(BOT, TOP) cyl(d2=Screw_Head_Diameter, d1=Screw_Diameter, h=sqrt((Screw_Head_Diameter/2-Screw_Diameter/2)^2))
+            attach(BOT, TOP) cyl(d=Screw_Diameter, h=Plate_Thickness+0.02);
+        children();
+    }
+}
 
 module HOKConnector(side1depth = 15, preTabWidth = 15, totalThickness = 2.75, half = false, spin = 0, orient = UP, anchor=CENTER){
 
@@ -50,11 +76,11 @@ module HOKConnector(side1depth = 15, preTabWidth = 15, totalThickness = 2.75, ha
     }
 
     module HOKConnectorFull(){
-        diff(){
+        diff("cutout"){
             force_tag("")
                 chamferProfile(profile = HOKOutsideProfileFull_Turtle, middleThickness = middleThickness, chamferThickness = Chamfer_thickness);
             //cutouts
-            force_tag("remove")
+            force_tag("cutout")
                 translate([0,-preTabWidth/2,0])
                 down(0.01)
                     //copy top and bottom
