@@ -6,6 +6,8 @@ Documentation available at https://handsonkatie.com/underware-2-0-the-made-to-me
 Change Log:
 - 2025-03-20
     - Initial release
+-2025-06-05
+    - Added Riser Offset to allow control of where the riser is positioned - Thanks chilltemp(GitHub)!
 
 Credit to 
     First and foremost - Katie and her community at Hands on Katie on Youtube, Patreon, and Discord
