@@ -71,30 +71,47 @@ Interface_Thickness = 0.4;
 //Distance between the interface and the tile. This is the distance between the top of the tile and the bottom of the interface. Try to use a multiple of the layer height when combined with the interface thickness.
 Interface_Separation = 0.1; 
 
+/*[Beta - Fill Space]*/
+Fill_Space_Mode = "None"; //[None, Complete Tiles Only, Fill Available Space]
+Space_Width = 330;
+Space_Depth = 500;
+Max_Tile_Width = 8;
+Max_Tile_Depth = 8;
+Tile_Spacing = 5;
+
 adjustedInterfaceThickness = 
     Stacking_Method == "Interface Layer" ? Interface_Thickness : 0;
 
-//GENERATE TILES
-if(Full_or_Lite == "Full" && Stack_Count == 1) openGrid(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Chamfers = Chamfers, anchor=BOT, Connector_Holes = Connector_Holes);
-if(Full_or_Lite == "Lite" && Stack_Count == 1) openGridLite(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size,  Screw_Mounting = Screw_Mounting, Chamfers = Chamfers, anchor=BOT, Connector_Holes = Connector_Holes);
+if(Fill_Space_Mode == "Complete Tiles Only")
+    FillSpaceFullTiles();
+if(Fill_Space_Mode == "Fill Available Space")
+    FillSpaceClipOneSide();
 
-//Stacked tiles
-if(Full_or_Lite == "Full" && Stack_Count > 1){
-    zcopies(spacing = Tile_Thickness + adjustedInterfaceThickness + 2*Interface_Separation, n=Stack_Count, sp=[0,0,Tile_Thickness])
-        zflip()
-        openGrid(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Chamfers = Chamfers, anchor=BOT, Connector_Holes = Connector_Holes);
-    if(Stacking_Method == "Interface Layer")
-        zcopies(spacing = Tile_Thickness + adjustedInterfaceThickness + 2*Interface_Separation, n=Stack_Count-1, sp=[0,0,Tile_Thickness + Interface_Separation])
-            color("red") interfaceLayer(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Chamfers = Chamfers, boardType = "Full", anchor=BOT);
-}
 
-if(Full_or_Lite == "Lite" && Stack_Count > 1){
-    Lite_Tile_Thickness = 4;
-    zcopies(spacing = Lite_Tile_Thickness + adjustedInterfaceThickness + 2*Interface_Separation, n=Stack_Count, sp=[0,0,Lite_Tile_Thickness])
-        openGridLite(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size,  Screw_Mounting = Screw_Mounting, Chamfers = Chamfers, Connector_Holes = Connector_Holes, anchor=$idx % 2 == 0 ? TOP : BOT, orient=$idx % 2 == 0 ? UP : DOWN);
-    if(Stacking_Method == "Interface Layer") 
-        zcopies(spacing = Lite_Tile_Thickness + adjustedInterfaceThickness + 2*Interface_Separation, n=Stack_Count-1, sp=[0,0,Lite_Tile_Thickness + Interface_Separation])
-            color("red") interfaceLayer2D(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Chamfers = Chamfers, boardType = "Lite", topSide = $idx % 2 == 0 ? false : true);
+//GENERATE SINGLE TILES
+if(Fill_Space_Mode == "None"){
+    if(Full_or_Lite == "Full" && Stack_Count == 1) openGrid(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Chamfers = Chamfers, anchor=BOT, Connector_Holes = Connector_Holes);
+    if(Full_or_Lite == "Lite" && Stack_Count == 1) openGridLite(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size,  Screw_Mounting = Screw_Mounting, Chamfers = Chamfers, anchor=BOT, Connector_Holes = Connector_Holes);
+
+
+    //GENERATE STACKED TILES
+    if(Full_or_Lite == "Full" && Stack_Count > 1){
+        zcopies(spacing = Tile_Thickness + adjustedInterfaceThickness + 2*Interface_Separation, n=Stack_Count, sp=[0,0,Tile_Thickness])
+            zflip()
+            openGrid(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Chamfers = Chamfers, anchor=BOT, Connector_Holes = Connector_Holes);
+        if(Stacking_Method == "Interface Layer")
+            zcopies(spacing = Tile_Thickness + adjustedInterfaceThickness + 2*Interface_Separation, n=Stack_Count-1, sp=[0,0,Tile_Thickness + Interface_Separation])
+                color("red") interfaceLayer(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Chamfers = Chamfers, boardType = "Full", anchor=BOT);
+    }
+
+    if(Full_or_Lite == "Lite" && Stack_Count > 1){
+        Lite_Tile_Thickness = 4;
+        zcopies(spacing = Lite_Tile_Thickness + adjustedInterfaceThickness + 2*Interface_Separation, n=Stack_Count, sp=[0,0,Lite_Tile_Thickness])
+            openGridLite(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size,  Screw_Mounting = Screw_Mounting, Chamfers = Chamfers, Connector_Holes = Connector_Holes, anchor=$idx % 2 == 0 ? TOP : BOT, orient=$idx % 2 == 0 ? UP : DOWN);
+        if(Stacking_Method == "Interface Layer") 
+            zcopies(spacing = Lite_Tile_Thickness + adjustedInterfaceThickness + 2*Interface_Separation, n=Stack_Count-1, sp=[0,0,Lite_Tile_Thickness + Interface_Separation])
+                color("red") interfaceLayer2D(Board_Width = Board_Width, Board_Height = Board_Height, tileSize = Tile_Size, Tile_Thickness = Tile_Thickness, Screw_Mounting = Screw_Mounting, Chamfers = Chamfers, boardType = "Lite", topSide = $idx % 2 == 0 ? false : true);
+    }
 }
 
 module interfaceLayer(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, Screw_Mounting = "None", Chamfers = "None", Connector_Holes = false, anchor=CENTER, spin=0, orient=UP, boardType = "Full"){
@@ -377,6 +394,150 @@ module openGrid(Board_Width, Board_Height, tileSize = 28, Tile_Thickness = 6.8, 
                 }
         } 
         cube([tileSize, tileSize, Tile_Thickness], anchor = BOT);
+        }
+    }
+}
+
+
+module FillSpaceFullTiles(){
+    // === Derived tile space ===
+    Total_Grid_Width = floor(Space_Width / Tile_Size);
+    Total_Grid_Depth = floor(Space_Depth / Tile_Size);
+
+    // === Max tile counts ===
+    Max_Tiles_Wide = floor(Total_Grid_Width / Max_Tile_Width);
+    Max_Tiles_Deep = floor(Total_Grid_Depth / Max_Tile_Depth);
+
+    // === Remaining grid spaces ===
+    Remaining_Width = Total_Grid_Width - (Max_Tiles_Wide * Max_Tile_Width);
+    Remaining_Depth = Total_Grid_Depth - (Max_Tiles_Deep * Max_Tile_Depth);
+
+
+
+    // === Output for debugging ===
+    echo("Grid Width (tiles):", Total_Grid_Width);
+    echo("Grid Depth (tiles):", Total_Grid_Depth);
+    echo("Max Tiles Wide:", Max_Tiles_Wide);
+    echo("Max Tiles Deep:", Max_Tiles_Deep);
+    echo("Remaining Width (tiles):", Remaining_Width);
+    echo("Remaining Depth (tiles):", Remaining_Depth);
+    spacing_x = Tile_Size + Tile_Spacing;
+    spacing_y = Tile_Size + Tile_Spacing;
+
+    // === Tile placement function ===
+    module place_tile(x, y, w, h) {
+        translate([x * spacing_x, y * spacing_y, 0])
+            if(Full_or_Lite == "Full")
+                openGrid(Board_Width = w, Board_Height = h);
+            else
+                openGridLite(Board_Width = w, Board_Height = h);
+    }
+
+    // === Main grid of full max-size tiles ===
+    for (x = [0 : Max_Tile_Width : Max_Tile_Width * (Max_Tiles_Wide - 1)])
+        for (y = [0 : Max_Tile_Depth : Max_Tile_Depth * (Max_Tiles_Deep - 1)])
+            place_tile(x, y, Max_Tile_Width, Max_Tile_Depth);
+
+    // === Right edge: fill remaining width with a full-height tile
+    if (Remaining_Width > 0)
+        for (y = [0 : Max_Tile_Depth : Max_Tile_Depth * (Max_Tiles_Deep - 1)])
+            place_tile(Max_Tile_Width * Max_Tiles_Wide, y, Remaining_Width, Max_Tile_Depth);
+
+    // === Bottom edge: fill remaining height with a full-width tile
+    if (Remaining_Depth > 0)
+        for (x = [0 : Max_Tile_Width : Max_Tile_Width * (Max_Tiles_Wide - 1)])
+            place_tile(x, Max_Tile_Depth * Max_Tiles_Deep, Max_Tile_Width, Remaining_Depth);
+
+    // === Bottom-right corner: one tile for remaining width and height
+    if (Remaining_Width > 0 && Remaining_Depth > 0)
+        place_tile(Max_Tile_Width * Max_Tiles_Wide, Max_Tile_Depth * Max_Tiles_Deep, Remaining_Width, Remaining_Depth);
+
+
+}
+
+module FillSpaceClipOneSide(){
+    /* — 1) Compute each full 8×8 tile’s size in pure millimeters (no spacing) — */
+    full_tile_width_mm  = Max_Tile_Width  * Tile_Size;  // 8 × 28 = 224 mm
+    full_tile_depth_mm  = Max_Tile_Depth  * Tile_Size;  // 8 × 28 = 224 mm
+
+    /* — 2) Determine how many full‐width columns fit — */
+    num_full_cols    = floor(Space_Width  / full_tile_width_mm);
+    // leftover width (in mm) beyond full columns
+    rem_width_mm     = Space_Width - (num_full_cols * full_tile_width_mm);
+    // If any leftover > 0, we’ll need one extra (clipped) column:
+    num_cols         = num_full_cols + (rem_width_mm > 0 ? 1 : 0);
+
+    /* — 3) Determine how many full‐depth rows fit — */
+    num_full_rows    = floor(Space_Depth / full_tile_depth_mm);
+    // leftover depth (in mm) beyond full rows
+    rem_depth_mm     = Space_Depth - (num_full_rows * full_tile_depth_mm);
+    // If any leftover > 0, we’ll need one extra (clipped) row:
+    num_rows         = num_full_rows + (rem_depth_mm > 0 ? 1 : 0);
+
+    /* — 4) Build lists of X and Y origins (in mm) for each column/row —
+    //     Each origin = (i * full_tile_width_mm) + (i * Tile_Spacing)
+    //     so that the 5 mm gap is only used when positioning, not in count. — */
+    X_origins = [
+        for (i = [0 : num_cols - 1])
+            (i * full_tile_width_mm) + (i * Tile_Spacing)
+    ];
+    Y_origins = [
+        for (j = [0 : num_rows - 1])
+            (j * full_tile_depth_mm) + (j * Tile_Spacing)
+    ];
+
+    /* — 5) Debug echoes to verify calculation — */
+    echo("Drawer interior (mm):", Space_Width, "×", Space_Depth);
+    echo("Full‐tile size  (mm):", full_tile_width_mm, "×", full_tile_depth_mm);
+    echo("num_full_cols, rem_width_mm:", num_full_cols, ",", rem_width_mm);
+    echo("num_cols total (incl. clipped):", num_cols, "→ X_origins:", X_origins);
+    echo("num_full_rows, rem_depth_mm:", num_full_rows, ",", rem_depth_mm);
+    echo("num_rows total (incl. clipped):", num_rows, "→ Y_origins:", Y_origins);
+
+    /* — 6) Module: place a full 8×8 tile at bottom‐left = (x_mm, y_mm),
+        then clip it to the drawer bounds. openGrid(8,8) is centered,
+        so we shift its center to (x_mm + half_w, y_mm + half_d). — */
+    module place_centered_and_clipped(x_mm, y_mm) {
+        // Half‐dimensions of an 8×8 tile (because openGrid is centered)
+        half_w = full_tile_width_mm  / 2;   // 224/2 = 112 mm
+        half_d = full_tile_depth_mm  / 2;   // 224/2 = 112 mm
+
+        // Center point for openGrid:
+        cx = x_mm + half_w;
+        cy = y_mm + half_d;
+
+        // Naive extents (before clipping)
+        x0 = cx - half_w;   // = x_mm
+        x1 = cx + half_w;   // = x_mm + full_tile_width_mm
+        y0 = cy - half_d;   // = y_mm
+        y1 = cy + half_d;   // = y_mm + full_tile_depth_mm
+
+        // Clipped extents:
+        clipped_x0 = max(x0,        0);
+        clipped_x1 = min(x1, Space_Width);
+        clipped_y0 = max(y0,        0);
+        clipped_y1 = min(y1, Space_Depth);
+
+        // Intersection: drawer cube ∩ translated, centered openGrid(8,8)
+        intersection() {
+            cube([Space_Width + num_full_cols * Tile_Spacing, Space_Depth + num_full_rows * Tile_Spacing, 10], center = false);
+            translate([cx, cy, 0])
+                if(Full_or_Lite == "Full")
+                    openGrid(Board_Width  = Max_Tile_Width,
+                            Board_Height = Max_Tile_Depth);
+                else {  
+                    openGridLite(Board_Width  = Max_Tile_Width,
+                        Board_Height = Max_Tile_Depth);
+                }
+        }
+    }
+
+    /* — 7) Place every column × row of 8×8 modules — */
+    for (ci = [0 : num_cols - 1]) {
+        x_base = X_origins[ci];
+        for (rj = [0 : num_rows - 1]) {
+            y_base = Y_origins[rj];
+            place_centered_and_clipped(x_base, y_base);
         }
     }
 }
