@@ -428,9 +428,9 @@ module FillSpaceFullTiles(){
     module place_tile(x, y, w, h) {
         translate([x * spacing_x, y * spacing_y, 0])
             if(Full_or_Lite == "Full")
-                openGrid(Board_Width = w, Board_Height = h);
+                openGrid(Board_Width = w, Board_Height = h, anchor=BOT);
             else
-                openGridLite(Board_Width = w, Board_Height = h);
+                openGridLite(Board_Width = w, Board_Height = h, anchor=BOT);
     }
 
     // === Main grid of full max-size tiles ===
@@ -524,10 +524,10 @@ module FillSpaceClipOneSide(){
             translate([cx, cy, 0])
                 if(Full_or_Lite == "Full")
                     openGrid(Board_Width  = Max_Tile_Width,
-                            Board_Height = Max_Tile_Depth);
+                            Board_Height = Max_Tile_Depth, anchor=BOT);
                 else {  
                     openGridLite(Board_Width  = Max_Tile_Width,
-                        Board_Height = Max_Tile_Depth);
+                        Board_Height = Max_Tile_Depth, anchor=BOT);
                 }
         }
     }
