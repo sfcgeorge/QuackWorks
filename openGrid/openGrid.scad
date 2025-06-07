@@ -19,6 +19,9 @@ Change Log:
     - Fix to allow screw head inset of zero and screw head chamfer matching screw diameter
 - 2025-04-27
     - Fix chamfers and connector hole options to initial orientation of MW
+- 2025-06-06 - Fill Space
+    - New ability to enter a larger space and max tile size and generate all tiles needed to fill available space
+
 
 Credit to 
     @David D on Printables for openGrid https://www.printables.com/@DavidD
@@ -428,9 +431,22 @@ module FillSpaceFullTiles(){
     module place_tile(x, y, w, h) {
         translate([x * spacing_x, y * spacing_y, 0])
             if(Full_or_Lite == "Full")
-                openGrid(Board_Width = w, Board_Height = h, anchor=BOT);
+                openGrid(Board_Width = w, Board_Height = h, 
+                    tileSize = Tile_Size, 
+                    Tile_Thickness = Tile_Thickness, 
+                    Screw_Mounting = Screw_Mounting, 
+                    Chamfers = Chamfers, anchor=BOT, 
+                    Connector_Holes = Connector_Holes
+                );
             else
-                openGridLite(Board_Width = w, Board_Height = h, anchor=BOT);
+                openGridLite(
+                    Board_Width = w, 
+                    Board_Height = h, 
+                    tileSize = Tile_Size,  
+                    Screw_Mounting = Screw_Mounting, 
+                    Chamfers = Chamfers, anchor=BOT, 
+                    Connector_Holes = Connector_Holes
+                );
     }
 
     // === Main grid of full max-size tiles ===
@@ -523,11 +539,24 @@ module FillSpaceClipOneSide(){
             cube([Space_Width + num_full_cols * Tile_Spacing, Space_Depth + num_full_rows * Tile_Spacing, 10], center = false);
             translate([cx, cy, 0])
                 if(Full_or_Lite == "Full")
-                    openGrid(Board_Width  = Max_Tile_Width,
-                            Board_Height = Max_Tile_Depth, anchor=BOT);
+                    openGrid(
+                        Board_Width  = Max_Tile_Width,
+                        Board_Height = Max_Tile_Depth, 
+                        tileSize = Tile_Size, 
+                        Tile_Thickness = Tile_Thickness, 
+                        Screw_Mounting = Screw_Mounting, 
+                        Chamfers = Chamfers, anchor=BOT, 
+                        Connector_Holes = Connector_Holes
+                    );
                 else {  
-                    openGridLite(Board_Width  = Max_Tile_Width,
-                        Board_Height = Max_Tile_Depth, anchor=BOT);
+                    openGridLite(
+                        Board_Width  = Max_Tile_Width,
+                        Board_Height = Max_Tile_Depth, 
+                        tileSize = Tile_Size,  
+                        Screw_Mounting = Screw_Mounting, 
+                        Chamfers = Chamfers, anchor=BOT, 
+                        Connector_Holes = Connector_Holes
+                    );
                 }
         }
     }
