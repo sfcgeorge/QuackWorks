@@ -31,6 +31,7 @@ Screw_Head_Inset = 1;
 Plate_Thickness = 2.75;
 Plate_Depth = 20;
 Plate_Width = Screw_Distance_Apart + 20;
+Rotate_HOK_Connector = false; 
 
 /*[Hidden]*/
 $fn = 25;
@@ -38,7 +39,7 @@ $fn = 25;
 diff()
 cuboid([Plate_Width, Plate_Depth, Plate_Thickness], rounding = 2.2, except_edges = [TOP, BOT], anchor=BOT){
     attach(TOP, LEFT, overlap = 0.01)
-        HOKConnector(half = true, spin=90);
+        HOKConnector(half = true, spin= Rotate_HOK_Connector ? 0 : 90);
     face_profile(TOP, r=2)
         mask2d_chamfer(2);
     attach(TOP, TOP, inside=true, shiftout = 0.01)
