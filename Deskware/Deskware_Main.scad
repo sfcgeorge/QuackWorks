@@ -29,6 +29,8 @@ Change Log:
 - 2025-05-19 v1.3 - Top Plate Customizer v1
     - Top Plate Customizer recesses for Gridfinity and OpenGrid (to be printed separately and place in)
     - Top Plate Customizer for wireless chargers 
+- 2025-06-06 v1.4 - Riser Customizer
+    - Customize riser slide sides and front chamfer
      
 
 Credit to 
@@ -92,6 +94,11 @@ Wireless_Charger_Cord_Length_Outward = 14;
 Enable_Curve_Mode = false;
 Degrees_of_Arc = 45;
 Core_Radius = 50;
+
+/*[Riser Customizer]*/
+Enable_Riser_Customizer = false;
+Slide_Side_Selection = "BOTH"; //[BOTH, LEFT, RIGHT, NONE]
+Riser_Front_Chamfer = 0; 
 
 /*[Colors]*/
 Primary_Color = "#dadada"; // color
@@ -363,6 +370,8 @@ if(!MakerWorld_Render_Mode && Show_Plate == 12)
     mw_plate_12();
 if(!MakerWorld_Render_Mode && Show_Plate == 13)
     mw_plate_13();
+if(!MakerWorld_Render_Mode && Show_Plate == 14)
+    mw_plate_14();
 
 
 
@@ -386,7 +395,9 @@ module mw_assembly_view() {
     else if (Enable_Top_Plate_Customizer){
         echo(str("Top Plate Customizer Enabled"));
         customizableTopPlateCore(depth = Top_Plate_Depth, width = Core_Section_Width, anchor=BOT) show_anchors();
-        
+    }
+    else if (Enable_Riser_Customizer){
+        Riser(slideSides = Slide_Side_Selection, chamfer = Riser_Front_Chamfer);
     }
     else{
         if(Show_Backer)
@@ -396,7 +407,7 @@ module mw_assembly_view() {
 
         if(Show_Risers)
             xcopies(spacing = Backer_Width, n = Core_Section_Count + 1)
-                Riser();
+                Riser(slideSides = Slide_Side_Selection, chamfer = Riser_Front_Chamfer);
 
         if(Show_Baseplate)
             
@@ -540,7 +551,7 @@ module mw_plate_2(){
     if(!special_render_mode()){
         left(widthOfAllRisers/2)
         xcopies(spacing = Riser_Width+5, n = 2)
-            Riser(orient=DOWN, anchor=TOP) ;
+            Riser(slideSides = Slide_Side_Selection, chamfer = Riser_Front_Chamfer, orient=DOWN, anchor=TOP) ;
         right(widthOfAllBackers/2)
             xcopies(spacing = Backer_Height + 5, n=1)
                 zrot(90)
@@ -677,6 +688,10 @@ module mw_plate_12(){
 module mw_plate_13(){
     if(Enable_Top_Plate_Customizer)
         customizableTopPlateCore(depth = Top_Plate_Depth, width = Core_Section_Width, anchor=BOT);
+}
+module mw_plate_14(){
+    if(Enable_Riser_Customizer)
+       Riser(slideSides = Slide_Side_Selection, chamfer = Riser_Front_Chamfer, orient=DOWN, anchor=TOP);
 }
 //END MAKERWORLD PLATING
 
@@ -1490,15 +1505,20 @@ module Backer(anchor=BOT, spin=0, orient=UP){
 
 }
 
-module Riser(anchor=BOT, spin=0, orient=UP){
+module Riser(slideSides = "BOTH", chamfer = 0, anchor=BOT, spin=0, orient=UP){
     number_of_slides = quantdn((Riser_Height - Slide_Distance_From_Bottom - Slide_Height - Slide_Minimum_Distance_From_Top)/Slide_Vertical_Separation+1, 1);
-    
+    slideSides = 
+        slideSides == "BOTH" ? [LEFT, RIGHT] : 
+        slideSides == "LEFT" ? [LEFT] : 
+        slideSides == "RIGHT" ? [RIGHT] : 
+        [];
+
     //main riser body
     color(Disable_Colors ? undef : Primary_Color)
     diff(){
-        cuboid([Riser_Width-clearance*2, Riser_Depth, Riser_Height], anchor=anchor, orient=orient, spin=spin){
+        cuboid([Riser_Width-clearance*2, Riser_Depth, Riser_Height], chamfer = chamfer, edges = [FRONT+LEFT, FRONT+RIGHT], anchor=anchor, orient=orient, spin=spin){
             //Slides
-            attach([LEFT, RIGHT], LEFT, inside=true, shiftout=0.01, align=BOT) 
+            attach(slideSides, LEFT, inside=true, shiftout=0.01, align=BOT) 
                 ycopies(spacing = Slide_Vertical_Separation, sp=[0,Slide_Distance_From_Bottom], n = number_of_slides)
                     Drawer_Slide(deleteTool = true);
             //HOK Connector cutouts
