@@ -4,6 +4,7 @@ This code and all parts derived from it are Licensed Creative Commons 4.0 Attrib
 
 Change Log:
 - 2025-03-26: Initial Release
+- 2025-06-21: Offset screw option
 
 */
 
@@ -30,6 +31,8 @@ Box_Width_in_Inches_Override = 0;
 Screw_Mount_Height_Distance_Inches = 3+9/32;
 Screw_Mount_Lateral_Distance_Inches = 1+13/16;
 Screw_Hole_Size_in_mm = 3.25; //0.01
+//Shift (mm) screw mounts left (negative) or right (positive)
+Screw_Mount_Lateral_Offset = 0;
 
 Screw_Mount_Inset = inches_to_mm(Box_Height_in_Inches-Screw_Mount_Height_Distance_Inches)/2;
 
@@ -52,6 +55,7 @@ union(){
     rect_tube(size=[inches_to_mm(Box_Width_in_Inches),inches_to_mm(Box_Height_in_Inches)], wall = Wall_Thickness, h=Depth_in_mm, rounding=Wall_Thickness, irounding=Wall_Thickness/2);
 
     //screw mounts
+    right(Screw_Mount_Lateral_Offset)
     xcopies(spacing = inches_to_mm(Screw_Mount_Lateral_Distance_Inches), n=Gang_Count)
         ycopies(spacing=inches_to_mm(Screw_Mount_Height_Distance_Inches)+0.02)
             union(){
