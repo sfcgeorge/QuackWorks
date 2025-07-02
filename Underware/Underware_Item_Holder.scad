@@ -234,7 +234,7 @@ translate(v = [-Internal_Width/2,0,0])
 
 
 if(ClamShell_Mode)
-up(total_item_width+item_slop*2) rot([0,180,0])
+up(total_item_width+item_slop*2) zflip() //rot([0,180,0])
 union(){
 translate(v = [-Internal_Width/2,0,0]) 
     if(!Backer_Only_Mode)
