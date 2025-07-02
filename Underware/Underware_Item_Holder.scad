@@ -52,7 +52,8 @@ include <BOSL2/threading.scad>
 
 /*[Mounting Options]*/
 Mounting_Style = "Multiconnect"; //[Multiconnect, Threaded Snap]
-Mounting_Surface = "Multiboard"; //[Multiboard, openGrid]
+//Surface on which you are mounting (which determines grid spacing). Select Custom and define the grid spacing in 'Slot Customization'.
+Mounting_Surface = "Multiboard"; //[Multiboard, openGrid, Custom]
 
 /* [Internal Dimensions] */
 //Depth (by mm): internal dimension along the Z axis of print orientation. Measured from the top to the base of the internal floor, equivalent to the depth of the item you wish to hold when mounted horizontally.
