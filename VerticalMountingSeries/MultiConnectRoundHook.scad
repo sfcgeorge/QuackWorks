@@ -27,6 +27,8 @@ hookBottomThickness = 5;
 backHeight = 40;
 
 /* [Slot Customization] */
+// Version of multiconnect (dimple or snap)
+multiConnectVersion = "v2"; // [v1, v2]
 distanceBetweenSlots = 25;
 slotQuickRelease = false;
 dimpleScale = 1; //[0.5:.05:1.5]
@@ -182,31 +184,57 @@ module slotCutter(backWidth, backHeight, distanceBetweenSlots) {
 
 module slotTool(totalHeight) {
     scale(v = slotTolerance)
-    let (slotProfile = [[0, 0], [10.15, 0], [10.15, 1.2121], [7.65, 3.712], [7.65, 5], [0, 5]]) {
-        difference() {
-            union() {
-                rotate(a = [90, 0, 0]) 
-                    rotate_extrude($fn = 50) 
-                        polygon(points = slotProfile);
-                translate(v = [0, 0, 0]) 
-                    rotate(a = [180, 0, 0]) 
-                    linear_extrude(height = totalHeight + 1) 
-                        union() {
+    //slot minus optional dimple with optional on-ramp
+    let (slotProfile = [[0,0],[10.15,0],[10.15,1.2121],[7.65,3.712],[7.65,5],[0,5]])
+    difference() {
+        union() {
+            //round top
+            rotate(a = [90,0,0,]) 
+                rotate_extrude($fn=50) 
+                    polygon(points = slotProfile);
+            //long slot
+            translate(v = [0,0,0]) 
+                rotate(a = [180,0,0]) 
+                union(){
+                    difference() {
+                        // Main half slot
+                        linear_extrude(height = totalHeight+1) 
                             polygon(points = slotProfile);
-                            mirror([1, 0, 0])
-                                polygon(points = slotProfile);
+                        
+                        // Snap cutout
+                        if (slotQuickRelease == false && multiConnectVersion == "v2")
+                            translate(v= [10.15,0,0])
+                            rotate(a= [-90,0,0])
+                            linear_extrude(height = 5)  // match slot height (5mm)
+                                polygon(points = [[0,0],[-0.4,0],[0,-8]]);  // triangle polygon with multiconnect v2 specs
                         }
-                if (onRampEnabled)
-                    for (y = [1 : onRampEveryXSlots : floor(totalHeight / distanceBetweenSlots)])
-                        translate(v = [0, -5, -y * distanceBetweenSlots]) 
-                            rotate(a = [-90, 0, 0]) 
-                                cylinder(h = 5, r1 = 12, r2 = 10.15);
-            }
-            if (!slotQuickRelease)
-                scale(v = dimpleScale) 
-                rotate(a = [90, 0, 0]) 
-                    rotate_extrude($fn = 50) 
-                        polygon(points = [[0, 0], [0, 1.5], [1.5, 0]]);
+
+                    mirror([1,0,0])
+                        difference() {
+                            // Main half slot
+                            linear_extrude(height = totalHeight+1) 
+                                polygon(points = slotProfile);
+                            
+                            // Snap cutout
+                            if (slotQuickRelease == false && multiConnectVersion == "v2")
+                                translate(v= [10.15,0,0])
+                                rotate(a= [-90,0,0])
+                                linear_extrude(height = 5)  // match slot height (5mm)
+                                    polygon(points = [[0,0],[-0.4,0],[0,-8]]);  // triangle polygon with multiconnect v2 spec
+                        }
+                }
+            //on-ramp
+            if(onRampEnabled)
+                for(y = [1:onRampEveryXSlots:totalHeight/distanceBetweenSlots])
+                    translate(v = [0,-5,-y*distanceBetweenSlots]) 
+                        rotate(a = [-90,0,0]) 
+                            cylinder(h = 5, r1 = 12, r2 = 10.15);
         }
+        //dimple
+        if (slotQuickRelease == false && multiConnectVersion == "v1")
+            scale(v = dimpleScale) 
+            rotate(a = [90,0,0,]) 
+                rotate_extrude($fn=50) 
+                    polygon(points = [[0,0],[0,1.5],[1.5,0]]);
     }
 }
