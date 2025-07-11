@@ -135,10 +135,10 @@ module straightHeightChangeChannelTop(lengthMM, widthMM, heightMM1 = 12, heightM
     attachable(anchor, spin, orient, size=[widthMM, lengthMM, topHeight + (heightMM2-12)]){
         skin(
             [
-                newTopProfileFull(heightMM = Channel_Internal_Height_1, totalWidth = widthMM, topThickness = topThickness),
-                newTopProfileFull(heightMM = Channel_Internal_Height_1, totalWidth = widthMM, topThickness = topThickness),
-                newTopProfileFull(heightMM = Channel_Internal_Height_2, totalWidth = widthMM, topThickness = topThickness),
-                newTopProfileFull(heightMM = Channel_Internal_Height_2, totalWidth = widthMM, topThickness = topThickness)
+                selectedTopProfile(heightMM1, widthMM, topThickness),
+                selectedTopProfile(heightMM1, widthMM, topThickness),
+                selectedTopProfile(heightMM2, widthMM, topThickness),
+                selectedTopProfile(heightMM2, widthMM, topThickness)
             ],
             z=[0,lengthMM/2-Rise_Distance/2,lengthMM/2+Rise_Distance/2,lengthMM],
             slices = 0
@@ -147,6 +147,13 @@ module straightHeightChangeChannelTop(lengthMM, widthMM, heightMM1 = 12, heightM
     }
 
 }
+
+//Return the appropriate top profile based on Profile_Type
+function selectedTopProfile(h, w, t) =
+    Profile_Type == "Original"
+        ? newTopProfileFull(heightMM = h, totalWidth = w, topThickness = t)
+        : topProfileInverseFull(widthMM = w, heightMM = h);
+
 
 //STRAIGHT CHANNELS
 module straightChannelBase(lengthMM, widthMM, anchor, spin, orient){
@@ -291,7 +298,7 @@ function topProfileHalf(heightMM = 12) =
 //An inside clamping profile alternative
 function topProfileInverseHalf(heightMM = 12) =
         let(snapWallThickness = 1, snapCaptureStrength = 0.5)
-        back(1.414,//profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions. 
+        back(1.414,//profile extracted from exact coordinates in Master Profile F360 sketch. Any additional modifications are added mathmatical functions.
         [
             [0,7.554 + (heightMM - 12)],//Point 1 (-0.017 per Katie's diagram. Moved to zero)
             [0,9.554 + (heightMM - 12)],//Point 2
@@ -308,6 +315,13 @@ function topProfileInverseHalf(heightMM = 12) =
             [-7.688+snapWallThickness*1.5,7.554 + (heightMM - 12)]//Point 12
         ]
         );
+
+function topProfileInverseFull(widthMM = 25, heightMM = 12) =
+    union(
+        left((widthMM-25)/2, topProfileInverseHalf(heightMM)),
+        right((widthMM-25)/2, mirror([1,0], topProfileInverseHalf(heightMM))),
+        back(topHeight-1 + heightMM-12 , rect([widthMM-25+0.02,2]))
+    );
 
 function baseProfileInverseHalf() = 
     let(snapWallThickness = 1, snapCaptureStrength = 0.5, baseChamfer = 0.5)
