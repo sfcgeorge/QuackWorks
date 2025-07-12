@@ -21,12 +21,16 @@ Change Log:
     - Fix chamfers and connector hole options to initial orientation of MW
 - 2025-06-06 - Fill Space
     - New ability to enter a larger space and max tile size and generate all tiles needed to fill available space
+- 2025-07-12 (thanks mitufy!)
+    - Screw positioning options
+    - Formatting changes
 
 
 Credit to 
     @David D on Printables for openGrid https://www.printables.com/@DavidD
     Katie and her community at Hands on Katie on Youtube, Patreon, and Discord https://handsonkatie.com/
     Pedro Leite for research and contributions on script performance improvements https://makerworld.com/en/@pedroleite
+    mitufy for screw position options and formatting improvements
 
 */
 
