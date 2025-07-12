@@ -6,6 +6,8 @@ Documentation available at https://handsonkatie.com/underware-2-0-the-made-to-me
 Change Log:
 - 2025-02-26 
     - Initial release
+- 2025-07-12
+    - Added 2.5 profile option (thanks Skaronator!)
 
 Credit to 
     First and foremost - Katie and her community at Hands on Katie on Youtube, Patreon, and Discord
@@ -15,6 +17,7 @@ Credit to
     @siyrahfall+1155967 on Printables for the idea of top exit holes
     @Lyric on Printables for the flush connector idea
     @fawix on GitHub for her contributions on parameter descriptors
+    @Skaronator on GitHub for 2.5 profile update
 
 */
 
