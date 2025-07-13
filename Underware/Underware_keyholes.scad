@@ -103,13 +103,15 @@ else{
     split_Part(split_width=22.2, connect=BOT, largest_size = 56)
     make_keyhole_part_openGrid(
         anchor=BOT, 
-        keyholeOffset=keyhole1Offset);
+        keyholeOffset=keyhole1Offset, 
+        lite = Mounting_Surface == "openGrid - Lite" ? true : false);
 
     fwd(40) 
     split_Part(split_width=22.2, connect=BOT, largest_size = 56)
     make_keyhole_part_openGrid(
         anchor=BOT, 
-        keyholeOffset=keyhole2Offset);
+        keyholeOffset=keyhole2Offset,
+        lite = Mounting_Surface == "openGrid - Lite" ? true : false);
 }
     
     /* deprecated for new split_part module
@@ -154,9 +156,9 @@ module make_keyhole_part (offset = 3, anchor=BOT,spin=0,orient=UP, keyholeOffset
     }
 }
 
-module make_keyhole_part_openGrid (offset = 0, anchor=BOT,spin=0,orient=UP, keyholeOffset, isTest=false){
-    attachable(anchor, spin, orient, size=[11.4465*2, 11.4465*2, 6.8+keyholeTotalDepth-0.02]) {
-        fwd (keyholeOffset) xrot(180) down(6.8/2)
+module make_keyhole_part_openGrid (offset = 0, anchor=BOT,spin=0,orient=UP, keyholeOffset, isTest=false, lite = false){
+    attachable(anchor, spin, orient, size=[11.4465*2, 11.4465*2, (lite ? 3.4 : 6.8) + keyholeTotalDepth - 0.02]) {
+        fwd (keyholeOffset) xrot(180) down((lite ? 3.4 : 6.8)/2)
         union(){
         make_keyhole_stem() 
             attach(TOP, TOP, overlap=0.02) 
@@ -166,7 +168,7 @@ module make_keyhole_part_openGrid (offset = 0, anchor=BOT,spin=0,orient=UP, keyh
                     }
                     else{
                     //zrot(45)
-                        openGridSnap();
+                        openGridSnap(lite = lite);
                     }
                 }
         }
@@ -288,7 +290,6 @@ module snapConnectBacker(offset = 0, holdingTolerance=1, anchor=CENTER, spin=0, 
             children(); 
         }
     }
-    
 }
 
 
