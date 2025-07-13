@@ -172,7 +172,9 @@ module openGridLite(Board_Width, Board_Height, tileSize = 28, Screw_Mounting = "
     // Screw_Mounting options: [Everywhere, Corners, None]
     // Bevel options: [Everywhere, Corners, None]
     Tile_Thickness = 6.8;
-    attachable(anchor, spin, orient, size=[Board_Width * tileSize, Board_Height * tileSize, Lite_Tile_Thickness]) {
+    total_thickness = Lite_Tile_Thickness + (Add_Adhesive_Base ? Adhesive_Base_Thickness : 0);
+
+    attachable(anchor, spin, orient, size=[Board_Width * tileSize, Board_Height * tileSize, total_thickness]) {
         render(convexity=2)
             down(Lite_Tile_Thickness / 2)
             union() {
@@ -189,18 +191,23 @@ module openGridLite(Board_Width, Board_Height, tileSize = 28, Screw_Mounting = "
                     );
 
                 if (Add_Adhesive_Base) {
-                    adhesiveBase();
+                    adhesiveBase(Board_Width, Board_Height, tileSize);
                 }
             }
         children();
     }
 
-    module adhesiveBase() {
-        diff() {
-            cube([tileSize * Board_Width, tileSize * Board_Height, Adhesive_Base_Thickness], anchor=BOT);
-            applyTileCornerModifications(Board_Width=Board_Width, Board_Height=Board_Height, Tile_Thickness=Tile_Thickness, Screw_Mounting=Screw_Mounting, Chamfers=Chamfers, anchor=anchor);
+    module adhesiveBase(Board_Width, Board_Height, tileSize = 28, anchor = CENTER, spin = 0, orient = UP) {
+        attachable(anchor, spin, orient, size = [tileSize * Board_Width, tileSize * Board_Height, Adhesive_Base_Thickness]) {
+            render(convexity=2)
+                diff() {
+                    cube([tileSize * Board_Width, tileSize * Board_Height, Adhesive_Base_Thickness], anchor=BOT, orient=DOWN);
+                    down(Adhesive_Base_Thickness)
+                    applyTileCornerModifications(Board_Width=Board_Width, Board_Height=Board_Height, Tile_Thickness=Adhesive_Base_Thickness, Screw_Mounting=Screw_Mounting, Chamfers=Chamfers, anchor=BOT);
+                }
+
+            children();
         }
-        children();
     }
 }
 
