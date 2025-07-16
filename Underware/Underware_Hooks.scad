@@ -68,6 +68,8 @@ baseThickness = 3; //.1
 
 
 /*[Slot Customization]*/
+// Version of multiconnect (dimple or snap)
+multiConnectVersion = "v2"; // [v1, v2]
 //Offset the multiconnect on-ramps to be between grid slots rather than on the slot
 onRampHalfOffset = true;
 //Change slot orientation, when enabled slots to come from the top of the back, when disabled slots come from the bottom
@@ -327,12 +329,34 @@ module multiConnectSlotTool(totalHeight) {
             //long slot
             translate(v = [0,0,0]) 
                 rotate(a = [180,0,0]) 
-                linear_extrude(height = totalHeight+1) 
-                    union(){
-                        polygon(points = slotProfile);
-                        mirror([1,0,0])
+                union(){
+                    difference() {
+                        // Main half slot
+                        linear_extrude(height = totalHeight+1) 
                             polygon(points = slotProfile);
-                    }
+                        
+                        // Snap cutout
+                        if (slotQuickRelease == false && multiConnectVersion == "v2")
+                            translate(v= [10.15,0,0])
+                            rotate(a= [-90,0,0])
+                            linear_extrude(height = 5)  // match slot height (5mm)
+                                polygon(points = [[0,0],[-0.4,0],[0,-8]]);  // triangle polygon with multiconnect v2 specs
+                        }
+
+                    mirror([1,0,0])
+                        difference() {
+                            // Main half slot
+                            linear_extrude(height = totalHeight+1) 
+                                polygon(points = slotProfile);
+                            
+                            // Snap cutout
+                            if (slotQuickRelease == false && multiConnectVersion == "v2")
+                                translate(v= [10.15,0,0])
+                                rotate(a= [-90,0,0])
+                                linear_extrude(height = 5)  // match slot height (5mm)
+                                    polygon(points = [[0,0],[-0.4,0],[0,-8]]);  // triangle polygon with multiconnect v2 spec
+                        }
+                }
             //on-ramp
             if(onRampEnabled)
                 for(y = [1:onRampEveryXSlots:totalHeight/distanceBetweenSlots])
@@ -342,11 +366,11 @@ module multiConnectSlotTool(totalHeight) {
                             cylinder(h = 5, r1 = 12, r2 = 10.15);
         }
         //dimple
-        if (slotQuickRelease == false)
+        if (slotQuickRelease == false && multiConnectVersion == "v1")
             scale(v = dimpleScale) 
             rotate(a = [90,0,0,]) 
                 rotate_extrude($fn=50) 
-                    polygon(points = [[0,0],[0,1],[1,0]]);
+                    polygon(points = [[0,0],[0,1.5],[1.5,0]]);
     }
 }
 
