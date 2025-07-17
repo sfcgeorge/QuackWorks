@@ -65,16 +65,16 @@ Wood_Screw_Head_Height = 1.75;
 //Thickness of the walls of the channel (by mm)
 Wall_Thickness = 4;
 //Size of the grid (by mm) if not Gridfinity or openGrid. Other sizes not tested. 
-custom_grid_size = 42;
+custom_grid_size = 0;
 //Emboss the material thickness on the bottom of the baseplate.
 Print_Specs = true;
 Top_Chamfers = true;
 Custom_Base_Chamfer = false;
-Custom_Base_Chamfer_Size = 4;
+Custom_Base_Chamfer_Size = 2;
 
 
 Base_Chamfer = 
-    Selected_Base == "Gridfinity" && !Custom_Base_Chamfer ? 5 : //default gridfinity baseplate chamfer size
+    Selected_Base == "Gridfinity" && !Custom_Base_Chamfer && custom_grid_size == 0 ? 5 : //default gridfinity baseplate chamfer size
     Selected_Base == "Flat" && !Custom_Base_Chamfer ? 4 : //default flat baseplate chamfer size
     Selected_Base == "openGrid" && !Custom_Base_Chamfer ? 3 : //default openGrid full baseplate chamfer size
     Custom_Base_Chamfer_Size;
@@ -86,9 +86,12 @@ Part_Separation = 5;
 
 
 
-grid_size = Selected_Base == "Gridfinity" ? 42 : //grid size for gridfinity baseplate
+grid_size = 
+    custom_grid_size > 0 ? custom_grid_size :
+    Selected_Base == "Gridfinity" ? 42 : //grid size for gridfinity baseplate
     Selected_Base == "openGrid" ? 25 : //grid size for openGrid baseplate
-    Selected_Base == "Flat" ? custom_grid_size : //grid size for flat baseplate
+    Selected_Base == "Flat" && custom_grid_size == 0 ? 30 : 
+    Selected_Base == "Flat" ? custom_grid_size ://grid size for flat baseplate
     0; //no grid size for no baseplate
 calculated_base_height = 
     Selected_Base == "Gridfinity" ? 4.75+0.6 : //0.6 is the additional height for the gridfinity baseplate by default. Update this if parameterized. 
@@ -114,7 +117,7 @@ grid_clearance = Selected_Base == "Gridfinity" ? 0.5 : 1; //adjusted grid size f
 text_depth = 0.2;
 text_size = 6;
 font = "Monsterrat:style=Bold";
-specs_text = str("th", Material_Thickness);
+specs_text = str(Material_Thickness);
 
     
 /*
@@ -303,7 +306,7 @@ BEGIN NEOGRID MODULES
 module neoGridBase(Channel_Length, grid_size){
         //Gridfinity Base
         if(Selected_Base == "Gridfinity")
-            gridfinity_bin_bottom_grid( x = 1, y = quantup(Channel_Length, grid_size)/grid_size, anchor=BOT);
+            gridfinity_bin_bottom_grid( x = 1, y = quantup(Channel_Length, grid_size)/grid_size, grid_size = grid_size, anchor=BOT);
         //Flat Base
         if(Selected_Base == "Flat")
             cuboid( [grid_size, Channel_Length, Flat_Base_Thickness], chamfer=0.5, except=BOT, anchor=BOT);
@@ -629,20 +632,21 @@ BEGIN GRIDFINITY MODULES
 
 */
 
-module gridfinity_bin_bottom_grid(x, y, additionalHeight = 0.6, anchor, spin, orient){
-    attachable(anchor, spin, orient, size=[42*x-0.5, 42*y-0.5, 4.75+additionalHeight]){
+module gridfinity_bin_bottom_grid(x, y, additionalHeight = 0.6, grid_size = 42, anchor, spin, orient){
+    
+    attachable(anchor, spin, orient, size=[grid_size*x-0.5, grid_size*y-0.5, 4.75+additionalHeight]){
         down((4.75+additionalHeight)/2)
         union(){
             up(4.75+additionalHeight/2-0.01)
                 minkowski(){
-                    cuboid([42*x-.5-outside_radius,42*y-0.5-outside_radius, additionalHeight]);
+                    cuboid([grid_size*x-.5-outside_radius,grid_size*y-0.5-outside_radius, additionalHeight]);
                     cyl(h=0.01, d=outside_radius, $fn=50);
                 }
-            translate([42/2-42/2*x,42/2-42/2*y,0])
+            translate([grid_size/2-grid_size/2*x,grid_size/2-grid_size/2*y,0])
                 for (i = [0:x-1]){
                     for (j = [0:y-1]){
-                        translate([i*42, j*42, 0]){
-                            gridfinity_bin_bottom(anchor=BOT);
+                        translate([i*grid_size, j*grid_size, 0]){
+                            gridfinity_bin_bottom(anchor=BOT, grid_size = grid_size);
                         }
                     }
                 }
@@ -662,21 +666,22 @@ base_profile_adj = [
                     [0, 0.8 + 1.8 + 2.15] //back to inside
                 ]; //Gridfinity Bin Bottom Specs
 
-module gridfinity_bin_bottom(additionalHeight = 0, anchor, spin, orient){
-    attachable(anchor, spin, orient, size=[41.5, 41.5, 4.75]){
-                translate(v = [-(35.6-inside_radius*2)/2,-(35.6-inside_radius*2)/2,-4.75/2]) 
+module gridfinity_bin_bottom(additionalHeight = 0, grid_size = 42, anchor, spin, orient){
+    attachable(anchor, spin, orient, size=[grid_size - 0.5, grid_size - 0.5, 4.75]){
+                translate(v = [-(grid_size - 6.4 - inside_radius*2)/2,-(grid_size - 6.4 - inside_radius*2)/2,-4.75/2]) 
                     rotate(a = [0,0,0]) 
                         minkowski() {
                             rotate_extrude($fn=50) 
                                     polygon(points=base_profile_adj); //Gridfinity Bin Bottom Specs
-                            cube(size = [35.6-inside_radius*2,35.6-inside_radius*2,0.01+additionalHeight]);
+                            cube(size = [grid_size - 6.4 - inside_radius*2,grid_size - 6.4-inside_radius*2,0.01+additionalHeight]);
                         }
     children();
     }
 }
-module gridfinity_base() {
+module gridfinity_base(grid_size = 42) {
+    //TODO - finish grid size implementation
     difference() {
-        cube(size = [42,42,4.65]);
+        cube(size = [grid_size,grid_size,4.65]);
         /*
         baseplate delete tool
         This is a delete tool which is the inverse profile of the baseplate intended for Difference.
