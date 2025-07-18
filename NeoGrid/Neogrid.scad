@@ -76,6 +76,8 @@ Print_Specs = true;
 Top_Chamfers = true;
 Custom_Base_Chamfer = false;
 Custom_Base_Chamfer_Size = 2;
+//Additional thickness added to the base beyond just the profile (Gridfinity only at the moment)
+Added_Base_Thickness = 1; //0.1
 
 //Extend NeoGrid multiple tiles (Only supported by Gridifinity at the moment)
 grid_x = 1;
@@ -103,7 +105,7 @@ grid_size =
     Selected_Base == "Flat" ? custom_grid_size ://grid size for flat baseplate
     0; //no grid size for no baseplate
 calculated_base_height = 
-    Selected_Base == "Gridfinity" ? 4.75+0.6 : //0.6 is the additional height for the gridfinity baseplate by default. Update this if parameterized. 
+    Selected_Base == "Gridfinity" ? 4.75 + Added_Base_Thickness : //0.6 is the additional height for the gridfinity baseplate by default. Update this if parameterized. 
     Selected_Base == "Flat" ? Flat_Base_Thickness:
     Selected_Base == "openGrid" && openGrid_Full_or_Lite == "Full" ? 6.8:
     Selected_Base == "openGrid" && openGrid_Full_or_Lite == "Lite" ? 3.4:
@@ -314,7 +316,7 @@ BEGIN NEOGRID MODULES
 module neoGridBase(Channel_Length, grid_size){
         //Gridfinity Base
         if(Selected_Base == "Gridfinity")
-            gridfinity_bin_bottom_grid( x = grid_x, y = quantup(Channel_Length, grid_size)/grid_size, grid_size = grid_size, anchor=BOT);
+            gridfinity_bin_bottom_grid( x = grid_x, y = quantup(Channel_Length, grid_size)/grid_size, grid_size = grid_size, additionalHeight = Added_Base_Thickness, anchor=BOT);
         //Flat Base
         if(Selected_Base == "Flat")
             cuboid( [grid_size, Channel_Length, Flat_Base_Thickness], chamfer=0.5, except=BOT, anchor=BOT);
@@ -635,7 +637,7 @@ BEGIN GRIDFINITY MODULES
 
 */
 
-module gridfinity_bin_bottom_grid(x, y, additionalHeight = 0.6, grid_size = 42, anchor, spin, orient){
+module gridfinity_bin_bottom_grid(x, y, additionalHeight = 1, grid_size = 42, anchor, spin, orient){
     
     attachable(anchor, spin, orient, size=[grid_size*x-0.5, grid_size*y-0.5, 4.75+additionalHeight]){
         down((4.75+additionalHeight)/2)
