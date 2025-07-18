@@ -11,6 +11,7 @@ Credit to
     Jonathan at Keep Making for Multiboard
     @fawix on GitHub for her contributions on parameter descriptors
     @SnazzyGreenWarrior on GitHub for their contributions on the Multipoint-compatible mount
+    @Dontic on GitHub for Multiconnect v2 code
 
 
 Change Log:
@@ -37,6 +38,9 @@ Change Log:
     - Allowed mm adjustements to the tength of a mm
 -2025-05-28
     - Added Clamshell move v0.1 (no independent customizations)
+-2025-07-15
+    - New Multiconnect v2 option added with improved holding (thanks @dontic on GitHub!)
+    - Enabled OnRamp by default
 
 Notes:
 - Slot test fit - For a slot test fit, set the following parameters
@@ -157,7 +161,7 @@ slotTolerance = 1.00; //[0.925:0.005:1.075]
 //Move the slot (Y axis) inwards (positive) or outwards (negative)
 slotDepthMicroadjustment = 0; //[-.5:0.05:.5]
 //Enable a slot on-ramp for easy mounting of tall items
-onRampEnabled = false;
+onRampEnabled = true;
 //Frequency of slots for on-ramp. 1 = every slot; 2 = every 2 slots; etc.
 On_Ramp_Every_X_Slots = 1;
 //Distance from the back of the item holder to where the multiconnect stops (i.e., where the dimple is) (by mm)

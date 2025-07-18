@@ -11,6 +11,7 @@ Credit to
     Jonathan at Keep Making for Multiboard
     @fawix on GitHub for her contributions on parameter descriptors
     @SnazzyGreenWarrior on GitHub for their contributions on the Multipoint-compatible mount
+    @Dontic on GitHub for Multiconnect v2 code
 
 
 Change Log:
@@ -37,6 +38,9 @@ Change Log:
     - Allowed mm adjustements to the tength of a mm
 -2025-05-28
     - Added Clamshell move v0.1 (no independent customizations)
+-2025-07-15
+    - New Multiconnect v2 option added with improved holding (thanks @dontic on GitHub!)
+    - Enabled OnRamp by default
 
 Notes:
 - Slot test fit - For a slot test fit, set the following parameters

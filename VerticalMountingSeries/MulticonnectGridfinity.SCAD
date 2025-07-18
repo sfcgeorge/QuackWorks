@@ -4,7 +4,10 @@ Credit to
     Jonathan at Keep Making for Multiconnect
     Zach at gridfinity.xyz for the Gridfinity standard
     Katie (and her community) at Hands on Katie on Youtube for advice
-Licensed Creative Commons 4.0 Attribution Non-Commercial Sharable with Attribution
+    @Dontic on GitHub for Multiconnect v2 code
+
+Licensed Creative Commons 4.0 Attribution Non-Commercial Share-alike with Attribution
+
 TODO: 
     - Add ability to tweak rim height
     - Ability to trim grid height (some versions lop off a tiny bit off the top)
@@ -14,6 +17,8 @@ Change Log:
     - Initial release
 - 2025-04-08
     - New backs (Multipoint, openGrid, GOEWS)
+-2025-07-15
+    - New Multiconnect v2 option added with improved holding (thanks @dontic on GitHub!)
 
 */
 include <BOSL2/std.scad>

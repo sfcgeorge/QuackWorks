@@ -1,5 +1,9 @@
 /*Created by Andy Levesque
-Credit to @David D on Printables and Jonathan at Keep Making for Multiconnect and Multiboard, respectively
+    
+Credits
+    Credit to @David D on Printables and Jonathan at Keep Making for Multiconnect and Multiboard, respectively
+    @Dontic on GitHub for Multiconnect v2 code
+
 Licensed Creative Commons 4.0 Attribution Non-Commercial Sharable with Attribution
 
 Change Log:
@@ -7,6 +11,8 @@ Change Log:
     - Initial release
 2025-01-20
     - Added rounded edges to the top of the hook (thanks @deTTriTTus!)
+-2025-07-15
+    - New Multiconnect v2 option added with improved holding (thanks @dontic on GitHub!)
 
 */
 

@@ -1,20 +1,22 @@
 /*Created by Andy Levesque
 Credit to @David D on Printables and Jonathan at Keep Making for Multiconnect and Multiboard, respectively
 Credit to @jcahoursfor the original version.
-Licensed Creative Commons 4.0 Attribution Non-Commercial Sharable with Attribution
+@Dontic on GitHub for Multiconnect v2 code
 
+Licensed Creative Commons 4.0 Attribution Non-Commercial Share Alike with Attribution
 
 Change Log:
 - 2024-1-07
     - Initial release
-    
+-2025-07-15
+    - New Multiconnect v2 option added with improved holding (thanks @dontic on GitHub!)
 */
 
 include <BOSL2/std.scad>
 include <BOSL2/walls.scad>
 /* [Slot Type] */
 //How do you intend to mount the item holder to a surface such as Multipoint connections or DrewD's Multiconnect?
-Connection_Type = "Multipoint"; // [Multipoint, Multiconnect]
+Connection_Type = "Multiconnect"; // [Multipoint, Multiconnect]
 
 /* [Holder Dimensions] */
 // Height (in mm) of the entire holder (minus baseplate)

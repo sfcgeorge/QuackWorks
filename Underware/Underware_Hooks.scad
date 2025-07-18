@@ -12,7 +12,7 @@ Credit to
     Jonathan at Keep Making for Multiboard
     @fawix on GitHub for her contributions on parameter descriptors
     @SnazzyGreenWarrior on GitHub for their contributions on the Multipoint-compatible mount
-
+    @Dontic on GitHub for Multiconnect v2 code
 
 Change Log:
 TODO

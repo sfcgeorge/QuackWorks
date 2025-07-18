@@ -6,6 +6,12 @@ Credit to
     Katie (and her community) at Hands on Katie on Youtube and Patreon
     @David D on Printables for Multiconnect
     Jonathan at Keep Making for MulticonnMultiboard
+    @Dontic on GitHub for Multiconnect v2 code
+
+Change Log:
+- 2025-07-17
+    - Initial Release
+    - New Multiconnect v2 option added with improved holding (thanks @dontic on GitHub!)
     
 Licensed Creative Commons 4.0 Attribution Non-Commercial Share-Alike (CC-BY-NC-SA)
 */

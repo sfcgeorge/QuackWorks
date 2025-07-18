@@ -7,13 +7,16 @@ Credit to
     @David D on Printables for Multiconnect
     Jonathan at Keep Making for Multiboard
     @SnazzyGreenWarrior on GitHub for their contributions on the Multipoint-compatible mount
-
+    @Dontic on GitHub for Multiconnect v2 code
 
 Change Log:
 - 2024-09-01 
     - Initial release
 - 2025-04-29
     - New backs (Multipoint, openGrid, GOEWS)
+-2025-07-15
+    - New Multiconnect v2 option added with improved holding (thanks @dontic on GitHub!)
+    - Enabled OnRamp by default
 
 */
 

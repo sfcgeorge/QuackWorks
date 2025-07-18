@@ -8,6 +8,7 @@ Credit to
     Jonathan at Keep Making for Multiboard
     @fawix on GitHub for her contributions on parameter descriptors
     @SnazzyGreenWarrior on GitHub for their contributions on the Multipoint-compatible mount
+    @Dontic on GitHub for Multiconnect v2 code
 
 Change Log:
 - 2024-08-10 
@@ -29,6 +30,8 @@ Change Log:
 - 2025-04-09
     - Added Command Strip Mounting
     - Added rounding for top cutout
+-2025-07-15
+    - New Multiconnect v2 option added with improved holding (thanks @dontic on GitHub!)
 
 Notes:
 - Slot test fit - For a slot test fit, set the following parameters

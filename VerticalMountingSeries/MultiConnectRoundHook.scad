@@ -1,6 +1,14 @@
 /* Created by Andy Levesque, remixed by Moritz Weller
-Credit to @David D on Printables and Jonathan at Keep Making for Multiconnect and Multiboard, respectively
+
+Credits:
+    Credit to @David D on Printables and Jonathan at Keep Making for Multiconnect and Multiboard, respectively
+    @Dontic on GitHub for Multiconnect v2 code
+
 Licensed Creative Commons 4.0 Attribution Non-Commercial Sharable with Attribution
+
+Change Log: 
+-2025-07-15
+    - New Multiconnect v2 option added with improved holding (thanks @dontic on GitHub!)
 */
 
 /*[Round Hook specific parameters]*/
