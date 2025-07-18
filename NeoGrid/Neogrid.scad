@@ -21,6 +21,7 @@ Credit to
 
 include <BOSL2/std.scad>
 include <BOSL2/rounding.scad>
+include <BOSL2/fnliterals.scad>
 
 /*[Part Selection)]*/
 Select_Part = "Straight"; //[Drawer Wall Mounts, Straight, Straight End, X Intersection, T Intersection, L Intersection, Vertical Trim]
@@ -320,9 +321,12 @@ module neoGridBase(Channel_Length, grid_size){
         if(Selected_Base == "openGrid")
             zrot(90*openGrid_Directional_Snap_Orientation)
             openGridSnap(lite= (openGrid_Full_or_Lite == "Full" ? false : true), directional=openGrid_Directional_Snap, anchor=BOT, spin=0, orient=UP);
+        if(Print_Specs)
+            baseText();
 }
 
 module baseText(){
+    translate([grid_x % 2 == 0 ? grid_size / 2 : 0, grid_y % 2 == 0 ? grid_size / 2 : 0, 0])
     zrot(90*(openGrid_Directional_Snap_Orientation-1))
         tag("text")
             mirror([1,0,0])
@@ -380,8 +384,6 @@ module NeoGrid_Straight_Thru_Base(Material_Thickness, Channel_Depth = 20, Wall_T
             attach(TOP, BOT, inside=true, shiftout=0.01)
                 channelDeleteTool([Material_Thickness, Channel_Length+0.02,Channel_Depth+0.02]);
             }
-        if(Print_Specs)             
-            baseText();
     }
 }
 
@@ -437,8 +439,6 @@ module NeoGrid_X_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
         //y
         tag("channel")up(calculated_base_height-0.02)
             channelDeleteTool([Material_Thickness, (grid_size * grid_y)+0.01, Channel_Depth+0.04], spike_count=2, chamfer_edges=[TOP], anchor=BOT);
-        if(Print_Specs) 
-            baseText();
         }//end gridfinity base
 }
 
@@ -503,8 +503,6 @@ module NeoGrid_T_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
         //channel clear full length
         tag("channel")zrot(90)up(calculated_base_height-0.02)
             channelDeleteTool([Material_Thickness, (grid_size*grid_x)+0.02, Channel_Depth+0.02], spike_count=2, chamfer_edges=[TOP], anchor=BOT);
-        if(Print_Specs) 
-            baseText();;
     }//end gridfinity base
 }
 
@@ -542,9 +540,6 @@ module NeoGrid_Straight_End_Base(Material_Thickness, Channel_Depth = 20, Wall_Th
                 attach(TOP, BOT, inside=true, shiftout=0.01, spin=90, align=LEFT)
                     channelDeleteTool([ Material_Thickness, Channel_Length-Partial_Channel_Buffer+0.02, Channel_Depth+0.02]);
             }
-        if(Print_Specs)
-            baseText();
-
     }
 }
 
@@ -612,8 +607,6 @@ module NeoGrid_L_Intersection_Base(Material_Thickness, Channel_Depth = 20, Wall_
             channelDeleteTool([Material_Thickness, (grid_size * grid_y)/2+Material_Thickness/2-grid_clearance/2+0.03, Channel_Depth+0.04], chamfer_edges=TOP, anchor=BOT);
         tag("channel")up(calculated_base_height-0.02) zrot(90) back((grid_size * grid_x)/4-grid_clearance/4-Material_Thickness/4)
             channelDeleteTool([Material_Thickness, (grid_size * grid_x)/2+Material_Thickness/2-grid_clearance/2+0.03, Channel_Depth+0.04], chamfer_edges=TOP, anchor=BOT);
-        if(Print_Specs)
-            baseText();
 
         }//end gridfinity base
 }
