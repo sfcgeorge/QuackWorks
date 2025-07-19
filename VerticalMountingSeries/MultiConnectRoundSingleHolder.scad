@@ -15,15 +15,21 @@ Change Log:
     - New Multiconnect v2 option added with improved holding (thanks @dontic on GitHub!)
 - 2025-07-19 @timtucker
     - Curved support structure (should be stronger, print faster, and use less filament)
+    - Allow oval objects
+    - Allow generation of rectangular items
     - Allow the hole / slot to be repositioned
     - Prevent the hole / slot from extending into the back wall
+    - Allow tuning for the number of slots wide / high
     - Allow tuning of the resolution of circles and curves
     - Simplify / reorganize parameters
 */
 
 /*[Parameters]*/
-// Diameter (in mm) of the item you wish to insert (this becomes the internal diameter)
-itemDiameter = 50; // 0.1
+// Width (in mm) of the item you wish to insert
+itemWidth = 50; // 0.1
+// Length (in mm) of the item you wish to insert (leave 0 for a circular item)
+itemLength = 0; // 0.1
+itemShape = "Round"; // [Round, Rectangular]
 // Distance (in mm) from the back wall to the back rim
 offSet = 0;
 
@@ -44,8 +50,6 @@ cutoutEnd = 0;
 /*[Support]*/
 // Thickness (in mm) of the base underneath the item you are holding (leave 0 for an open hole to hang items)
 baseThickness = 3;
-// If the rim is shorter than the total height, slope towards the back wall
-slopeTowardsBackWall = true;
 
 /*[Multiconnect]*/
 // Version of multiconnect (dimple or snap)
@@ -63,7 +67,7 @@ dimpleScale = 1; // [0.5:0.05:1.5]
 // Scale the size of slots in the back (1.015 scale is default for a tight fit. Increase if your finding poor fit. )
 slotTolerance = 1.00; // [0.925:0.005:1.075]
 // Move the slot in (positive) or out (negative)
-slotDepthMicroadjustment = 0; // [-.5:0.05:.5]
+slotDepthMicroadjustment = 0; // [-0.5:0.05:0.5]
 // Enable a slot on-ramp for easy mounting of tall items
 onRampEnabled = true;
 // Frequency of slots for on-ramp. 1 = every slot; 2 = every 2 slots; etc.
@@ -76,11 +80,13 @@ circleResolution = 500; // [50:50:1000]
 /*[Hidden]*/
 
 // Shortcuts for reference measurements and positions
-totalWidth = itemDiameter + rimThickness * 2;
+totalItemX = itemWidth + (rimThickness * 2);
+adjustedItemLength = itemLength > 0 ? itemLength : itemWidth;
+totalItemY = adjustedItemLength + (rimThickness * 2);
+
 totalHeight = slotsHigh * distanceBetweenSlots;
-itemCenterX = totalWidth / 2;
-itemCenterY = totalWidth / 2 + offSet;
-heightAboveRim = totalHeight - rimHeight;
+itemCenterX = totalItemX / 2;
+itemCenterY = (totalItemY / 2) + offSet;
 
 maxZHeight = max(totalHeight, rimHeight + baseThickness);
 
@@ -88,58 +94,68 @@ beyondX = itemCenterX * 10;
 beyondY = itemCenterY * 10;
 beyondZ = maxZHeight * 10;
 
-// Curve support angling up towards the back wall
-supportHeight = slopeTowardsBackWall ? totalHeight : rimHeight + baseThickness;
+// Support angling up towards the back wall
+supportHeight = totalHeight;
+if (rimHeight + baseThickness > supportHeight) {
+    supportHeight = rimHeight + baseThickness;
+}
 supportCurveY = itemCenterY * 2;
-supportCurveZ = heightAboveRim * 2;
+// Have the support extend up to 2 times the grid distance
+supportCurveZ = min(distanceBetweenSlots * 2, (totalHeight - rimHeight) * 2);
 
 // Stop the cutout from extending into the back wall
-adjustedCutoutDiameter = min(cutoutDiameter, itemDiameter);
-adjustedCutoutStart = max((adjustedCutoutDiameter/2) - itemCenterY, cutoutStart);
-adjustedCutoutEnd = max((adjustedCutoutDiameter/2) - itemCenterY, cutoutEnd);
+adjustedCutoutDiameter = min(cutoutDiameter, itemWidth);
+adjustedCutoutStart = max((adjustedCutoutDiameter/2) - itemCenterY + rimThickness, cutoutStart);
+adjustedCutoutEnd = max((adjustedCutoutDiameter/2) - itemCenterY + rimThickness, cutoutEnd);
 
-offsetWidth = min(totalWidth, distanceBetweenSlots * slotsWide);
+offsetWidth = min(totalItemX, distanceBetweenSlots * slotsWide);
 
 //item holder
 difference() {
     // Item holder and support structure
     union() {
         // Outer cylinder for the item holder
-        createElongatedRoundObject(height = rimHeight + baseThickness, diameter = totalWidth, yCenterStart = itemCenterY, yCenterEnd = itemCenterY, circleResolution = circleResolution);
+        createElongatedObject(shape = itemShape,height = rimHeight + baseThickness, diameterX = totalItemX, diameterY = totalItemY, yCenterStart = itemCenterY, yCenterEnd = itemCenterY, circleResolution = circleResolution);
 
         // Support structure
         difference() {
             // Fill the space between the item holder and the back wall along the base
             hull() {
-                createElongatedRoundObject(height = supportHeight, diameter = totalWidth, yCenterStart = itemCenterY, yCenterEnd = itemCenterY, circleResolution = circleResolution);
+                createElongatedObject(shape = itemShape, height = supportHeight, diameterX = totalItemX, diameterY = totalItemY, yCenterStart = itemCenterY, yCenterEnd = itemCenterY, circleResolution = circleResolution);
 
                 // Create the shell to hold the multiconnect slots
                 createMulticonnectBackShell(distanceBetweenSlots = distanceBetweenSlots, slotsWide = slotsWide, slotsHigh = slotsHigh);
             }
 
             // Slope from rim to back wall
-            if (slopeTowardsBackWall == true && totalHeight > rimHeight + baseThickness) {
+            if (totalHeight > rimHeight + baseThickness) {
                 union() {
                     // For the curve, subtract a cylinder that extends from the rim up to the back wall
                     translate(v = [-0.5 * beyondX, supportCurveY / 2, baseThickness + rimHeight + (supportCurveZ / 2)]) {
                         scale(v = [1, supportCurveY, supportCurveZ]) {
                             rotate([0, 90, 0]) {
-                                cylinder(h = beyondY, d = 1, $fn = circleResolution);
+                                cylinder(h = beyondX, d = 1, $fn = circleResolution);
                             }
                         }
                     }
+
                     // Remove the front half of the cylinder
                     translate(v = [-0.5* beyondX, itemCenterY, rimHeight + baseThickness]) {
                         cube([beyondX, beyondY, beyondZ]);
                     }
+
+                    // Remove anything above the cylinder
+                    translate(v = [-0.5 * beyondX, 0, baseThickness + rimHeight + supportCurveZ / 2]) {
+                        cube([beyondX, beyondY, beyondZ]);
+                    }                    
                 }
             }
         }
     }
     union() {
-        // Cut out a cylinder for the item to fit into
+        // Cut out space for the item to fit into
         translate(v = [0, 0, (baseThickness > 0) ? baseThickness : -0.5 * beyondZ]) {
-            createElongatedRoundObject(height = beyondZ, diameter = itemDiameter, yCenterStart = itemCenterY, yCenterEnd = itemCenterY, circleResolution = circleResolution);
+            createElongatedObject(shape = itemShape, height = beyondZ, diameterX = itemWidth, diameterY = adjustedItemLength, yCenterStart = itemCenterY, yCenterEnd = itemCenterY, circleResolution = circleResolution);
         }
 
         // Cut out a hole / slot
@@ -155,23 +171,41 @@ difference() {
 module createCutout(holeDiameter=0, yCenterStart=0, yCenterEnd=0, circleResolution=100) {
     // Use extreme values to ensure that the cutout extends beyond the bounds of the object
     translate(v = [0, 0, -0.5 * beyondZ]) {
-        createElongatedRoundObject(height = beyondZ, diameter = holeDiameter, yCenterStart = yCenterStart, yCenterEnd = yCenterEnd, circleResolution = circleResolution);
+        createElongatedObject(height = beyondZ, diameterX = holeDiameter, diameterY = holeDiameter, yCenterStart = yCenterStart, yCenterEnd = yCenterEnd, circleResolution = circleResolution);
     }
 }
 
-module createElongatedRoundObject(height, diameter=0, xCenterStart=0, xCenterEnd=0, yCenterStart=0, yCenterEnd=0, circleResolution=100) {
+module createElongatedObject(height, shape="Round", diameterX=0, diameterY=0, xCenterStart=0, xCenterEnd=0, yCenterStart=0, yCenterEnd=0, circleResolution=100) {
     // There's no object to create if the diameter is 0 or less
-    if (diameter > 0) {
+    if (diameterX > 0 && diameterY > 0) {
         // Create an elongated round object (like a cylinder) that extends from start to end position
         hull() {
             // Starting position for the object
             translate(v = [xCenterStart, yCenterStart, 0]) {
-                cylinder(h = height, d = diameter, $fn = circleResolution);
+                createObject(height = height, shape = shape, diameterX = diameterX, diameterY = diameterY, circleResolution = circleResolution);
             }
             
             // Ending position for the object
             translate(v = [xCenterEnd, yCenterEnd, 0]) {
-                cylinder(h = height, d = diameter, $fn = circleResolution);
+                createObject(height = height, shape = shape, diameterX = diameterX, diameterY = diameterY, circleResolution = circleResolution);
+            }
+        }
+    }
+}
+
+module createObject(height, shape="Round", diameterX=0, diameterY=0, circleResolution=100) {
+    // There's no object to create if the diameter is 0 or less
+    if (diameterX > 0 && diameterY > 0) {
+        // Create a round object (like a cylinder)
+        if (shape == "Round") {
+            scale(v = [diameterX, diameterY, 1]) {
+                cylinder(h = height, d = 1, $fn = circleResolution);
+            }
+        }
+        else if (shape == "Rectangular") {
+            translate(v = [-diameterX/2, -diameterY/2, 0]) {
+                // Create a rectangular prism
+                cube([diameterX, diameterY, height]);
             }
         }
     }
