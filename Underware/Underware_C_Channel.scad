@@ -106,19 +106,19 @@ Base_Screw_Hole_Cone = false;
 radius_channel_Y = Grid_Size + channelWidth + (Curve_Radius_in_Units*channelWidth/2 - channelWidth/2)/2 - channelWidth/2;
 c_channel_arc = Grid_Size*(Channel_Width_in_Units/2 + Curve_Radius_in_Units-1);
 //solved via https://chatgpt.com/share/6736552f-ce1c-8010-ab4c-36a095eee6b5
+partWidth = Curve_Radius_in_Units * Grid_Size + Grid_Size*Channel_Width_in_Units;
 
 echo(str("C Channel Arc: ", c_channel_arc));
 
-if(Base_Top_or_Both != "Top")
-color_this(Global_Color)
-    left(Show_Attached ? 0 : radius_channel_Y + partSeparation / 2)
-        curvedChannelBase(radiusMM = c_channel_arc, widthMM = channelWidth, anchor=BOT);
-if(Base_Top_or_Both != "Base")
-color_this(Global_Color)
-    right(Show_Attached ? 0 : radius_channel_Y + partSeparation / 2)
-    up(Show_Attached ? interlockFromFloor : 0)
-        curvedChannelTop(radiusMM = c_channel_arc, widthMM = channelWidth, heightMM = Channel_Internal_Height, anchor = Show_Attached ? BOT : TOP, orient= Show_Attached ? TOP : BOT);
-
+xdistribute(sizes=[partWidth, partWidth]){
+    if(Base_Top_or_Both != "Top")
+    color_this(Global_Color)
+            curvedChannelBase(radiusMM = c_channel_arc, widthMM = channelWidth, anchor=BOT);
+    if(Base_Top_or_Both != "Base")
+    color_this(Global_Color)
+        up(Show_Attached ? interlockFromFloor : 0)
+            curvedChannelTop(radiusMM = c_channel_arc, widthMM = channelWidth, heightMM = Channel_Internal_Height, anchor = Show_Attached ? BOT : TOP, orient= Show_Attached ? TOP : BOT);
+}
 /*
 
 ***BEGIN MODULES***
