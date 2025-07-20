@@ -25,7 +25,7 @@ Change Log:
     - Simplify / reorganize parameters
 - 2025-07-19
     - Add ability to have cutout go out the back of the slots
-    
+
 */
 
 include <BOSL2/std.scad>
@@ -117,7 +117,8 @@ supportCurveZ = min(distanceBetweenSlots * 2, (totalHeight - rimHeight) * 2);
 adjustedCutoutDiameter = min(cutoutDiameter, itemWidth);
 adjustedCutoutStart = Override_Back_Wall_Safety ? cutoutStart : 
     max((adjustedCutoutDiameter/2) - itemCenterY + rimThickness, cutoutStart);
-adjustedCutoutEnd = max((adjustedCutoutDiameter/2) - itemCenterY + rimThickness, cutoutEnd);
+adjustedCutoutEnd = Override_Back_Wall_Safety ? cutoutEnd : 
+    max((adjustedCutoutDiameter/2) - itemCenterY + rimThickness, cutoutEnd);
 //if cutout height override is used, use that value. Otherwise use beyondz to ensure full cutout
 adjustedCutoutHeight = Override_Slot_Cutout_Height == 0 ? beyondZ : Override_Slot_Cutout_Height;
 
