@@ -3,6 +3,7 @@
 Credits:
     Credit to @David D on Printables and Jonathan at Keep Making for Multiconnect and Multiboard, respectively
     @Dontic on GitHub for Multiconnect v2 code
+    @timtucker for all the 2025-7-19 improvements listed below
 
 Licensed Creative Commons 4.0 Attribution Non-Commercial Sharable with Attribution
 
@@ -22,7 +23,12 @@ Change Log:
     - Allow tuning for the number of slots wide / high
     - Allow tuning of the resolution of circles and curves
     - Simplify / reorganize parameters
+- 2025-07-19
+    - Add ability to have cutout go out the back of the slots
+    
 */
+
+include <BOSL2/std.scad>
 
 /*[Parameters]*/
 // Width (in mm) of the item you wish to insert
@@ -46,6 +52,10 @@ cutoutDiameter = 0;
 cutoutStart = 0;
 // Offset from the center (in mm) for the hole to end (postive values extend towards the front wall, negative values extend towards the back wall)
 cutoutEnd = 0;
+//Override so that the slot can cut into the back. If doing so, be sure to have enough valid slots in the back (using the slotWide parameters under Multiconnect settings)
+Override_Back_Wall_Safety = false;
+//Override slot cutout height. Use this when pushing a slot out the back when you don't want the cutout to be the entire height of the back. 
+Override_Slot_Cutout_Height = 0;
 
 /*[Support]*/
 // Thickness (in mm) of the base underneath the item you are holding (leave 0 for an open hole to hang items)
@@ -105,8 +115,11 @@ supportCurveZ = min(distanceBetweenSlots * 2, (totalHeight - rimHeight) * 2);
 
 // Stop the cutout from extending into the back wall
 adjustedCutoutDiameter = min(cutoutDiameter, itemWidth);
-adjustedCutoutStart = max((adjustedCutoutDiameter/2) - itemCenterY + rimThickness, cutoutStart);
+adjustedCutoutStart = Override_Back_Wall_Safety ? cutoutStart : 
+    max((adjustedCutoutDiameter/2) - itemCenterY + rimThickness, cutoutStart);
 adjustedCutoutEnd = max((adjustedCutoutDiameter/2) - itemCenterY + rimThickness, cutoutEnd);
+//if cutout height override is used, use that value. Otherwise use beyondz to ensure full cutout
+adjustedCutoutHeight = Override_Slot_Cutout_Height == 0 ? beyondZ : Override_Slot_Cutout_Height;
 
 offsetWidth = min(totalItemX, distanceBetweenSlots * slotsWide);
 
@@ -159,7 +172,7 @@ difference() {
         }
 
         // Cut out a hole / slot
-        createCutout(holeDiameter = adjustedCutoutDiameter, yCenterStart = itemCenterY + adjustedCutoutStart, yCenterEnd = itemCenterY + adjustedCutoutEnd, circleResolution = circleResolution);
+        createCutout(holeDiameter = adjustedCutoutDiameter, yCenterStart = itemCenterY + adjustedCutoutStart, yCenterEnd = itemCenterY + adjustedCutoutEnd, height = adjustedCutoutHeight, circleResolution = circleResolution);
 
         // Remove the slots for multiconnect
         translate(v = [-(slotsWide * distanceBetweenSlots)/2,0,0]) {
@@ -168,10 +181,10 @@ difference() {
     }
 }
 
-module createCutout(holeDiameter=0, yCenterStart=0, yCenterEnd=0, circleResolution=100) {
+module createCutout(holeDiameter=0, yCenterStart=0, yCenterEnd=0, height = beyondZ, circleResolution=100) {
     // Use extreme values to ensure that the cutout extends beyond the bounds of the object
-    translate(v = [0, 0, -0.5 * beyondZ]) {
-        createElongatedObject(height = beyondZ, diameterX = holeDiameter, diameterY = holeDiameter, yCenterStart = yCenterStart, yCenterEnd = yCenterEnd, circleResolution = circleResolution);
+    translate(v = [0, 0, -0.01]) {
+        createElongatedObject(height = height, diameterX = holeDiameter, diameterY = holeDiameter, yCenterStart = yCenterStart, yCenterEnd = yCenterEnd, circleResolution = circleResolution);
     }
 }
 

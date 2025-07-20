@@ -10,6 +10,8 @@ Change Log:
     - Fix to threading of snap connector by adding flare and new slop parameter
 - 2025-04-09
     - Additional Holding Strength now available! For larger channels, I recommend 0.6.
+- 2025-07-18
+    - Fixed overlapping of channels on larger radius settings
     
 Credit to 
     First and foremost - Katie and her community at Hands on Katie on Youtube, Patreon, and Discord
