@@ -41,6 +41,8 @@ Change Log:
 -2025-07-15
     - New Multiconnect v2 option added with improved holding (thanks @dontic on GitHub!)
     - Enabled OnRamp by default
+-2025-07-25
+    - Added ability to subtract slots if wanting few slots than generated
 
 Notes:
 - Slot test fit - For a slot test fit, set the following parameters
@@ -147,6 +149,8 @@ Force_Back_Thickness = 0; //0.1
 /*[Slot Customization]*/
 // Version of multiconnect (dimple or snap)
 multiConnectVersion = "v2"; // [v1, v2]
+//Reduce the number of slots
+subtractedSlots = 0;
 //Offset the multiconnect on-ramps to be between grid slots rather than on the slot
 onRampHalfOffset = true;
 //Change slot orientation, when enabled slots to come from the top of the back, when disabled slots come from the bottom
@@ -162,7 +166,7 @@ slotTolerance = 1.00; //[0.925:0.005:1.075]
 //Move the slot (Y axis) inwards (positive) or outwards (negative)
 slotDepthMicroadjustment = 0; //[-.5:0.05:.5]
 //Enable a slot on-ramp for easy mounting of tall items
-onRampEnabled = false;
+onRampEnabled = true;
 //Frequency of slots for on-ramp. 1 = every slot; 2 = every 2 slots; etc.
 On_Ramp_Every_X_Slots = 1;
 //Distance from the back of the item holder to where the multiconnect stops (i.e., where the dimple is) (by mm)
@@ -338,7 +342,7 @@ module multiconnectBack(backWidth, backHeight, distanceBetweenSlots, slotStopFro
 {
     //slot count calculates how many slots can fit on the back. Based on internal width for buffer. 
     //slot width needs to be at least the distance between slot for at least 1 slot to generate
-    let (backWidth = max(backWidth,distanceBetweenSlots), backHeight = max(backHeight, 25),slotCount = floor(backWidth/distanceBetweenSlots), backThickness = Force_Back_Thickness == 0 ? 6.5 : Force_Back_Thickness){
+    let (backWidth = max(backWidth,distanceBetweenSlots), backHeight = max(backHeight, 25),slotCount = floor(backWidth/distanceBetweenSlots) - subtractedSlots, backThickness = Force_Back_Thickness == 0 ? 6.5 : Force_Back_Thickness){
         diff() {
             tag(Backer_Negatives_Only ? "remove" : "")
                 translate(v = [0,-backThickness,0]) 
