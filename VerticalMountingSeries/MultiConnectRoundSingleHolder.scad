@@ -302,7 +302,7 @@ module makebackPlate(backWidth, backHeight, distanceBetweenSlots, backThickness,
                 union() {
                     // Back plate
                     translate(v = [0,-backThickness,0]) 
-                    cuboid(size = [backWidth,backThickness,backHeight], rounding=edgeRounding, edges=FRONT, anchor=FRONT+LEFT+BOT);
+                    cuboid(size = [backWidth,backThickness,backHeight], chamfer=edgeRounding, edges=FRONT, anchor=FRONT+LEFT+BOT);
                     //Loop through slots and center on the item
                     //Note: I kept doing math until it looked right. It's possible this can be simplified.
                     // Add cleats
