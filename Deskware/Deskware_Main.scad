@@ -31,6 +31,8 @@ Change Log:
     - Top Plate Customizer for wireless chargers 
 - 2025-06-06 v1.4 - Riser Customizer
     - Customize riser slide sides and front chamfer
+- 2025-08-03 v1.4.1
+    - Removed drawer width contraints to match drawers to other mm-level width customization
      
 
 Credit to 
@@ -784,8 +786,11 @@ module DrawerFront(height_units, inside_width, anchor=CENTER, orient=UP, spin=0)
 }
 
 module Drawer(height_units, inside_width, Drawer_Outside_Depth, anchor=CENTER, orient=UP, spin=0){
-    //FORCE INSIDE TO STANDARD UNITS
-    inside_width_adjusted = quant(inside_width, 42);
+    //FORCE INSIDE TO STANDARD UNITS - Update 2025-08-03 - Removed now that input parameters force standard units.
+    inside_width_adjusted = inside_width + clearance*2;
+    //inside_width_adjusted = quant(inside_width, 42); //replaced rounding for drawer width as calculations are managed by enforcing Core_Section_Width
+    additionalMMBeyondGFPerfectFit = inside_width_adjusted % 42;
+    echo(str("Drawer inside are Gridfinity perfect fit? ", additionalMMBeyondGFPerfectFit == 0 ? "Yes - " : "No - ", additionalMMBeyondGFPerfectFit, " mm extra"));
 
     drawer_height = height_units * Slide_Vertical_Separation - DrawerVerticalClearance;
     drawerFloorThickness = 2;
