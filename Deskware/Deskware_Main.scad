@@ -33,6 +33,7 @@ Change Log:
     - Customize riser slide sides and front chamfer
 - 2025-08-03 v1.4.1
     - Removed drawer width contraints to match drawers to other mm-level width customization
+    - Updated assembly view to only show one drawer (in top position) to reduce render time and prevent MakerWorld timeouts
      
 
 Credit to 
@@ -467,7 +468,8 @@ module mw_assembly_view() {
                 fwd(Show_Connected ? 8.5 : 50)
                     //1-unit drawer
                     if($idx % 2 == 0){
-                        zcopies(spacing = 40, sp=0, n = Riser_Height / 40)
+                        up(40 * ((Riser_Height / 40) - 1)) //Change 2025-08-03 - Only show 1 drawer (and in the top position to save render time)
+                        //zcopies(spacing = 40, sp=0, n = Riser_Height / 40) //Change 2025-08-03 - Only show 1 drawer (and in the top position to save render time)
                         Drawer(height_units = 1, inside_width = Drawer_Outside_Width - DrawerThickness*2, Drawer_Outside_Depth = Drawer_Outside_Depth, anchor=BOT)
                             //drawer fronts
                             if(Show_Connected)
@@ -530,7 +532,7 @@ module mw_assembly_view() {
 }
 
 //are we rendering a special part or the regular entire deskware standard
-function special_render_mode() = Enable_Curve_Mode || Enable_Top_Plate_Customizer;
+function special_render_mode() = Enable_Curve_Mode || Enable_Top_Plate_Customizer || Enable_Riser_Customizer;
 
 echo(str("special render mode? ", special_render_mode()));
 
