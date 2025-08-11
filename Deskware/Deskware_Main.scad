@@ -34,6 +34,8 @@ Change Log:
 - 2025-08-03 v1.4.1
     - Removed drawer width contraints to match drawers to other mm-level width customization
     - Updated assembly view to only show one drawer (in top position) to reduce render time and prevent MakerWorld timeouts
+- 2025-08-10 v1.5
+    - Riser Customizer - Added split height option
      
 
 Credit to 
@@ -102,6 +104,9 @@ Core_Radius = 50;
 Enable_Riser_Customizer = false;
 Slide_Side_Selection = "BOTH"; //[BOTH, LEFT, RIGHT, NONE]
 Riser_Front_Chamfer = 0; 
+//Total Height of the core section from the bottom of the riser to the base of the top plate.
+Outer_Total_Height = 107.5; //[67.5:40:387.5]
+Inner_Total_Height = 67.5; //[67.5:40:387.5]
 
 /*[Colors]*/
 Primary_Color = "#dadada"; // color
@@ -201,6 +206,8 @@ Core_Section_Height = Total_Height - Top_Plate_Thickness - Base_Plate_Thickness;
 ///*[Riser]*/
 Riser_Depth = Core_Section_Depth - 7.5;
 Riser_Height = Core_Section_Height;
+Outer_Riser_Height = Outer_Total_Height - Top_Plate_Thickness - Base_Plate_Thickness;
+Inner_Riser_Height = Inner_Total_Height - Top_Plate_Thickness - Base_Plate_Thickness;
 Riser_Width = 22;
 
 ///*[Backer]*/
@@ -400,7 +407,10 @@ module mw_assembly_view() {
         customizableTopPlateCore(depth = Top_Plate_Depth, width = Core_Section_Width, anchor=BOT) show_anchors();
     }
     else if (Enable_Riser_Customizer){
-        Riser(slideSides = Slide_Side_Selection, chamfer = Riser_Front_Chamfer);
+        xdistribute(spacing = Riser_Width+10){
+            RiserSplit(slideSides = Slide_Side_Selection, chamfer = Riser_Front_Chamfer, orient=DOWN, anchor=TOP);
+            RiserSplit(slideSides = Slide_Side_Selection, reverseSides = true, chamfer = Riser_Front_Chamfer, orient=DOWN, anchor=TOP);
+        }
     }
     else{
         if(Show_Backer)
@@ -695,7 +705,10 @@ module mw_plate_13(){
 }
 module mw_plate_14(){
     if(Enable_Riser_Customizer)
-       Riser(slideSides = Slide_Side_Selection, chamfer = Riser_Front_Chamfer, orient=DOWN, anchor=TOP);
+        xdistribute(spacing = Riser_Width+10){
+            RiserSplit(slideSides = Slide_Side_Selection, chamfer = Riser_Front_Chamfer, orient=DOWN, anchor=TOP);
+            RiserSplit(slideSides = Slide_Side_Selection, reverseSides = true, chamfer = Riser_Front_Chamfer, orient=DOWN, anchor=TOP);
+        }
 }
 //END MAKERWORLD PLATING
 
@@ -1513,18 +1526,44 @@ module Backer(anchor=BOT, spin=0, orient=UP){
 
 }
 
-module Riser(slideSides = "BOTH", chamfer = 0, anchor=BOT, spin=0, orient=UP){
-    number_of_slides = quantdn((Riser_Height - Slide_Distance_From_Bottom - Slide_Height - Slide_Minimum_Distance_From_Top)/Slide_Vertical_Separation+1, 1);
+module RiserSplit(slideSides = "BOTH", height1 = Outer_Riser_Height, height2 = Inner_Riser_Height, chamfer = 0, reverseSides = false, anchor=BOT, spin=0, orient=UP){
+
+    slideSidesReversed = 
+        slideSides == "BOTH" ? "BOTH" : 
+        slideSides == "LEFT" ? "RIGHT" :
+        slideSides == "RIGHT" ? "LEFT" : 
+        "NONE";
+
+    echo(str("Side Slides in RiserSplit: ", slideSides));
+    echo(str("Reversed Side Slides in RiserSplit: ", slideSidesReversed));
+
+    union(){
+        left_half(s = Core_Section_Depth*2)
+            Riser(slideSides = reverseSides ? slideSidesReversed : slideSides, chamfer = chamfer, height = reverseSides ? height2 : height1);
+        right_half(s = Core_Section_Depth*2)
+            Riser(slideSides = reverseSides ? slideSidesReversed : slideSides, chamfer = chamfer, height = reverseSides ? height1 : height2);
+    }
+}
+
+module Riser(slideSides = "BOTH", height = Riser_Height, chamfer = 0, anchor=BOT, spin=0, orient=UP){
+    echo(str("Riser() Slide Sides before processing: ", slideSides));
+    
+    number_of_slides = quantdn((height - Slide_Distance_From_Bottom - Slide_Height - Slide_Minimum_Distance_From_Top)/Slide_Vertical_Separation+1, 1);
+    
+    
     slideSides = 
         slideSides == "BOTH" ? [LEFT, RIGHT] : 
-        slideSides == "LEFT" ? [LEFT] : 
+        slideSides == "LEFT" ? [LEFT] :
         slideSides == "RIGHT" ? [RIGHT] : 
-        [];
+        slideSides == "NONE" ? [] : 
+        slideSides;
+
+    echo(str("Slide Sides after processing: ", slideSides));
 
     //main riser body
     color(Disable_Colors ? undef : Primary_Color)
     diff(){
-        cuboid([Riser_Width-clearance*2, Riser_Depth, Riser_Height], chamfer = chamfer, edges = [FRONT+LEFT, FRONT+RIGHT], anchor=anchor, orient=orient, spin=spin){
+        cuboid([Riser_Width-clearance*2, Riser_Depth, height], chamfer = chamfer, edges = [FRONT+LEFT, FRONT+RIGHT], anchor=anchor, orient=orient, spin=spin){
             //Slides
             attach(slideSides, LEFT, inside=true, shiftout=0.01, align=BOT) 
                 ycopies(spacing = Slide_Vertical_Separation, sp=[0,Slide_Distance_From_Bottom], n = number_of_slides)
@@ -1593,6 +1632,8 @@ module Drawer_Slide(length = Riser_Depth+0.02, deleteTool = false, anchor=CENTER
         [0,Slide_Height-Slide_Clearance*2]
     ];
 }
+
+
 
 module HOKConnectorDeleteTool(anchor=CENTER, spin=0, orient=UP){
     //thickness = 3.2;
