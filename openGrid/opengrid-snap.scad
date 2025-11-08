@@ -19,18 +19,18 @@ include <BOSL2/std.scad>
 
 module openGridSnap(lite=false, directional=false, orient, anchor, spin){
 	module openGridSnapNub(w, nub_h, nub_w, nub_d, b_y, top_wedge_h, bot_wedge_h, r_x, r_r, r_s){
-		move([w/2, 0, 0]) 
+		move([w/2, 0, 0])
 		intersection(){
 			difference(){
-				//bounding box
-				zmove(nub_h) cuboid([nub_d,nub_w,2-nub_h], anchor=CENTER+LEFT+BOTTOM) ;
+				//bounding box - add 0.01 to height for overlap with core
+				zmove(nub_h-0.01) cuboid([nub_d,nub_w,2-nub_h+0.01], anchor=CENTER+LEFT+BOTTOM) ;
 				//top part
 				zmove(2) rotate([0,180,90]) wedge([nub_w,nub_d,top_wedge_h], anchor=CENTER+BOTTOM+BACK);
 				//bottom part
 				zmove(nub_h) rotate([0,0,90]) ymove(b_y) wedge([nub_w,0.4,bot_wedge_h], anchor=CENTER+BOTTOM+BACK);
 			};
-			//rounding
-			xmove(r_x) yscale(r_s) cyl($fn=600, r=r_r, h=2, anchor=BOTTOM);
+			//rounding - add 0.01 to height for overlap
+			xmove(r_x) yscale(r_s) cyl($fn=600, r=r_r, h=2.01, anchor=BOTTOM);
 		};
 	}
 
@@ -45,13 +45,13 @@ module openGridSnap(lite=false, directional=false, orient, anchor, spin){
 
 			union() {
 				//top
-				zmove(h-top_h) cuboid([w,w,top_h], rounding=3.262743, edges="Z", $fn=2, anchor=BOTTOM);
+				zmove(h-top_h-0.01) cuboid([w,w,top_h+0.01], rounding=3.262743, edges="Z", $fn=2, anchor=BOTTOM);
 				// core
 				cuboid([w,w,core], rounding=4.81837, edges="Z", $fn=2, anchor=BOTTOM);
 				//top nub
 				offs=2.02;
 				intersection(){
-					zmove(core-top_nub_h) cuboid([w,w,top_nub_h], rounding=3.262743, edges="Z", $fn=2, anchor=BOTTOM);
+					zmove(core-top_nub_h-0.01) cuboid([w,w,top_nub_h+0.01], rounding=3.262743, edges="Z", $fn=2, anchor=BOTTOM);
 					zrot_copies(n=4) move([w/2-offs,w/2-offs,core]) rotate([180, 0, 135]) wedge(size=[6.817,top_nub_h,top_nub_h], anchor=CENTER+BOTTOM);
 				};
 				//bottom nub
